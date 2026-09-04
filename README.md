@@ -72,19 +72,19 @@ Usuario -> Chatbot (Chainlit) -> API (FastAPI) -> Retrieval hibrido (denso + BM2
 4. Colocar tus PDFs de GPC en `data/01_raw/gpc/` e indexarlos:
 
     ```bash
-    uv run python -m gpc_rag.pipelines.build_index --input-dir data/01_raw/gpc --recreate
+    PYTHONPATH=src uv run python -m gpc_rag.pipelines.build_index --input-dir data/01_raw/gpc --recreate
     ```
 
 5. Levantar la API:
 
     ```bash
-    uv run uvicorn gpc_rag.api.main:app --reload --port 8000
+    PYTHONPATH=src uv run uvicorn gpc_rag.api.main:app --reload --port 8000
     ```
 
 6. En otra terminal, levantar el chatbot:
 
     ```bash
-    uv run chainlit run src/gpc_rag/chat/app.py --port 8001
+    PYTHONPATH=src uv run chainlit run src/gpc_rag/chat/app.py --port 8001
     ```
 
 7. Abrir <http://localhost:8001> y preguntar.
@@ -107,7 +107,7 @@ del puerto 8001 -- no expongas los puertos de `ollama` (11434) ni `qdrant`
 ## Evaluacion (RAGAS)
 
 ```bash
-uv run python -m gpc_rag.evaluation.ragas_eval --dataset data/05_model_input/preguntas_evaluacion.jsonl
+PYTHONPATH=src uv run python -m gpc_rag.evaluation.ragas_eval --dataset data/05_model_input/preguntas_evaluacion.jsonl
 ```
 
 El dataset es un JSONL con `{"question": "...", "ground_truth": "..."}` por

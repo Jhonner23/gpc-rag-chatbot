@@ -16,7 +16,7 @@ import chainlit as cl
 import httpx
 
 API_URL = os.environ.get("API_URL", "http://localhost:8000")
-REQUEST_TIMEOUT_SECONDS = 120
+REQUEST_TIMEOUT_SECONDS = 300
 
 
 @cl.on_chat_start

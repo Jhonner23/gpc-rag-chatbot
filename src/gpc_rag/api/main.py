@@ -23,6 +23,17 @@ app = FastAPI(
 )
 
 
+@app.on_event("startup")
+def _warm_up_pipeline() -> None:
+    try:
+        pipeline = get_pipeline()
+        if pipeline.retriever.cfg.retrieval.use_reranker:
+            _ = pipeline.retriever.reranker
+        logger.info("Pipeline RAG precargado.")
+    except Exception:
+        logger.exception("No se pudo precargar el pipeline en el startup.")
+
+
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok"}
