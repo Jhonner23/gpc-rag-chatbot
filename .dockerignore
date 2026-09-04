@@ -1,0 +1,13 @@
+.venv
+__pycache__
+*.pyc
+.git
+.github
+notebooks
+docs
+tests
+data/01_raw
+data/02_intermediate
+.pytest_cache
+.ruff_cache
+.mypy_cache

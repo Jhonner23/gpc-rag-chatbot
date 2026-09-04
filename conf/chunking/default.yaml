@@ -1,0 +1,5 @@
+# Chunking jerarquico por seccion (ver src/gpc_rag/ingestion/chunking.py)
+chunk_size_tokens: 400
+chunk_overlap_ratio: 0.15
+respect_section_boundaries: true
+min_chunk_tokens: 40

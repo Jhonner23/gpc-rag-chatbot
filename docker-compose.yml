@@ -1,0 +1,64 @@
+# Despliegue en produccion (on-premise): Ollama + Qdrant + API + Chatbot,
+# todo local, sin llamadas a servicios de pago.
+#
+# Primer arranque:
+#   docker compose up -d ollama qdrant
+#   docker compose exec ollama ollama pull bge-m3
+#   docker compose exec ollama ollama pull qwen2.5:3b-instruct
+#   docker compose up -d --build api chat
+#
+# Luego indexar las guias (una vez, o cada vez que agregues GPC nuevas):
+#   docker compose exec api python -m gpc_rag.pipelines.build_index --input-dir data/01_raw/gpc --recreate
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    restart: unless-stopped
+    # Si el servidor tiene GPU NVIDIA, descomenta este bloque para usarla:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    volumes:
+      - qdrant_data:/qdrant/storage
+    ports:
+      - "6333:6333"
+    restart: unless-stopped
+
+  api:
+    build: .
+    depends_on:
+      - ollama
+      - qdrant
+    environment:
+      - RAG_ENV=docker
+    volumes:
+      - ./data:/app/data  # PDFs de entrada y reportes de evaluacion
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  chat:
+    build: .
+    command: ["chainlit", "run", "src/gpc_rag/chat/app.py", "--host", "0.0.0.0", "--port", "8001"]
+    depends_on:
+      - api
+    environment:
+      - API_URL=http://api:8000
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+  qdrant_data:

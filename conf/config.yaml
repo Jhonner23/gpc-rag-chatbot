@@ -1,0 +1,21 @@
+# Configuracion principal (Hydra). Compone los grupos de abajo.
+# Cambiar de ambiente: RAG_ENV=docker (ver src/gpc_rag/common/settings.py)
+defaults:
+  - env: dev
+  - llm: ollama
+  - embeddings_cfg: ollama
+  - vectorstore_cfg: qdrant
+  - chunking: default
+  - _self_
+
+# Parametros de retrieval (no dependen del proveedor)
+retrieval:
+  top_k_dense: 8          # candidatos recuperados por busqueda densa
+  top_k_bm25: 8            # candidatos recuperados por BM25
+  top_k_final: 4           # despues de rerank, cuantos chunks van al prompt
+  use_reranker: true
+  reranker_model: "BAAI/bge-reranker-v2-m3"
+
+app:
+  name: "GPC RAG Chatbot"
+  collection_name: "gpc_guidelines"

@@ -1,0 +1,8 @@
+# Modelo por defecto: pensado para equipos con poca VRAM (<=4GB) o solo CPU.
+# En un servidor con mas GPU, sube a "qwen2.5:7b-instruct" o "llama3.1:8b-instruct"
+# sin tocar codigo -- solo cambia este archivo (o crea conf/llm/ollama-prod.yaml y
+# selecciona con `llm=ollama-prod` al arrancar).
+provider: ollama
+model: "qwen2.5:3b-instruct"
+temperature: 0.1
+max_tokens: 700
