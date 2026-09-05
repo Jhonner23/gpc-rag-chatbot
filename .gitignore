@@ -130,3 +130,9 @@ out/
 
 # Spyder
 .spyproject/
+
+# Evaluacion RAGAS: el dataset dorado si se versiona (es el input curado),
+# pero los archivos generados por cada corrida no (cambian con cada ejecucion
+# y no aportan valor en el historial de git).
+eval/qa_candidates.json
+eval/ragas_results.csv

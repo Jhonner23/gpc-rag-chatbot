@@ -10,9 +10,9 @@ defaults:
 
 # Parametros de retrieval (no dependen del proveedor)
 retrieval:
-  top_k_dense: 8          # candidatos recuperados por busqueda densa
-  top_k_bm25: 8            # candidatos recuperados por BM25
-  top_k_final: 4           # despues de rerank, cuantos chunks van al prompt
+  top_k_dense: 12          # candidatos recuperados por busqueda densa
+  top_k_bm25: 12             # candidatos recuperados por BM25
+  top_k_final: 6           # despues de rerank, cuantos chunks van al prompt
   use_reranker: true
   reranker_model: "BAAI/bge-reranker-v2-m3"
 

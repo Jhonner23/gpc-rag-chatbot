@@ -24,6 +24,25 @@ def test_split_into_sections_without_headers_returns_single_section():
     assert sections[0].title == "Sin seccion"
 
 
+def test_split_into_sections_detects_bold_numbered_headers_from_ocr_pages():
+    # Paginas OCR (ver ingestion/extract.py) no traen '#', pero suelen marcar
+    # preguntas clinicas numeradas en negrita -- debe tratarse como seccion.
+    ocr_like_text = (
+        "Texto introductorio de la pagina, sin encabezado real.\n\n"
+        "**13. En pacientes adultos con diagnostico de NAC grave, "
+        "cual es el esquema antibiotico recomendado?**\n\n"
+        "**Recomendacion 13** Ampicilina/sulbactam o ceftriaxona mas "
+        "claritromicina."
+    )
+    sections = split_into_sections(ocr_like_text)
+    titles = [s.title for s in sections]
+    expected_section_count = 2
+    assert len(sections) == expected_section_count
+    assert titles[0] == "Sin seccion"
+    assert titles[1].startswith("13. En pacientes adultos")
+    assert "Ampicilina/sulbactam" in sections[1].text
+
+
 def test_chunk_document_preserves_section_and_source_metadata():
     pages = [{"text": SAMPLE_MD, "page": 3}]
     chunks = chunk_document(pages, source_file="guia_diabetes.pdf", chunk_size_tokens=50, min_chunk_tokens=5)

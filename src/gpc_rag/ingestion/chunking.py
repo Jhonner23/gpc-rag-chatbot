@@ -15,6 +15,21 @@ from gpc_rag.common.models import Chunk
 
 _HEADER_RE = re.compile(r"^(#{1,4})\s+(.*)$", re.MULTILINE)
 
+# Paginas que pasaron por OCR (ver ingestion/extract.py) no traen encabezados
+# markdown reales (#, ##...) -- el texto queda "plano". Muchas GPC sin embargo
+# marcan sus preguntas clinicas numeradas en negrita al inicio de linea, ej.
+# "**13. En pacientes adultos con diagnostico de NAC grave...**". Sin detectar
+# esto como limite de seccion, toda la pagina cae en una sola seccion "Sin
+# seccion" larga, que el splitter por parrafos corta a ciegas -- pudiendo
+# separar una recomendacion clinica (con el farmaco/dosis exacta) de su propia
+# pregunta y contexto, y dejar que el LLM reciba solo la mitad.
+_BOLD_NUMBERED_HEADER_RE = re.compile(r"^\*\*(\d{1,3}\.\s.*)$", re.MULTILINE)
+
+
+def _strip_markdown_markers(text: str) -> str:
+    """Quita ** y _ de enfasis para dejar un titulo de seccion legible."""
+    return re.sub(r"[*_]+", "", text).strip()
+
 
 def approx_token_count(text: str) -> int:
     """Aproximacion rapida de tokens sin depender de un tokenizer real.
@@ -34,22 +49,31 @@ class _Section:
 
 
 def split_into_sections(markdown_text: str, default_title: str = "Sin seccion") -> list[_Section]:
-    """Divide un texto markdown en secciones usando los encabezados (#, ##, ...)."""
-    matches = list(_HEADER_RE.finditer(markdown_text))
+    """Divide un texto markdown en secciones usando encabezados reales (#, ##...)
+    y, como respaldo (paginas OCR sin markdown), preguntas numeradas en negrita
+    al inicio de linea (ej. "**13. En pacientes...**").
+    """
+    raw_matches: list[tuple[int, int, str]] = [
+        (m.start(), m.end(), m.group(2).strip()) for m in _HEADER_RE.finditer(markdown_text)
+    ]
+    raw_matches += [
+        (m.start(), m.end(), _strip_markdown_markers(m.group(1)))
+        for m in _BOLD_NUMBERED_HEADER_RE.finditer(markdown_text)
+    ]
+    matches = sorted(raw_matches, key=lambda t: t[0])
+
     if not matches:
         return [_Section(title=default_title, text=markdown_text.strip())]
 
     sections: list[_Section] = []
-    if matches[0].start() > 0:
-        preamble = markdown_text[: matches[0].start()].strip()
+    if matches[0][0] > 0:
+        preamble = markdown_text[: matches[0][0]].strip()
         if preamble:
             sections.append(_Section(title=default_title, text=preamble))
 
-    for i, match in enumerate(matches):
-        title = match.group(2).strip()
-        start = match.end()
-        end = matches[i + 1].start() if i + 1 < len(matches) else len(markdown_text)
-        body = markdown_text[start:end].strip()
+    for i, (_start, end, title) in enumerate(matches):
+        body_end = matches[i + 1][0] if i + 1 < len(matches) else len(markdown_text)
+        body = markdown_text[end:body_end].strip()
         if body:
             sections.append(_Section(title=title, text=body))
 
