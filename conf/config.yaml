@@ -19,3 +19,13 @@ retrieval:
 app:
   name: "GPC RAG Chatbot"
   collection_name: "gpc_guidelines"
+
+# Capa de agentes (coordinador, RAG, evaluador -- ver src/gpc_rag/agents/).
+# Usa un modelo mas grande que el de generacion (qwen2.5:3b) para las tareas
+# de juicio/clasificacion (filtrar preguntas, auditar respuestas): son
+# llamadas puntuales (2 por pregunta, no 40+ como en la evaluacion RAGAS), asi
+# que el costo extra de latencia se paga menos veces y vale la pena la mejor
+# confiabilidad de razonamiento de un modelo mas grande.
+agents:
+  coordinator_model: "qwen2.5:7b-instruct"
+  evaluator_model: "qwen2.5:7b-instruct"

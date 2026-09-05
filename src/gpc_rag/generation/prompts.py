@@ -57,13 +57,20 @@ def format_context(chunks: list[RetrievedChunk]) -> str:
     return "\n\n".join(blocks) if blocks else "(sin contexto relevante encontrado)"
 
 
-def build_messages(question: str, chunks: list[RetrievedChunk]) -> list[dict]:
+def build_messages(
+    question: str, chunks: list[RetrievedChunk], extra_instruction: str | None = None
+) -> list[dict]:
     context = format_context(chunks)
     user_prompt = (
         f"CONTEXTO:\n{context}\n\n"
         f"PREGUNTA DEL USUARIO:\n{question}\n\n"
         "Responde siguiendo las reglas del sistema, citando las fuentes usadas."
     )
+    if extra_instruction:
+        # Usado por el agente evaluador (ver agents/graph.py) para pedir un
+        # reintento mas estricto cuando la primera respuesta no paso su
+        # auditoria -- no cambia las reglas base, solo refuerza una de ellas.
+        user_prompt += f"\n\nINSTRUCCION ADICIONAL:\n{extra_instruction}"
     return [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": user_prompt},

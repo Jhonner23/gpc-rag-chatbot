@@ -15,6 +15,8 @@ import os
 import chainlit as cl
 import httpx
 
+from gpc_rag.common.refusal import is_refusal
+
 API_URL = os.environ.get("API_URL", "http://localhost:8000")
 REQUEST_TIMEOUT_SECONDS = 300
 
@@ -28,27 +30,6 @@ async def on_chat_start() -> None:
             "la fuente exacta. Recuerda: esto apoya pero no reemplaza el juicio clinico."
         )
     ).send()
-
-
-# Mismas senales que usa el prompt del sistema (ver generation/prompts.py) para
-# pedirle al modelo que reconozca cuando no tiene informacion suficiente o el
-# tema no esta cubierto. Si la respuesta cae en uno de estos casos, no tiene
-# sentido mostrar "Fuentes consultadas": el retriever siempre devuelve algo
-# (los chunks mas parecidos, aunque sean irrelevantes), y listarlos ahi
-# sugiere -enganosamente- que si se encontro informacion relevante.
-_REFUSAL_MARKERS = [
-    "no encontr",
-    "no cubr",
-    "no teng",
-    "no dispon",
-    "informacion suficiente",
-    "información suficiente",
-]
-
-
-def _is_refusal(answer: str) -> bool:
-    lower = answer.lower()
-    return any(marker in lower for marker in _REFUSAL_MARKERS)
 
 
 def _format_sources(sources: list[dict]) -> str:
@@ -85,6 +66,6 @@ async def on_message(message: cl.Message) -> None:
         return
 
     answer_text = data["answer"]
-    sources_block = "" if _is_refusal(answer_text) else _format_sources(data.get("sources", []))
+    sources_block = "" if is_refusal(answer_text) else _format_sources(data.get("sources", []))
     thinking.content = answer_text + sources_block
     await thinking.update()

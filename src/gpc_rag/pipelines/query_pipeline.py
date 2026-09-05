@@ -27,9 +27,9 @@ class QueryPipeline:
         self.retriever.build_bm25_index()
         self.generator = OllamaGenerator(self.cfg)
 
-    def answer(self, question: str) -> RagAnswer:
+    def answer(self, question: str, extra_instruction: str | None = None) -> RagAnswer:
         retrieved = self.retriever.retrieve(question)
-        answer_text = self.generator.generate(question, retrieved)
+        answer_text = self.generator.generate(question, retrieved, extra_instruction=extra_instruction)
         return RagAnswer(question=question, answer=answer_text, sources=retrieved)
 
 

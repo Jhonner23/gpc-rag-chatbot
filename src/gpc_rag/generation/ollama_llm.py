@@ -18,8 +18,10 @@ class OllamaGenerator:
         self.max_tokens = cfg.llm.max_tokens
         self.client = Client(host=cfg.env.ollama_url)
 
-    def generate(self, question: str, chunks: list[RetrievedChunk]) -> str:
-        messages = build_messages(question, chunks)
+    def generate(
+        self, question: str, chunks: list[RetrievedChunk], extra_instruction: str | None = None
+    ) -> str:
+        messages = build_messages(question, chunks, extra_instruction=extra_instruction)
         response = self.client.chat(
             model=self.model,
             messages=messages,
