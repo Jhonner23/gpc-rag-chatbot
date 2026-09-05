@@ -61,6 +61,7 @@ Usuario -> Chatbot (Chainlit) -> API (FastAPI) -> Retrieval hibrido (denso + BM2
     ```bash
     ollama pull bge-m3
     ollama pull qwen2.5:3b-instruct
+    ollama pull qwen2.5:7b-instruct  # usado por el coordinador y el evaluador (ver conf/config.yaml -> agents)
     ```
 
 3. Levantar Qdrant (mas simple con Docker, aunque el resto del proyecto corra local):
@@ -75,10 +76,12 @@ Usuario -> Chatbot (Chainlit) -> API (FastAPI) -> Retrieval hibrido (denso + BM2
     PYTHONPATH=src uv run python -m gpc_rag.pipelines.build_index --input-dir data/01_raw/gpc --recreate
     ```
 
-5. Levantar la API:
+5. Levantar la API (agrega GPC_USE_AGENTS=true para usar la arquitectura de agentes -- coordinador + RAG + evaluador, ver seccion 9 de docs/arquitectura.md -- en vez del pipeline directo):
 
     ```bash
     PYTHONPATH=src uv run uvicorn gpc_rag.api.main:app --reload --port 8000
+    # o, con la capa de agentes activada:
+    GPC_USE_AGENTS=true PYTHONPATH=src uv run uvicorn gpc_rag.api.main:app --reload --port 8000
     ```
 
 6. En otra terminal, levantar el chatbot:
@@ -95,6 +98,7 @@ Usuario -> Chatbot (Chainlit) -> API (FastAPI) -> Retrieval hibrido (denso + BM2
 docker compose up -d ollama qdrant
 docker compose exec ollama ollama pull bge-m3
 docker compose exec ollama ollama pull qwen2.5:3b-instruct
+docker compose exec ollama ollama pull qwen2.5:7b-instruct
 docker compose up -d --build api chat
 docker compose exec api python -m gpc_rag.pipelines.build_index --input-dir data/01_raw/gpc --recreate
 ```
