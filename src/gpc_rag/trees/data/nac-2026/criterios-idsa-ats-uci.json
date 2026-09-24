@@ -1,0 +1,828 @@
+{
+  "tree_id": "nac-2026-criterios-idsa-ats-uci",
+  "title": "Criterios IDSA/ATS 2007 para ingreso a UCI",
+  "description": "Determina si un paciente hospitalizado con NAC tiene indicacion de ingreso a UCI segun los criterios IDSA/ATS 2007 (Tabla 5): 1 criterio mayor, o >=3 de 9 criterios menores.",
+  "gpc_source": "Guia de practica clinica Colombiana NAC 2026.pdf",
+  "root_node_id": "major_vm_invasiva",
+  "nodes": {
+    "major_vm_invasiva": {
+      "type": "decision",
+      "node_id": "major_vm_invasiva",
+      "question": "El paciente requiere ventilacion mecanica invasiva?",
+      "variable": "major_vm_invasiva",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "leaf_uci_directa",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "major_choque_septico",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Necesidad de ventilacion mecanica invasiva (Tabla 5, Criterios mayores, pag. 199)."
+    },
+    "major_choque_septico": {
+      "type": "decision",
+      "node_id": "major_choque_septico",
+      "question": "El paciente esta en choque septico con requerimiento de vasopresores?",
+      "variable": "major_choque_septico",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "leaf_uci_directa",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step1_count0",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Choque septico con requerimiento de vasopresores (Tabla 5, Criterios mayores, pag. 199)."
+    },
+    "step1_count0": {
+      "type": "decision",
+      "node_id": "step1_count0",
+      "question": "Frecuencia respiratoria >= 30 respiraciones/min?",
+      "variable": "minor_fr30",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step2_count1",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step2_count0",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Frecuencia respiratoria >=30/min (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step1_count1": {
+      "type": "decision",
+      "node_id": "step1_count1",
+      "question": "Frecuencia respiratoria >= 30 respiraciones/min?",
+      "variable": "minor_fr30",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step2_count2",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step2_count1",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Frecuencia respiratoria >=30/min (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step1_count2": {
+      "type": "decision",
+      "node_id": "step1_count2",
+      "question": "Frecuencia respiratoria >= 30 respiraciones/min?",
+      "variable": "minor_fr30",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "leaf_uci_criterios_menores",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step2_count2",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Frecuencia respiratoria >=30/min (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step2_count0": {
+      "type": "decision",
+      "node_id": "step2_count0",
+      "question": "Relacion PaO2/FiO2 <= 250?",
+      "variable": "minor_pafi250",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step3_count1",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step3_count0",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "PaO2/FiO2 <=250 (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step2_count1": {
+      "type": "decision",
+      "node_id": "step2_count1",
+      "question": "Relacion PaO2/FiO2 <= 250?",
+      "variable": "minor_pafi250",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step3_count2",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step3_count1",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "PaO2/FiO2 <=250 (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step2_count2": {
+      "type": "decision",
+      "node_id": "step2_count2",
+      "question": "Relacion PaO2/FiO2 <= 250?",
+      "variable": "minor_pafi250",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "leaf_uci_criterios_menores",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step3_count2",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "PaO2/FiO2 <=250 (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step3_count0": {
+      "type": "decision",
+      "node_id": "step3_count0",
+      "question": "La radiografia de torax muestra infiltrados multilobares?",
+      "variable": "minor_infiltrados_multilobares",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step4_count1",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step4_count0",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Infiltrados multilobares (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step3_count1": {
+      "type": "decision",
+      "node_id": "step3_count1",
+      "question": "La radiografia de torax muestra infiltrados multilobares?",
+      "variable": "minor_infiltrados_multilobares",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step4_count2",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step4_count1",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Infiltrados multilobares (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step3_count2": {
+      "type": "decision",
+      "node_id": "step3_count2",
+      "question": "La radiografia de torax muestra infiltrados multilobares?",
+      "variable": "minor_infiltrados_multilobares",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "leaf_uci_criterios_menores",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step4_count2",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Infiltrados multilobares (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step4_count0": {
+      "type": "decision",
+      "node_id": "step4_count0",
+      "question": "El paciente presenta confusion o desorientacion?",
+      "variable": "minor_confusion",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step5_count1",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step5_count0",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Confusion o desorientacion (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step4_count1": {
+      "type": "decision",
+      "node_id": "step4_count1",
+      "question": "El paciente presenta confusion o desorientacion?",
+      "variable": "minor_confusion",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step5_count2",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step5_count1",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Confusion o desorientacion (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step4_count2": {
+      "type": "decision",
+      "node_id": "step4_count2",
+      "question": "El paciente presenta confusion o desorientacion?",
+      "variable": "minor_confusion",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "leaf_uci_criterios_menores",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step5_count2",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Confusion o desorientacion (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step5_count0": {
+      "type": "decision",
+      "node_id": "step5_count0",
+      "question": "BUN >= 20 mg/dL?",
+      "variable": "minor_bun20",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step6_count1",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step6_count0",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "BUN >=20 mg/dL (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step5_count1": {
+      "type": "decision",
+      "node_id": "step5_count1",
+      "question": "BUN >= 20 mg/dL?",
+      "variable": "minor_bun20",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step6_count2",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step6_count1",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "BUN >=20 mg/dL (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step5_count2": {
+      "type": "decision",
+      "node_id": "step5_count2",
+      "question": "BUN >= 20 mg/dL?",
+      "variable": "minor_bun20",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "leaf_uci_criterios_menores",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step6_count2",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "BUN >=20 mg/dL (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step6_count0": {
+      "type": "decision",
+      "node_id": "step6_count0",
+      "question": "El paciente tiene leucopenia (<4.000 celulas/mm3)?",
+      "variable": "minor_leucopenia",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step7_count1",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step7_count0",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Leucopenia (<4.000 celulas/mm3) (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step6_count1": {
+      "type": "decision",
+      "node_id": "step6_count1",
+      "question": "El paciente tiene leucopenia (<4.000 celulas/mm3)?",
+      "variable": "minor_leucopenia",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step7_count2",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step7_count1",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Leucopenia (<4.000 celulas/mm3) (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step6_count2": {
+      "type": "decision",
+      "node_id": "step6_count2",
+      "question": "El paciente tiene leucopenia (<4.000 celulas/mm3)?",
+      "variable": "minor_leucopenia",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "leaf_uci_criterios_menores",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step7_count2",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Leucopenia (<4.000 celulas/mm3) (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step7_count0": {
+      "type": "decision",
+      "node_id": "step7_count0",
+      "question": "El paciente tiene trombocitopenia (<100.000 plaquetas/mm3)?",
+      "variable": "minor_trombocitopenia",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step8_count1",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step8_count0",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Trombocitopenia (<100.000 plaquetas/mm3) (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step7_count1": {
+      "type": "decision",
+      "node_id": "step7_count1",
+      "question": "El paciente tiene trombocitopenia (<100.000 plaquetas/mm3)?",
+      "variable": "minor_trombocitopenia",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step8_count2",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step8_count1",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Trombocitopenia (<100.000 plaquetas/mm3) (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step7_count2": {
+      "type": "decision",
+      "node_id": "step7_count2",
+      "question": "El paciente tiene trombocitopenia (<100.000 plaquetas/mm3)?",
+      "variable": "minor_trombocitopenia",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "leaf_uci_criterios_menores",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step8_count2",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Trombocitopenia (<100.000 plaquetas/mm3) (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step8_count0": {
+      "type": "decision",
+      "node_id": "step8_count0",
+      "question": "El paciente tiene hipotermia (temperatura <36 C)?",
+      "variable": "minor_hipotermia",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step9_count1",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step9_count0",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Hipotermia (<36 C) (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step8_count1": {
+      "type": "decision",
+      "node_id": "step8_count1",
+      "question": "El paciente tiene hipotermia (temperatura <36 C)?",
+      "variable": "minor_hipotermia",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step9_count2",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step9_count1",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Hipotermia (<36 C) (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step8_count2": {
+      "type": "decision",
+      "node_id": "step8_count2",
+      "question": "El paciente tiene hipotermia (temperatura <36 C)?",
+      "variable": "minor_hipotermia",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "leaf_uci_criterios_menores",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step9_count2",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Hipotermia (<36 C) (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step9_count0": {
+      "type": "decision",
+      "node_id": "step9_count0",
+      "question": "El paciente presenta hipotension que requiere reanimacion agresiva con liquidos intravenosos?",
+      "variable": "minor_hipotension_liquidos",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "leaf_no_uci_por_criterios",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "leaf_no_uci_por_criterios",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Hipotension que requiere liquidos intravenosos agresivos (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step9_count1": {
+      "type": "decision",
+      "node_id": "step9_count1",
+      "question": "El paciente presenta hipotension que requiere reanimacion agresiva con liquidos intravenosos?",
+      "variable": "minor_hipotension_liquidos",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "leaf_no_uci_por_criterios",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "leaf_no_uci_por_criterios",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Hipotension que requiere liquidos intravenosos agresivos (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "step9_count2": {
+      "type": "decision",
+      "node_id": "step9_count2",
+      "question": "El paciente presenta hipotension que requiere reanimacion agresiva con liquidos intravenosos?",
+      "variable": "minor_hipotension_liquidos",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "leaf_uci_criterios_menores",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "leaf_no_uci_por_criterios",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Hipotension que requiere liquidos intravenosos agresivos (Tabla 5, Criterios menores, pag. 199)."
+    },
+    "leaf_uci_directa": {
+      "type": "leaf",
+      "node_id": "leaf_uci_directa",
+      "recommendation": "Cumple >=1 criterio mayor IDSA/ATS 2007 (ventilacion mecanica invasiva o choque septico con requerimiento de vasopresores): indicacion de ingreso directo a UCI.",
+      "evidence_level": "Fuerte, Moderada calidad",
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Recomendacion 10.2: Recomendamos admision directa a UCI en pacientes con hipotension que requiere vasopresores o insuficiencia respiratoria que requiere ventilacion mecanica.",
+        "page": 199
+      },
+      "source_quote": "Recomendacion 10.2 Recomendamos admision directa a UCI en pacientes con hipotension que requiere vasopresores o insuficiencia respiratoria que requiere ventilacion mecanica. (Fuerte, Moderada calidad) (pag. 198)."
+    },
+    "leaf_uci_criterios_menores": {
+      "type": "leaf",
+      "node_id": "leaf_uci_criterios_menores",
+      "recommendation": "Cumple >=3 criterios menores IDSA/ATS 2007 (sin criterios mayores): sugiere ingreso a UCI. Correlacionar con juicio clinico.",
+      "evidence_level": "Punto de buena practica",
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Criterios menores (>=3 sugieren ingreso a UCI) (Tabla 5, pag. 199); Punto de buena practica: criterios IDSA/ATS 2007 acompanados del juicio clinico para determinar el traslado a UCI (suma de criterios menores) (pag. 198)."
+    },
+    "leaf_no_uci_por_criterios": {
+      "type": "leaf",
+      "node_id": "leaf_no_uci_por_criterios",
+      "recommendation": "No cumple criterios mayores ni >=3 criterios menores IDSA/ATS 2007: sin indicacion de UCI por estos criterios. Continuar manejo hospitalario general con reevaluacion clinica periodica.",
+      "evidence_level": "Punto de buena practica",
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
+        "page": 199
+      },
+      "source_quote": "Criterios menores (<3): no se alcanza el umbral que sugiere ingreso a UCI (Tabla 5, pag. 199)."
+    }
+  }
+}

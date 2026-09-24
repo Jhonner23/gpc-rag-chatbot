@@ -1,0 +1,486 @@
+{
+  "tree_id": "nac-2026-severidad-hospitalizacion",
+  "title": "Severidad y decision de hospitalizacion (CURB-65)",
+  "description": "Estima la severidad de la NAC y sugiere el nivel de manejo (ambulatorio, hospitalizacion, considerar UCI) segun el puntaje CURB-65.",
+  "gpc_source": "Guia de practica clinica Colombiana NAC 2026.pdf",
+  "root_node_id": "step1_score0",
+  "nodes": {
+    "step1_score0": {
+      "type": "decision",
+      "node_id": "step1_score0",
+      "question": "El paciente presenta confusion de aparicion nueva?",
+      "variable": "confusion_nueva",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step2_score1",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step2_score0",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla 3: CURB-65 y CRB-65)",
+        "page": 199
+      },
+      "source_quote": "Confusion | CURB-65: 1 | CRB-65: 1 (Tabla 3, pag. 199)."
+    },
+    "step2_score0": {
+      "type": "decision",
+      "node_id": "step2_score0",
+      "question": "Nitrogeno ureico/urea elevado (BUN > 19 mg/dL o urea > 7 mmol/L)?",
+      "variable": "urea_elevada",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step3_score1",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step3_score0",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla 3: CURB-65 y CRB-65)",
+        "page": 199
+      },
+      "source_quote": "BUN >7 mmol/L (>19 mg/dL) | CURB-65: 1 | CRB-65: - (Tabla 3, pag. 199). Nota: CRB-65 no incluye este criterio (no requiere laboratorio)."
+    },
+    "step2_score1": {
+      "type": "decision",
+      "node_id": "step2_score1",
+      "question": "Nitrogeno ureico/urea elevado (BUN > 19 mg/dL o urea > 7 mmol/L)?",
+      "variable": "urea_elevada",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step3_score2",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step3_score1",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla 3: CURB-65 y CRB-65)",
+        "page": 199
+      },
+      "source_quote": "BUN >7 mmol/L (>19 mg/dL) | CURB-65: 1 | CRB-65: - (Tabla 3, pag. 199). Nota: CRB-65 no incluye este criterio (no requiere laboratorio)."
+    },
+    "step3_score0": {
+      "type": "decision",
+      "node_id": "step3_score0",
+      "question": "Frecuencia respiratoria >= 30 respiraciones por minuto?",
+      "variable": "frecuencia_respiratoria_alta",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step4_score1",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step4_score0",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla 3: CURB-65 y CRB-65)",
+        "page": 199
+      },
+      "source_quote": "Frecuencia respiratoria >=30/min | CURB-65: 1 | CRB-65: 1 (Tabla 3, pag. 199)."
+    },
+    "step3_score1": {
+      "type": "decision",
+      "node_id": "step3_score1",
+      "question": "Frecuencia respiratoria >= 30 respiraciones por minuto?",
+      "variable": "frecuencia_respiratoria_alta",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step4_score2",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step4_score1",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla 3: CURB-65 y CRB-65)",
+        "page": 199
+      },
+      "source_quote": "Frecuencia respiratoria >=30/min | CURB-65: 1 | CRB-65: 1 (Tabla 3, pag. 199)."
+    },
+    "step3_score2": {
+      "type": "decision",
+      "node_id": "step3_score2",
+      "question": "Frecuencia respiratoria >= 30 respiraciones por minuto?",
+      "variable": "frecuencia_respiratoria_alta",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step4_score3",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step4_score2",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla 3: CURB-65 y CRB-65)",
+        "page": 199
+      },
+      "source_quote": "Frecuencia respiratoria >=30/min | CURB-65: 1 | CRB-65: 1 (Tabla 3, pag. 199)."
+    },
+    "step4_score0": {
+      "type": "decision",
+      "node_id": "step4_score0",
+      "question": "Presion arterial baja (sistolica < 90 mmHg o diastolica <= 60 mmHg)?",
+      "variable": "presion_arterial_baja",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step5_score1",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step5_score0",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla 3: CURB-65 y CRB-65)",
+        "page": 199
+      },
+      "source_quote": "Presion arterial sistolica <90 o diastolica <=60 mmHg | CURB-65: 1 | CRB-65: 1 (Tabla 3, pag. 199)."
+    },
+    "step4_score1": {
+      "type": "decision",
+      "node_id": "step4_score1",
+      "question": "Presion arterial baja (sistolica < 90 mmHg o diastolica <= 60 mmHg)?",
+      "variable": "presion_arterial_baja",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step5_score2",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step5_score1",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla 3: CURB-65 y CRB-65)",
+        "page": 199
+      },
+      "source_quote": "Presion arterial sistolica <90 o diastolica <=60 mmHg | CURB-65: 1 | CRB-65: 1 (Tabla 3, pag. 199)."
+    },
+    "step4_score2": {
+      "type": "decision",
+      "node_id": "step4_score2",
+      "question": "Presion arterial baja (sistolica < 90 mmHg o diastolica <= 60 mmHg)?",
+      "variable": "presion_arterial_baja",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step5_score3",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step5_score2",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla 3: CURB-65 y CRB-65)",
+        "page": 199
+      },
+      "source_quote": "Presion arterial sistolica <90 o diastolica <=60 mmHg | CURB-65: 1 | CRB-65: 1 (Tabla 3, pag. 199)."
+    },
+    "step4_score3": {
+      "type": "decision",
+      "node_id": "step4_score3",
+      "question": "Presion arterial baja (sistolica < 90 mmHg o diastolica <= 60 mmHg)?",
+      "variable": "presion_arterial_baja",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "step5_score4",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "step5_score3",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla 3: CURB-65 y CRB-65)",
+        "page": 199
+      },
+      "source_quote": "Presion arterial sistolica <90 o diastolica <=60 mmHg | CURB-65: 1 | CRB-65: 1 (Tabla 3, pag. 199)."
+    },
+    "step5_score0": {
+      "type": "decision",
+      "node_id": "step5_score0",
+      "question": "Edad >= 65 anos?",
+      "variable": "edad_65_o_mas",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "leaf_score1",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "leaf_score0",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla 3: CURB-65 y CRB-65)",
+        "page": 199
+      },
+      "source_quote": "Edad >=65 anos | CURB-65: 1 | CRB-65: 1 (Tabla 3, pag. 199)."
+    },
+    "step5_score1": {
+      "type": "decision",
+      "node_id": "step5_score1",
+      "question": "Edad >= 65 anos?",
+      "variable": "edad_65_o_mas",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "leaf_score2",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "leaf_score1",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla 3: CURB-65 y CRB-65)",
+        "page": 199
+      },
+      "source_quote": "Edad >=65 anos | CURB-65: 1 | CRB-65: 1 (Tabla 3, pag. 199)."
+    },
+    "step5_score2": {
+      "type": "decision",
+      "node_id": "step5_score2",
+      "question": "Edad >= 65 anos?",
+      "variable": "edad_65_o_mas",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "leaf_score3",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "leaf_score2",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla 3: CURB-65 y CRB-65)",
+        "page": 199
+      },
+      "source_quote": "Edad >=65 anos | CURB-65: 1 | CRB-65: 1 (Tabla 3, pag. 199)."
+    },
+    "step5_score3": {
+      "type": "decision",
+      "node_id": "step5_score3",
+      "question": "Edad >= 65 anos?",
+      "variable": "edad_65_o_mas",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "leaf_score4",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "leaf_score3",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla 3: CURB-65 y CRB-65)",
+        "page": 199
+      },
+      "source_quote": "Edad >=65 anos | CURB-65: 1 | CRB-65: 1 (Tabla 3, pag. 199)."
+    },
+    "step5_score4": {
+      "type": "decision",
+      "node_id": "step5_score4",
+      "question": "Edad >= 65 anos?",
+      "variable": "edad_65_o_mas",
+      "input_type": "boolean",
+      "branches": [
+        {
+          "operator": "eq",
+          "value": true,
+          "next_node_id": "leaf_score5",
+          "label": "Si"
+        },
+        {
+          "operator": "eq",
+          "value": false,
+          "next_node_id": "leaf_score4",
+          "label": "No"
+        }
+      ],
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla 3: CURB-65 y CRB-65)",
+        "page": 199
+      },
+      "source_quote": "Edad >=65 anos | CURB-65: 1 | CRB-65: 1 (Tabla 3, pag. 199)."
+    },
+    "leaf_score0": {
+      "type": "leaf",
+      "node_id": "leaf_score0",
+      "recommendation": "CURB-65 = 0. Riesgo bajo: manejo ambulatorio.",
+      "evidence_level": null,
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla Interpretacion CURB-65, pag. 199)",
+        "page": 199
+      },
+      "source_quote": "Puntaje total 0-1: riesgo de mortalidad Bajo (0.6-2.7%), manejo sugerido Ambulatorio (Tabla de interpretacion, pag. 199)."
+    },
+    "leaf_score1": {
+      "type": "leaf",
+      "node_id": "leaf_score1",
+      "recommendation": "CURB-65 = 1. Riesgo bajo: manejo ambulatorio.",
+      "evidence_level": null,
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla Interpretacion CURB-65, pag. 199)",
+        "page": 199
+      },
+      "source_quote": "Puntaje total 0-1: riesgo de mortalidad Bajo (0.6-2.7%), manejo sugerido Ambulatorio (Tabla de interpretacion, pag. 199)."
+    },
+    "leaf_score2": {
+      "type": "leaf",
+      "node_id": "leaf_score2",
+      "recommendation": "CURB-65 = 2. Riesgo intermedio: considerar hospitalizacion.",
+      "evidence_level": null,
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla Interpretacion CURB-65, pag. 199)",
+        "page": 199
+      },
+      "source_quote": "Puntaje total 2: riesgo de mortalidad Moderado (~6.8%), manejo sugerido Hospitalizacion (Tabla de interpretacion, pag. 199)."
+    },
+    "leaf_score3": {
+      "type": "leaf",
+      "node_id": "leaf_score3",
+      "recommendation": "CURB-65 = 3. Riesgo alto: hospitalizacion, considerar manejo en UCI segun criterio clinico adicional.",
+      "evidence_level": null,
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla Interpretacion CURB-65, pag. 199)",
+        "page": 199
+      },
+      "source_quote": "Puntaje total >=3: riesgo de mortalidad Alto (>14.5%), manejo sugerido Considerar hospitalizacion/UCI (Tabla de interpretacion, pag. 199)."
+    },
+    "leaf_score4": {
+      "type": "leaf",
+      "node_id": "leaf_score4",
+      "recommendation": "CURB-65 = 4. Riesgo alto: hospitalizacion, considerar manejo en UCI segun criterio clinico adicional.",
+      "evidence_level": null,
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla Interpretacion CURB-65, pag. 199)",
+        "page": 199
+      },
+      "source_quote": "Puntaje total >=3: riesgo de mortalidad Alto (>14.5%), manejo sugerido Considerar hospitalizacion/UCI (Tabla de interpretacion, pag. 199)."
+    },
+    "leaf_score5": {
+      "type": "leaf",
+      "node_id": "leaf_score5",
+      "recommendation": "CURB-65 = 5. Riesgo alto: hospitalizacion, considerar manejo en UCI segun criterio clinico adicional.",
+      "evidence_level": null,
+      "source": {
+        "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
+        "section": "10. En pacientes adultos con diagnostico de NAC, debe utilizarse una regla de prediccion pronostica junto con el juicio clinico, en lugar del juicio clinico por si solo, para determinar el sitio de atencion y orientar la necesidad de soporte? (Tabla Interpretacion CURB-65, pag. 199)",
+        "page": 199
+      },
+      "source_quote": "Puntaje total >=3: riesgo de mortalidad Alto (>14.5%), manejo sugerido Considerar hospitalizacion/UCI (Tabla de interpretacion, pag. 199)."
+    }
+  }
+}
