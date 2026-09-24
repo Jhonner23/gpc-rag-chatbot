@@ -109,7 +109,23 @@ Agregar una guía nueva son dos partes, y **las dos son obligatorias**: indexarl
     PYTHONPATH=src uv run python -m gpc_rag.pipelines.build_index --input-dir data/01_raw/gpc
     ```
 
-3. Crear su árbol de decisión: escribir `scripts/gen_<protocolo>_tree.py` (ver los dos existentes como plantilla) con `gpc_source` igual al nombre exacto del PDF del paso 1, correrlo, y agregar sus pruebas en `tests/trees/test_<protocolo>.py` -- ver `src/gpc_rag/trees/README.md` para el detalle completo del patrón.
+3. Crear su árbol de decisión, de una de dos formas (ninguna usa un LLM -- ambas son 100% deterministas):
+   - **A mano**: escribir `scripts/gen_<protocolo>_tree.py` (ver los dos existentes como plantilla) con `gpc_source` igual al nombre exacto del PDF del paso 1, correrlo, y agregar sus pruebas en `tests/trees/test_<protocolo>.py` -- ver `src/gpc_rag/trees/README.md` para el detalle completo del patrón.
+   - **Automático, si el criterio viene en una tabla** con el patrón "suma de puntaje" (tipo CURB-65) o "criterio mayor o N menores" (tipo IDSA/ATS): usar `scripts/extract_tree_from_table.py` (ver `recetas/*.json` como ejemplo de receta), que detecta la tabla por su geometría en el PDF (`pdfplumber`) y la parsea con reglas fijas de encabezados/columnas -- si una tabla no matchea con confianza uno de esos dos patrones, el script falla explícitamente (`TablaNoReconocidaError`) en vez de adivinar:
+
+        ```bash
+        # 1. ubicar el indice de tabla correcto en la pagina
+        PYTHONPATH=src uv run python scripts/extract_tree_from_table.py listar \
+            --pdf "data/01_raw/gpc/<archivo>.pdf" --pagina <N>
+
+        # 2. escribir una receta (ver recetas/curb65.json, recetas/idsa_ats.json)
+        #    y construir el arbol -- verifica la fidelidad de sus citas antes
+        #    de escribir el JSON, con el mismo criterio del paso 4 de abajo
+        PYTHONPATH=src uv run python scripts/extract_tree_from_table.py construir \
+            --pdf "data/01_raw/gpc/<archivo>.pdf" --pagina <N> \
+            --receta recetas/<protocolo>.json \
+            --out src/gpc_rag/trees/data/<gpc_slug>/<protocolo>.json
+        ```
 4. Verificar que las citas del árbol nuevo son fieles al PDF:
 
     ```bash
@@ -202,6 +218,7 @@ src/gpc_rag/
   eval/         # harness de comparacion RAG vs. arbol (scripts/compare_rag_vs_arbol.py)
   common/       # configuracion (Hydra) y tipos compartidos
 conf/           # configuracion Hydra (modelos, chunking, retrieval, ambientes dev/docker)
+recetas/        # recetas JSON de scripts/extract_tree_from_table.py (extraccion de tablas, sin LLM)
 ```
 
 ## Cumplimiento y limites

@@ -43,6 +43,7 @@ dev = [
     "pytest-cov>=7.1.0",
     "cruft[pyproject]>=2.16.0",# Automated Cookiecutter template synchronization
     "pymupdf>=1.28.2",
+    "pdfplumber>=0.11.9", # deteccion geometrica de tablas (trees/table_extraction.py, sin LLM)
 ]
 
 #

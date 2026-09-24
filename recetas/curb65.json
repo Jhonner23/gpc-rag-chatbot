@@ -1,0 +1,14 @@
+{
+  "tipo": "suma_puntaje",
+  "tree_id": "prueba-cli-curb65",
+  "title": "Severidad y decision de hospitalizacion (CURB-65) [prueba CLI]",
+  "description": "Generado por scripts/extract_tree_from_table.py a partir de la Tabla 3 (pag. 199).",
+  "gpc_source": "Guia de practica clinica Colombiana NAC 2026.pdf",
+  "tabla_criterios": 1,
+  "columna_objetivo": "CURB-65",
+  "seccion_criterios": "Tabla 3",
+  "tabla_interpretacion": 4,
+  "columna_rango": "Puntaje total",
+  "columna_recomendacion": ["Riesgo de mortalidad estimado (%)", "Manejo sugerido"],
+  "seccion_interpretacion": "Tabla interpretacion CURB-65"
+}

@@ -1,0 +1,27 @@
+{
+  "tipo": "mayor_o_menores",
+  "tree_id": "prueba-cli-idsa-ats",
+  "title": "Criterios IDSA/ATS de ingreso a UCI [prueba CLI]",
+  "description": "Generado por scripts/extract_tree_from_table.py a partir de la Tabla 5 (pag. 199).",
+  "gpc_source": "Guia de practica clinica Colombiana NAC 2026.pdf",
+  "tabla": 3,
+  "seccion": "Tabla 5",
+  "hoja_directa": {
+    "node_id": "leaf_directa",
+    "recomendacion": "Cumple >=1 criterio mayor: indicacion directa de ingreso a UCI.",
+    "source_quote": "Criterios mayores (>=1 indica ingreso a UCI) (Tabla 5, pag. 199).",
+    "evidence_level": null
+  },
+  "hoja_umbral_menores": {
+    "node_id": "leaf_umbral",
+    "recomendacion": "Cumple >=3 criterios menores: indicacion de ingreso a UCI.",
+    "source_quote": "Criterios menores (>=3 sugieren ingreso a UCI) (Tabla 5, pag. 199).",
+    "evidence_level": null
+  },
+  "hoja_sin_indicacion": {
+    "node_id": "leaf_sin",
+    "recomendacion": "No cumple criterios mayores ni el umbral de menores: sin indicacion de UCI por estos criterios.",
+    "source_quote": "Criterios menores (>=3 sugieren ingreso a UCI) (Tabla 5, pag. 199).",
+    "evidence_level": null
+  }
+}

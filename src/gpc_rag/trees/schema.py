@@ -6,8 +6,11 @@ antibiotico, duracion del tratamiento), no un unico arbol por documento.
 Cada arbol se navega en tiempo de consulta sin invocar ningun LLM: es una
 maquina de estados determinista definida enteramente por este JSON.
 
-Los arboles se generan offline (ver scripts/extract_tree.py, LLM-asistido)
-a partir del contenido ya indexado de una GPC, y se versionan en git bajo
+Los arboles se generan offline -- a mano (ver scripts/gen_*_tree.py) o de
+forma automatica y determinista a partir de tablas de la GPC (ver
+trees/table_extraction.py + trees/builders.py + scripts/extract_tree_from_table.py,
+sin LLM: deteccion geometrica de tablas + parseo por reglas fijas) -- y se
+versionan en git bajo
 `trees/data/<gpc_slug>/<arbol_slug>.json` -- son artefactos curados y
 pequenos (solo fragmentos citados de la guia, no el documento completo),
 igual que `eval/golden_dataset.json`.
