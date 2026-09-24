@@ -12,6 +12,7 @@ Nada en este modulo llama a un LLM: solo lee el estado de un TreeSession
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from gpc_rag.trees.engine import TreeSession
@@ -63,9 +64,16 @@ def build_tree_menu(entries: list[TreeEntry]) -> list[TreeMenuOption]:
     ]
 
 
+# Varios `section` del bosque ya incluyen su propia referencia de pagina
+# como texto humano, ej. "Tabla 5 (pag. 199)" -- sin este recorte, el pie de
+# cita terminaba con la pagina duplicada: "...199), pág. 199".
+_TRAILING_PAGE_REF = re.compile(r"\s*\([^()]*p[áa]g\.?\s*\d+[^()]*\)\.?\s*$", re.IGNORECASE)
+
+
 def format_citation(guide_file: str, section: str, page: int | None, quote: str) -> str:
+    seccion_limpia = _TRAILING_PAGE_REF.sub("", section).rstrip()
     pagina = f", pág. {page}" if page is not None else ""
-    return f"**Fuente:** {guide_file} — {section}{pagina}\n\n> {quote}"
+    return f"**Fuente:** {guide_file} — {seccion_limpia}{pagina}\n\n> {quote}"
 
 
 def describe_current_node(session: TreeSession) -> QuestionStep | LeafReached:

@@ -32,6 +32,8 @@ MAJORS = [
     ),
 ]
 
+UMBRAL_CRITERIOS_MENORES = 3  # Tabla 5: >=3 criterios menores sugieren ingreso a UCI
+
 MINORS = [
     (
         "minor_fr30",
@@ -85,8 +87,8 @@ LEAF_UCI_CRITERIOS_MENORES = "leaf_uci_criterios_menores"
 LEAF_NO_UCI = "leaf_no_uci_por_criterios"
 
 
-def source(section: str = SECTION_TABLA5) -> dict:
-    return {"guide_file": GUIDE_FILE, "section": section, "page": 199}
+def source(section: str = SECTION_TABLA5, page: int = 199) -> dict:
+    return {"guide_file": GUIDE_FILE, "section": section, "page": page}
 
 
 def step_id(n: int, count: int) -> str:
@@ -132,14 +134,11 @@ def build_nodes() -> dict:
             is_last = idx == n_total
 
             # rama "No" (criterio ausente): el conteo no cambia
-            if is_last:
-                false_target = LEAF_NO_UCI
-            else:
-                false_target = step_id(idx + 1, count)
+            false_target = LEAF_NO_UCI if is_last else step_id(idx + 1, count)
 
             # rama "Si" (criterio presente): el conteo sube en 1
             new_count = count + 1
-            if new_count >= 3:
+            if new_count >= UMBRAL_CRITERIOS_MENORES:
                 true_target = LEAF_UCI_CRITERIOS_MENORES
             elif is_last:
                 true_target = LEAF_NO_UCI
@@ -171,7 +170,8 @@ def build_nodes() -> dict:
         "evidence_level": "Fuerte, Moderada calidad",
         "source": source(
             "Recomendacion 10.2: Recomendamos admision directa a UCI en pacientes con hipotension "
-            "que requiere vasopresores o insuficiencia respiratoria que requiere ventilacion mecanica."
+            "que requiere vasopresores o insuficiencia respiratoria que requiere ventilacion mecanica.",
+            page=198,
         ),
         "source_quote": (
             "Recomendacion 10.2 Recomendamos admision directa a UCI en pacientes con hipotension "
@@ -184,15 +184,13 @@ def build_nodes() -> dict:
         "node_id": LEAF_UCI_CRITERIOS_MENORES,
         "recommendation": (
             "Cumple >=3 criterios menores IDSA/ATS 2007 (sin criterios mayores): sugiere ingreso "
-            "a UCI. Correlacionar con juicio clinico."
+            "a UCI. Correlacionar con juicio clinico -- punto de buena practica (tras la "
+            "recomendacion 10): usar los criterios IDSA/ATS 2007 (Tabla 5) junto con el juicio "
+            "clinico para decidir el traslado a UCI (pag. 198)."
         ),
         "evidence_level": "Punto de buena practica",
         "source": source(),
-        "source_quote": (
-            "Criterios menores (>=3 sugieren ingreso a UCI) (Tabla 5, pag. 199); Punto de buena "
-            "practica: criterios IDSA/ATS 2007 acompanados del juicio clinico para determinar el "
-            "traslado a UCI (suma de criterios menores) (pag. 198)."
-        ),
+        "source_quote": "Criterios menores (>=3 sugieren ingreso a UCI) (Tabla 5, pag. 199).",
     }
     nodes[LEAF_NO_UCI] = {
         "type": "leaf",

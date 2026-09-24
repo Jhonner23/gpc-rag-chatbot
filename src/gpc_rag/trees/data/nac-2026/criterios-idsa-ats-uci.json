@@ -796,21 +796,21 @@
       "source": {
         "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
         "section": "Recomendacion 10.2: Recomendamos admision directa a UCI en pacientes con hipotension que requiere vasopresores o insuficiencia respiratoria que requiere ventilacion mecanica.",
-        "page": 199
+        "page": 198
       },
       "source_quote": "Recomendacion 10.2 Recomendamos admision directa a UCI en pacientes con hipotension que requiere vasopresores o insuficiencia respiratoria que requiere ventilacion mecanica. (Fuerte, Moderada calidad) (pag. 198)."
     },
     "leaf_uci_criterios_menores": {
       "type": "leaf",
       "node_id": "leaf_uci_criterios_menores",
-      "recommendation": "Cumple >=3 criterios menores IDSA/ATS 2007 (sin criterios mayores): sugiere ingreso a UCI. Correlacionar con juicio clinico.",
+      "recommendation": "Cumple >=3 criterios menores IDSA/ATS 2007 (sin criterios mayores): sugiere ingreso a UCI. Correlacionar con juicio clinico -- punto de buena practica (tras la recomendacion 10): usar los criterios IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (pag. 198).",
       "evidence_level": "Punto de buena practica",
       "source": {
         "guide_file": "Guia de practica clinica Colombiana NAC 2026.pdf",
         "section": "Punto de buena practica (tras la recomendacion 10): en pacientes hospitalizados sin indicacion inmediata de traslado a UCI por vasopresores o ventilacion mecanica, pueden usarse los criterios de severidad IDSA/ATS 2007 (Tabla 5) junto con el juicio clinico para decidir el traslado a UCI (suma de criterios menores).",
         "page": 199
       },
-      "source_quote": "Criterios menores (>=3 sugieren ingreso a UCI) (Tabla 5, pag. 199); Punto de buena practica: criterios IDSA/ATS 2007 acompanados del juicio clinico para determinar el traslado a UCI (suma de criterios menores) (pag. 198)."
+      "source_quote": "Criterios menores (>=3 sugieren ingreso a UCI) (Tabla 5, pag. 199)."
     },
     "leaf_no_uci_por_criterios": {
       "type": "leaf",

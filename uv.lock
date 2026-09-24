@@ -1174,6 +1174,7 @@ dependencies = [
 dev = [
     { name = "cruft", extra = ["pyproject"] },
     { name = "pre-commit" },
+    { name = "pymupdf" },
     { name = "pytest" },
     { name = "pytest-cookies" },
     { name = "pytest-cov" },
@@ -1212,6 +1213,7 @@ requires-dist = [
 dev = [
     { name = "cruft", extras = ["pyproject"], specifier = ">=2.16.0" },
     { name = "pre-commit", specifier = ">=4.6.2" },
+    { name = "pymupdf", specifier = ">=1.28.2" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-cookies", specifier = ">=0.7.0" },
     { name = "pytest-cov", specifier = ">=7.1.0" },

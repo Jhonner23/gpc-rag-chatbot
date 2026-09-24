@@ -21,7 +21,6 @@ from gpc_rag.trees.wizard_logic import (
     QuestionStep,
     build_tree_menu,
     describe_current_node,
-    parse_boolean_answer,
     parse_numeric_answer,
 )
 
@@ -137,6 +136,9 @@ async def on_restart(_action: cl.Action) -> None:
 async def _apply_answer(value: bool | float | str) -> None:
     session: TreeSession | None = cl.user_session.get(_SESSION_KEY)
     if session is None:
+        await cl.Message(
+            content="Esa pregunta ya no está vigente. Elige un protocolo para empezar de nuevo:"
+        ).send()
         await _show_tree_menu()
         return
 

@@ -5,6 +5,14 @@ data/**
 !data/**/
 !data/README.md
 
+# GPC en PDF: se versionan (decision confirmada con la asesora) para que
+# clonar el repo alcance -- sin depender de que cada quien tenga su copia
+# aparte. Van en data/01_raw/gpc/ (convencion Kedro de este proyecto),
+# que es exactamente lo que lee gpc_rag.pipelines.build_index.
+!data/01_raw/gpc/*.pdf
+
+# clonar el repo alcance, sin depender de que cada quien tenga su copia.
+
 # also keep all .gitkeep files
 !.gitkeep
 
