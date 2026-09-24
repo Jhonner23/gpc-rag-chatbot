@@ -149,3 +149,4 @@ eval/ragas_results.csv
 # -- eval/casos_clinicos.json es el input curado y si se versiona, el reporte
 # que genera cada corrida no.
 eval/comparacion_rag_arbol.md
+*.tar.gz
