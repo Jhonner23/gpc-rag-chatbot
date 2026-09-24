@@ -1,0 +1,77 @@
+[
+  {
+    "caso_id": "curb65-bajo-riesgo",
+    "tree_id": "nac-2026-severidad-hospitalizacion",
+    "pregunta": "Paciente de 45 anos con NAC, sin confusion, BUN normal, frecuencia respiratoria de 18/min y presion arterial 120/80. Segun CURB-65, requiere hospitalizacion?",
+    "respuestas_arbol": {
+      "confusion_nueva": false,
+      "urea_elevada": false,
+      "frecuencia_respiratoria_alta": false,
+      "presion_arterial_baja": false,
+      "edad_65_o_mas": false
+    }
+  },
+  {
+    "caso_id": "curb65-riesgo-intermedio",
+    "tree_id": "nac-2026-severidad-hospitalizacion",
+    "pregunta": "Paciente de 70 anos con NAC, orientado, BUN elevado (25 mg/dL), frecuencia respiratoria de 20/min y presion arterial normal. Segun CURB-65, requiere hospitalizacion?",
+    "respuestas_arbol": {
+      "confusion_nueva": false,
+      "urea_elevada": true,
+      "frecuencia_respiratoria_alta": false,
+      "presion_arterial_baja": false,
+      "edad_65_o_mas": true
+    }
+  },
+  {
+    "caso_id": "curb65-alto-riesgo",
+    "tree_id": "nac-2026-severidad-hospitalizacion",
+    "pregunta": "Paciente de 80 anos con NAC, confundido, BUN elevado, frecuencia respiratoria de 32/min y presion sistolica de 85 mmHg. Segun CURB-65, cual es el manejo recomendado?",
+    "respuestas_arbol": {
+      "confusion_nueva": true,
+      "urea_elevada": true,
+      "frecuencia_respiratoria_alta": true,
+      "presion_arterial_baja": true,
+      "edad_65_o_mas": true
+    }
+  },
+  {
+    "caso_id": "idsa-uci-directa-vm",
+    "tree_id": "nac-2026-criterios-idsa-ats-uci",
+    "pregunta": "Paciente con NAC que requiere ventilacion mecanica invasiva. Tiene indicacion de ingreso a UCI segun los criterios IDSA/ATS 2007?",
+    "respuestas_arbol": {
+      "major_vm_invasiva": true
+    }
+  },
+  {
+    "caso_id": "idsa-uci-tres-criterios-menores",
+    "tree_id": "nac-2026-criterios-idsa-ats-uci",
+    "pregunta": "Paciente con NAC sin criterios mayores, pero con frecuencia respiratoria >=30, PaO2/FiO2 <=250 y confusion. Segun los criterios IDSA/ATS 2007, hay indicacion de UCI?",
+    "respuestas_arbol": {
+      "major_vm_invasiva": false,
+      "major_choque_septico": false,
+      "minor_fr30": true,
+      "minor_pafi250": true,
+      "minor_infiltrados_multilobares": false,
+      "minor_confusion": true
+    }
+  },
+  {
+    "caso_id": "idsa-sin-indicacion-uci",
+    "tree_id": "nac-2026-criterios-idsa-ats-uci",
+    "pregunta": "Paciente con NAC sin criterios mayores y con un unico criterio menor (frecuencia respiratoria >=30). Segun los criterios IDSA/ATS 2007, hay indicacion de UCI?",
+    "respuestas_arbol": {
+      "major_vm_invasiva": false,
+      "major_choque_septico": false,
+      "minor_fr30": true,
+      "minor_pafi250": false,
+      "minor_infiltrados_multilobares": false,
+      "minor_confusion": false,
+      "minor_bun20": false,
+      "minor_leucopenia": false,
+      "minor_trombocitopenia": false,
+      "minor_hipotermia": false,
+      "minor_hipotension_liquidos": false
+    }
+  }
+]

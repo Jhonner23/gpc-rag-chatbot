@@ -90,7 +90,39 @@ Usuario -> Chatbot (Chainlit) -> API (FastAPI) -> Retrieval hibrido (denso + BM2
     PYTHONPATH=src uv run chainlit run src/gpc_rag/chat/app.py --port 8001
     ```
 
-7. Abrir <http://localhost:8001> y preguntar.
+7. Abrir <http://localhost:8001>. Al entrar, el chatbot pide elegir modo:
+   **"Chat libre"** (RAG + agentes, lo de los pasos 4-6) o **"Evaluación
+   guiada"** (wizard sobre el bosque de árboles de decisión en
+   `src/gpc_rag/trees/` -- CURB-65, criterios IDSA/ATS de UCI, etc. --
+   preguntas paso a paso, 100% determinista, sin LLM ni llamadas a la API).
+   El modo wizard no depende de Qdrant/Ollama/la API: funciona aunque no
+   hayas hecho los pasos 2-5.
+
+## Agregar un protocolo nuevo
+
+Agregar una guía nueva son dos partes, y **las dos son obligatorias**: indexarla en el RAG y crearle su árbol de decisión. Una prueba automatizada (`tests/data/test_forest_covers_rag_corpus.py`) falla si falta la segunda parte, así que no se puede quedar a medias sin que la suite lo avise.
+
+1. Colocar el PDF en `data/01_raw/gpc/` (está versionado en git -- ver `.gitignore` -- así que clonar el repo ya incluye las guías que existan a la fecha).
+2. Indexarlo en el RAG:
+
+    ```bash
+    PYTHONPATH=src uv run python -m gpc_rag.pipelines.build_index --input-dir data/01_raw/gpc
+    ```
+
+3. Crear su árbol de decisión: escribir `scripts/gen_<protocolo>_tree.py` (ver los dos existentes como plantilla) con `gpc_source` igual al nombre exacto del PDF del paso 1, correrlo, y agregar sus pruebas en `tests/trees/test_<protocolo>.py` -- ver `src/gpc_rag/trees/README.md` para el detalle completo del patrón.
+4. Verificar que las citas del árbol nuevo son fieles al PDF:
+
+    ```bash
+    PYTHONPATH=src uv run python scripts/verify_tree_citations.py --pdf-dir data/01_raw/gpc
+    ```
+
+5. Correr toda la suite (incluye el chequeo de que todo PDF del corpus tiene su árbol):
+
+    ```bash
+    uv run pytest
+    ```
+
+`trees/registry.py` descubre el árbol nuevo automáticamente (recorre `trees/data/**/*.json`) -- no hace falta registrarlo a mano en ningún otro lado, tampoco en el menú del modo wizard del chat.
 
 ## Despliegue en Docker (produccion)
 
@@ -120,6 +152,29 @@ Ollama local (no OpenAI), asi que las metricas son gratis pero algo mas
 ruidosas que con un modelo grande como juez; util para comparar versiones del
 pipeline entre si, no como numero absoluto.
 
+## Comparacion RAG vs. arbol de decision
+
+Herramienta de evaluacion (objetivo planteado por la asesora): para un mismo
+caso clinico curado en `eval/casos_clinicos.json`, corre el arbol de
+decision correspondiente (determinista, sin LLM) y, si Ollama/Qdrant estan
+disponibles, tambien el pipeline del RAG con una pregunta en lenguaje
+natural equivalente -- y deja las dos respuestas una al lado de la otra en
+un reporte para que alguien las compare. No es algo que el usuario final
+vea en el chat: es una herramienta aparte para evaluacion/tesis.
+
+```bash
+PYTHONPATH=src uv run python scripts/compare_rag_vs_arbol.py
+# sin Ollama/Qdrant a la mano, solo genera el lado del arbol:
+PYTHONPATH=src uv run python scripts/compare_rag_vs_arbol.py --sin-rag
+```
+
+El reporte queda en `eval/comparacion_rag_arbol.md` (no se versiona -- se
+regenera en cada corrida). `eval/casos_clinicos.json` si se versiona: es el
+dataset curado de casos, no un artefacto de una corrida puntual. Agregar un
+caso nuevo es agregar una entrada a ese JSON con `tree_id`, la `pregunta` en
+lenguaje natural para el RAG y las `respuestas_arbol` (una por cada
+`variable` que el árbol vaya a preguntar para ese caso).
+
 ## Desarrollo
 
 ```bash
@@ -142,6 +197,9 @@ src/gpc_rag/
   chat/         # chatbot Chainlit (cliente HTTP de la API)
   evaluation/   # evaluacion RAGAS
   pipelines/    # build_index (indexacion) y query_pipeline (consulta)
+  agents/       # coordinador, RAG-agente, evaluador (LangGraph, flag GPC_USE_AGENTS)
+  trees/        # bosque de arboles de decision por protocolo, sin LLM (ver trees/README.md)
+  eval/         # harness de comparacion RAG vs. arbol (scripts/compare_rag_vs_arbol.py)
   common/       # configuracion (Hydra) y tipos compartidos
 conf/           # configuracion Hydra (modelos, chunking, retrieval, ambientes dev/docker)
 ```
