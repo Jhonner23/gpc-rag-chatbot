@@ -35,6 +35,17 @@ class RetrievedChunk:
 
 
 @dataclass
+class PendingTreeQuestion:
+    """El grafo de agentes quedo pausado: el agente arbol necesita un dato
+    mas (ver agents/tree_agent.py, agents/graph.py). `thread_id` identifica
+    la conversacion pausada en el checkpointer -- hay que reenviarlo junto
+    con la respuesta del usuario para continuar donde quedo."""
+
+    thread_id: str
+    question: str
+
+
+@dataclass
 class RagAnswer:
     """Respuesta final del pipeline de RAG, lista para mostrar al usuario."""
 

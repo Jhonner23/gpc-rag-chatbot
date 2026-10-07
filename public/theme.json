@@ -1,0 +1,19 @@
+{
+  "custom_fonts": [],
+  "variables": {
+    "light": {
+      "primary": {
+        "main": "#154C99",
+        "dark": "#0F3A75",
+        "light": "#547FEA"
+      }
+    },
+    "dark": {
+      "primary": {
+        "main": "#547FEA",
+        "dark": "#154C99",
+        "light": "#8AA5CC"
+      }
+    }
+  }
+}

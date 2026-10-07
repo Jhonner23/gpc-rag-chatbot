@@ -116,13 +116,29 @@ def filter_query(question: str, cfg: DictConfig) -> tuple[bool, str | None]:
 def build_final_output(state: AgentState) -> tuple[str, list[RetrievedChunk]]:
     """Arma (respuesta_final, fuentes_a_mostrar) a partir del estado del grafo.
 
-    Solo se muestran fuentes cuando la pregunta fue admitida Y el evaluador
-    aprobo la respuesta -- en cualquier otro caso (rechazo del coordinador o
-    de el evaluador tras el reintento) se omiten, para no sugerir
-    enganosamente que se encontro informacion relevante.
+    Prioridad:
+    1. Rechazo del coordinador (filter_query) -- ni se intenta nada mas.
+    2. Decision del agente comparador (agents/comparator.py), si corrio:
+       la respuesta del arbol (auditada, EXTRACTED) si tuvo match, o si no
+       la respuesta del RAG ya evaluada.
+    3. Fallback directo al resultado del evaluador, para cuando el grafo se
+       use sin la rama del arbol (compatibilidad).
+
+    Solo se muestran fuentes cuando hay una respuesta admitida y aprobada --
+    en cualquier otro caso se omiten, para no sugerir enganosamente que se
+    encontro informacion relevante.
     """
     if not state.get("is_appropriate", True):
         return state.get("rejection_reason") or _DEFAULT_REJECTION, []
+
+    if "chosen_source" in state:
+        # El arbol gana aunque el evaluador haya rechazado al RAG (su propia
+        # auditoria -- validation_status EXTRACTED -- es independiente). Pero
+        # si el comparador cayo al RAG, hay que seguir respetando el rechazo
+        # del evaluador en vez de mostrar una respuesta no aprobada.
+        if state.get("chosen_source") == "rag" and not state.get("eval_ok", True):
+            return _FALLBACK_AFTER_FAILED_EVAL, []
+        return state.get("chosen_answer", ""), state.get("chosen_sources", [])
 
     if state.get("eval_ok", True):
         return state.get("answer", ""), state.get("sources", [])

@@ -5,7 +5,7 @@ description = "Sistema RAG on-premise para consultar Guias de Practica Clinica (
 authors = [
     "Jhonner <jjacostac23@gmail.com>",
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 readme = "README.md"
 
 dependencies = [
@@ -26,6 +26,7 @@ dependencies = [
     "ragas==0.2.15",
     "rank-bm25>=0.2.2",
     "sentence-transformers>=6.0.1",
+    "side-project-cpg-tree-mvp",
     "torch>=2.0",
     "uvicorn[standard]>=0.52.4",
 ]
@@ -85,3 +86,4 @@ explicit = true
 
 [tool.uv.sources]
 torch = [{ index = "pytorch-cpu" }]
+side-project-cpg-tree-mvp = { git = "https://github.com/elKiruvi/Side_Project_CPG_Tree_MVP.git" }

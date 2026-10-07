@@ -1,0 +1,31 @@
+/* Avatar del asistente en los mensajes (logo Clinica Universitaria Bolivariana):
+   cuadrado redondeado en vez de circulo, para no recortar el logotipo horizontal. */
+.ai-message span.relative.flex.shrink-0.overflow-hidden.rounded-full {
+  height: 3.5rem !important;
+  width: 3.5rem !important;
+  border-radius: 0.5rem !important;
+}
+
+.ai-message span.relative.flex.shrink-0.overflow-hidden.rounded-full img {
+  object-fit: contain !important;
+}
+
+/* Logo de la clinica en la barra superior fija (siempre visible, cualquier
+   tamano de ventana), junto al boton de "nuevo chat". */
+#header {
+  overflow: visible !important;
+}
+
+#header::before {
+  content: "";
+  position: absolute;
+  left: 4rem;
+  top: 16px;
+  height: 176px;
+  width: 376px;
+  background-image: url("/public/logo_light.svg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: left center;
+  pointer-events: none;
+}
