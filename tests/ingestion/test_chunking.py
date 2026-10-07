@@ -45,7 +45,9 @@ def test_split_into_sections_detects_bold_numbered_headers_from_ocr_pages():
 
 def test_chunk_document_preserves_section_and_source_metadata():
     pages = [{"text": SAMPLE_MD, "page": 3}]
-    chunks = chunk_document(pages, source_file="guia_diabetes.pdf", chunk_size_tokens=50, min_chunk_tokens=5)
+    chunks = chunk_document(
+        pages, source_file="guia_diabetes.pdf", chunk_size_tokens=50, min_chunk_tokens=5
+    )
 
     expected_chunk_count = 2
     expected_page = 3

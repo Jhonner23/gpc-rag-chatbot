@@ -90,55 +90,21 @@ Usuario -> Chatbot (Chainlit) -> API (FastAPI) -> Retrieval hibrido (denso + BM2
     PYTHONPATH=src uv run chainlit run src/gpc_rag/chat/app.py --port 8001
     ```
 
-7. Abrir <http://localhost:8001>. Al entrar, el chatbot pide elegir modo:
-   **"Chat libre"** (RAG + agentes, lo de los pasos 4-6) o **"Evaluación
-   guiada"** (wizard sobre el bosque de árboles de decisión en
-   `src/gpc_rag/trees/` -- CURB-65, criterios IDSA/ATS de UCI, etc. --
-   preguntas paso a paso, 100% determinista, sin LLM ni llamadas a la API).
-   El modo wizard no depende de Qdrant/Ollama/la API: funciona aunque no
-   hayas hecho los pasos 2-5.
+7. Abrir <http://localhost:8001> y preguntar sobre el contenido de las guías
+   indexadas; el chatbot responde citando la fuente exacta.
 
 ## Agregar un protocolo nuevo
 
-Agregar una guía nueva son dos partes, y **las dos son obligatorias**: indexarla en el RAG y crearle su árbol de decisión. Una prueba automatizada (`tests/data/test_forest_covers_rag_corpus.py`) falla si falta la segunda parte, así que no se puede quedar a medias sin que la suite lo avise.
+Colocar el PDF en `data/01_raw/gpc/` (está versionado en git -- ver
+`.gitignore` -- así que clonar el repo ya incluye las guías que existan a la
+fecha) y reindexar:
 
-1. Colocar el PDF en `data/01_raw/gpc/` (está versionado en git -- ver `.gitignore` -- así que clonar el repo ya incluye las guías que existan a la fecha).
-2. Indexarlo en el RAG:
+```bash
+PYTHONPATH=src uv run python -m gpc_rag.pipelines.build_index --input-dir data/01_raw/gpc --recreate
+```
 
-    ```bash
-    PYTHONPATH=src uv run python -m gpc_rag.pipelines.build_index --input-dir data/01_raw/gpc
-    ```
-
-3. Crear su árbol de decisión, de una de dos formas (ninguna usa un LLM -- ambas son 100% deterministas):
-   - **A mano**: escribir `scripts/gen_<protocolo>_tree.py` (ver los dos existentes como plantilla) con `gpc_source` igual al nombre exacto del PDF del paso 1, correrlo, y agregar sus pruebas en `tests/trees/test_<protocolo>.py` -- ver `src/gpc_rag/trees/README.md` para el detalle completo del patrón.
-   - **Automático, si el criterio viene en una tabla** con el patrón "suma de puntaje" (tipo CURB-65) o "criterio mayor o N menores" (tipo IDSA/ATS): usar `scripts/extract_tree_from_table.py` (ver `recetas/*.json` como ejemplo de receta), que detecta la tabla por su geometría en el PDF (`pdfplumber`) y la parsea con reglas fijas de encabezados/columnas -- si una tabla no matchea con confianza uno de esos dos patrones, el script falla explícitamente (`TablaNoReconocidaError`) en vez de adivinar:
-
-        ```bash
-        # 1. ubicar el indice de tabla correcto en la pagina
-        PYTHONPATH=src uv run python scripts/extract_tree_from_table.py listar \
-            --pdf "data/01_raw/gpc/<archivo>.pdf" --pagina <N>
-
-        # 2. escribir una receta (ver recetas/curb65.json, recetas/idsa_ats.json)
-        #    y construir el arbol -- verifica la fidelidad de sus citas antes
-        #    de escribir el JSON, con el mismo criterio del paso 4 de abajo
-        PYTHONPATH=src uv run python scripts/extract_tree_from_table.py construir \
-            --pdf "data/01_raw/gpc/<archivo>.pdf" --pagina <N> \
-            --receta recetas/<protocolo>.json \
-            --out src/gpc_rag/trees/data/<gpc_slug>/<protocolo>.json
-        ```
-4. Verificar que las citas del árbol nuevo son fieles al PDF:
-
-    ```bash
-    PYTHONPATH=src uv run python scripts/verify_tree_citations.py --pdf-dir data/01_raw/gpc
-    ```
-
-5. Correr toda la suite (incluye el chequeo de que todo PDF del corpus tiene su árbol):
-
-    ```bash
-    uv run pytest
-    ```
-
-`trees/registry.py` descubre el árbol nuevo automáticamente (recorre `trees/data/**/*.json`) -- no hace falta registrarlo a mano en ningún otro lado, tampoco en el menú del modo wizard del chat.
+`build_index` es genérico: indexa todos los `*.pdf` que encuentre en
+`--input-dir`, así que no hace falta tocar código para agregar guías nuevas.
 
 ## Despliegue en Docker (produccion)
 
@@ -168,28 +134,6 @@ Ollama local (no OpenAI), asi que las metricas son gratis pero algo mas
 ruidosas que con un modelo grande como juez; util para comparar versiones del
 pipeline entre si, no como numero absoluto.
 
-## Comparacion RAG vs. arbol de decision
-
-Herramienta de evaluacion (objetivo planteado por la asesora): para un mismo
-caso clinico curado en `eval/casos_clinicos.json`, corre el arbol de
-decision correspondiente (determinista, sin LLM) y, si Ollama/Qdrant estan
-disponibles, tambien el pipeline del RAG con una pregunta en lenguaje
-natural equivalente -- y deja las dos respuestas una al lado de la otra en
-un reporte para que alguien las compare. No es algo que el usuario final
-vea en el chat: es una herramienta aparte para evaluacion/tesis.
-
-```bash
-PYTHONPATH=src uv run python scripts/compare_rag_vs_arbol.py
-# sin Ollama/Qdrant a la mano, solo genera el lado del arbol:
-PYTHONPATH=src uv run python scripts/compare_rag_vs_arbol.py --sin-rag
-```
-
-El reporte queda en `eval/comparacion_rag_arbol.md` (no se versiona -- se
-regenera en cada corrida). `eval/casos_clinicos.json` si se versiona: es el
-dataset curado de casos, no un artefacto de una corrida puntual. Agregar un
-caso nuevo es agregar una entrada a ese JSON con `tree_id`, la `pregunta` en
-lenguaje natural para el RAG y las `respuestas_arbol` (una por cada
-`variable` que el árbol vaya a preguntar para ese caso).
 
 ## Desarrollo
 
@@ -214,11 +158,8 @@ src/gpc_rag/
   evaluation/   # evaluacion RAGAS
   pipelines/    # build_index (indexacion) y query_pipeline (consulta)
   agents/       # coordinador, RAG-agente, evaluador (LangGraph, flag GPC_USE_AGENTS)
-  trees/        # bosque de arboles de decision por protocolo, sin LLM (ver trees/README.md)
-  eval/         # harness de comparacion RAG vs. arbol (scripts/compare_rag_vs_arbol.py)
   common/       # configuracion (Hydra) y tipos compartidos
 conf/           # configuracion Hydra (modelos, chunking, retrieval, ambientes dev/docker)
-recetas/        # recetas JSON de scripts/extract_tree_from_table.py (extraccion de tablas, sin LLM)
 ```
 
 ## Cumplimiento y limites

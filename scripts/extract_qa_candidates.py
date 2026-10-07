@@ -5,6 +5,7 @@ pacientes...") contienen la Recomendacion formal de la GPC -- son la mejor
 fuente de ground truth porque pregunta y respuesta vienen del mismo
 documento que se va a evaluar.
 """
+
 from __future__ import annotations
 
 import json
@@ -41,9 +42,7 @@ def main() -> None:
 
     out_path = Path("eval/qa_candidates.json")
     out_path.parent.mkdir(exist_ok=True)
-    out_path.write_text(
-        json.dumps(candidates, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    out_path.write_text(json.dumps(candidates, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"{len(candidates)} candidatos escritos en {out_path}")
 
 

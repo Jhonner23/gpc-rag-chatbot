@@ -91,12 +91,16 @@ def run_evaluation(dataset_path: Path, output_path: Path) -> None:
     df.to_csv(output_path, index=False)
 
     logger.info("Reporte guardado en %s", output_path)
-    logger.info("Promedios:\n%s", df[["faithfulness", "answer_relevancy", "context_precision"]].mean())
+    logger.info(
+        "Promedios:\n%s", df[["faithfulness", "answer_relevancy", "context_precision"]].mean()
+    )
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evalua el pipeline RAG con RAGAS.")
-    parser.add_argument("--dataset", type=Path, required=True, help="JSONL con preguntas de evaluacion.")
+    parser.add_argument(
+        "--dataset", type=Path, required=True, help="JSONL con preguntas de evaluacion."
+    )
     parser.add_argument(
         "--output",
         type=Path,

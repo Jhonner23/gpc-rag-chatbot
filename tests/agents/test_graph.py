@@ -80,7 +80,9 @@ def test_approves_and_returns_answer_with_sources_when_evaluator_ok():
 
 
 def test_retries_once_with_stricter_instruction_then_succeeds():
-    pipeline = _FakePipeline(answers=["Primera respuesta (mal fundamentada).", "Segunda respuesta (corregida)."])
+    pipeline = _FakePipeline(
+        answers=["Primera respuesta (mal fundamentada).", "Segunda respuesta (corregida)."]
+    )
 
     with (
         patch("gpc_rag.agents.coordinator.Client") as mock_coord_client,

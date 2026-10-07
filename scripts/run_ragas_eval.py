@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Evalua el pipeline RAG completo con RAGAS, usando Ollama local como juez.
 
 Corre cada pregunta del golden dataset (eval/golden_dataset.json) contra el
@@ -12,6 +11,7 @@ QueryPipeline (un proceso Python aparte) y le hace preguntas, igual que
 haria un usuario real. Apunta a la misma Qdrant y al mismo Ollama, asi que
 usa el indice ya construido sin reindexar nada.
 """
+
 from __future__ import annotations
 
 import json
@@ -23,8 +23,8 @@ from langchain_ollama import ChatOllama, OllamaEmbeddings
 from ragas import evaluate
 from ragas.embeddings import LangchainEmbeddingsWrapper
 from ragas.llms import LangchainLLMWrapper
-from ragas.run_config import RunConfig
 from ragas.metrics import answer_relevancy, context_precision, context_recall, faithfulness
+from ragas.run_config import RunConfig
 
 from gpc_rag.pipelines.query_pipeline import QueryPipeline
 
@@ -91,7 +91,9 @@ def run_pipeline(golden: list[dict]) -> dict:
 
 def main() -> None:
     golden = load_golden_dataset()
-    print(f"Corriendo el pipeline real sobre {len(golden)} preguntas (puede tardar varios minutos)...")
+    print(
+        f"Corriendo el pipeline real sobre {len(golden)} preguntas (puede tardar varios minutos)..."
+    )
     collected = run_pipeline(golden)
 
     dataset = Dataset.from_dict(

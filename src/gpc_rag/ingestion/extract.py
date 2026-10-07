@@ -31,8 +31,7 @@ def needs_ocr(pdf_path: Path) -> bool:
     """True si el PDF tiene al menos una pagina sin capa de texto (escaneada)."""
     with fitz.open(pdf_path) as doc:
         return any(
-            len(doc[i].get_text().strip()) < MIN_CHARS_PER_PAGE_TO_SKIP_OCR
-            for i in range(len(doc))
+            len(doc[i].get_text().strip()) < MIN_CHARS_PER_PAGE_TO_SKIP_OCR for i in range(len(doc))
         )
 
 
@@ -54,9 +53,7 @@ def ocr_pdf(pdf_path: Path, lang: str = "spa") -> Path:
     logger.info("Corriendo OCR sobre %s ...", pdf_path.name)
     result = subprocess.run(cmd, capture_output=True, text=True, check=False)  # noqa: S603 -- cmd es una lista fija, sin input de shell
     if result.returncode != 0:
-        raise RuntimeError(
-            f"ocrmypdf fallo para {pdf_path.name}: {result.stderr[-2000:]}"
-        )
+        raise RuntimeError(f"ocrmypdf fallo para {pdf_path.name}: {result.stderr[-2000:]}")
     return out_path
 
 
@@ -71,9 +68,7 @@ def extract_pages_markdown(pdf_path: Path) -> list[dict]:
     pdf_path = Path(pdf_path)
     working_path = pdf_path
     if needs_ocr(pdf_path):
-        logger.warning(
-            "%s parece tener paginas escaneadas -- aplicando OCR.", pdf_path.name
-        )
+        logger.warning("%s parece tener paginas escaneadas -- aplicando OCR.", pdf_path.name)
         working_path = ocr_pdf(pdf_path)
 
     pages = pymupdf4llm.to_markdown(str(working_path), page_chunks=True)

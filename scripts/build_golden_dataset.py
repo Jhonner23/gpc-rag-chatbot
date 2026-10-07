@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Construye el dataset dorado (golden dataset) para evaluar el RAG.
 
 Combina:
@@ -13,6 +12,7 @@ Cada entrada trae "question", "ground_truth" (respuesta esperada) y
 Un campo "should_refuse": true marca preguntas que el chatbot NO debe
 responder con contenido medico (fuera del alcance de las guias indexadas).
 """
+
 from __future__ import annotations
 
 import json
@@ -211,9 +211,7 @@ GOLDEN_DATASET = [
 def main() -> None:
     out_path = Path("eval/golden_dataset.json")
     out_path.parent.mkdir(exist_ok=True)
-    out_path.write_text(
-        json.dumps(GOLDEN_DATASET, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    out_path.write_text(json.dumps(GOLDEN_DATASET, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"{len(GOLDEN_DATASET)} preguntas doradas escritas en {out_path}")
 
 

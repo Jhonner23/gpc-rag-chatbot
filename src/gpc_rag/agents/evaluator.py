@@ -75,7 +75,9 @@ def evaluate_answer(
 ) -> tuple[bool, str | None]:
     """Devuelve (aprobada, motivo_de_rechazo_o_None)."""
     if is_refusal(answer):
-        logger.info("Evaluador: respuesta ya tiene forma de rechazo bien formado; se aprueba sin llamar al LLM.")
+        logger.info(
+            "Evaluador: respuesta ya tiene forma de rechazo bien formado; se aprueba sin llamar al LLM."
+        )
         return True, None
 
     client = Client(host=cfg.env.ollama_url)
@@ -112,7 +114,5 @@ def evaluate_answer(
         reason = str(parsed.get("reason", "")).strip()
         return False, reason or "La respuesta no paso la auditoria."
 
-    logger.warning(
-        "Evaluador: veredicto inesperado (%r); se aprueba por defecto.", verdict
-    )
+    logger.warning("Evaluador: veredicto inesperado (%r); se aprueba por defecto.", verdict)
     return True, None

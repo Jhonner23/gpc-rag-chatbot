@@ -124,7 +124,9 @@ class HybridRetriever:
             self._reranker = CrossEncoder(self.cfg.retrieval.reranker_model, device="cpu")
         return self._reranker
 
-    def _rerank(self, query: str, candidates: list[RetrievedChunk], top_k: int) -> list[RetrievedChunk]:
+    def _rerank(
+        self, query: str, candidates: list[RetrievedChunk], top_k: int
+    ) -> list[RetrievedChunk]:
         if not candidates:
             return []
         pairs = [(query, rc.chunk.text) for rc in candidates]

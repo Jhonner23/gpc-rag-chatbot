@@ -25,9 +25,28 @@ def test_format_context_handles_empty_list():
 
 
 def test_build_messages_has_system_and_user_roles():
-    messages = build_messages("Cual es el tratamiento de primera linea?", [_sample_retrieved_chunk()])
+    messages = build_messages(
+        "Cual es el tratamiento de primera linea?", [_sample_retrieved_chunk()]
+    )
     roles = [m["role"] for m in messages]
     assert roles == ["system", "user"]
     assert "guia_diabetes.pdf" in messages[1]["content"]
     assert "no inventes" in messages[0]["content"].lower()
     assert "no uses conocimiento medico propio" in messages[0]["content"].lower()
+
+
+def test_system_prompt_prohibe_completar_criterios_de_escalas_de_memoria():
+    """Regresion del caso real: CURB-65 con contexto correcto pero respuesta
+
+    inventada (ver docstring del modulo prompts.py) -- la regla original solo
+    cubria farmacos/dosis, no criterios de escalas ni sus umbrales numericos.
+    """
+    system_prompt = build_messages("cualquier pregunta", [_sample_retrieved_chunk()])[0][
+        "content"
+    ].lower()
+    assert (
+        "criterios de una escala" in system_prompt
+        or "variables/criterios de una escala" in system_prompt
+    )
+    assert "conocimiento general del instrumento" in system_prompt
+    assert "lista completa" in system_prompt

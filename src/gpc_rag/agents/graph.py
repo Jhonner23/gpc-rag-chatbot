@@ -49,7 +49,9 @@ def _rag_node(state: AgentState, pipeline: QueryPipeline) -> dict:
 
 
 def _evaluator_node(state: AgentState, cfg: DictConfig) -> dict:
-    ok, feedback = evaluate_answer(state["question"], state.get("sources", []), state["answer"], cfg)
+    ok, feedback = evaluate_answer(
+        state["question"], state.get("sources", []), state["answer"], cfg
+    )
     logger.info(
         "Evaluador: ok=%s feedback=%r retry_count=%d", ok, feedback, state.get("retry_count", 0)
     )
