@@ -1,0 +1,2908 @@
+protocol:
+  id: CT-PL-193
+  name: Protocolo de práctica clínica de neumonía adquirida en comunidad
+  description: Atención de pacientes adultos con diagnóstico de neumonía adquirida
+    en comunidad
+version:
+  version: v09
+  approval_date: '2024-08-12'
+  change_summary: Actualización del protocolo institucional para manejo de neumonía
+    adquirida en comunidad en pacientes adultos, indicaciones de pruebas moleculares,
+    tratamiento empírico según factores de riesgo y algoritmo de diagnóstico y tratamiento
+variables:
+  hospitalizado:
+    id: hospitalizado
+    label: Hospitalizado
+    type: BOOLEAN
+    description: Paciente hospitalizado al momento de la evaluación.
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_definicion_nac
+  sintomas_dentro_48h_ingreso:
+    id: sintomas_dentro_48h_ingreso
+    label: Síntomas dentro de las primeras 48 horas del ingreso
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_definicion_nac
+  sintomas_respiratorios_generales:
+    id: sintomas_respiratorios_generales
+    label: Síntomas respiratorios y/o síntomas generales
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_definicion_nac
+  alteracion_radiologica:
+    id: alteracion_radiologica
+    label: Alteración en un estudio radiológico del pulmón
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_definicion_nac
+  sin_otras_causas_evidentes:
+    id: sin_otras_causas_evidentes
+    label: Sin otras causas evidentes
+    type: BOOLEAN
+    description: Juicio clínico; el documento no lo operacionaliza.
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_definicion_nac
+  cuadro_clinico_compatible:
+    id: cuadro_clinico_compatible
+    label: Cuadro clínico compatible
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_rx_torax
+  infiltrado_reciente_rx:
+    id: infiltrado_reciente_rx
+    label: Infiltrado pulmonar de reciente aparición en radiografía de tórax
+    type: BOOLEAN
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_rx_torax
+      notes: 'Colapsa la lista ''al menos uno de los siguientes hallazgos: infiltrados
+        alveolares o intersticiales segmentarios o infiltrados en uno o más lóbulos
+        no presentes previamente'' en una única variable booleana.'
+  signos_sintomas_respiratorios_bajos:
+    id: signos_sintomas_respiratorios_bajos
+    label: Signos y síntomas respiratorios bajos
+    type: BOOLEAN
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_rx_torax
+      notes: Colapsa la lista '(tos, expectoración, dolor pleurítico, taquipnea, disnea,
+        desaturación y/o alteraciones auscultatorias compatibles)'.
+  rx_inicial_sin_hallazgos:
+    id: rx_inicial_sin_hallazgos
+    label: Radiografía inicial sin hallazgos
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_rx_repetir
+  sospecha_alta_neumonia:
+    id: sospecha_alta_neumonia
+    label: Sospecha alta de neumonía
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_rx_repetir
+  alta_probabilidad_neumonia:
+    id: alta_probabilidad_neumonia
+    label: Alta probabilidad de neumonía por clínica
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_tc
+  rx_no_concluyente:
+    id: rx_no_concluyente
+    label: Radiografía de tórax no concluyente
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_tc
+  prioritario_diagnostico:
+    id: prioritario_diagnostico
+    label: Prioritario hacer el diagnóstico de neumonía
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_tc
+  sospecha_complicacion:
+    id: sospecha_complicacion
+    label: Sospecha de complicación
+    type: BOOLEAN
+    description: Neumonía necrosante, absceso pulmonar o empiema tabicado.
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_tc
+  neutropenia_febril:
+    id: neutropenia_febril
+    label: Neutropenia febril
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_tc_neutropenia
+  sospecha_neumonia:
+    id: sospecha_neumonia
+    label: Sospecha de neumonía
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_labs_sospecha
+  diagnostico_neumonia:
+    id: diagnostico_neumonia
+    label: Diagnóstico de neumonía
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_esputo_gram
+  diagnostico_confirmado_neumonia:
+    id: diagnostico_confirmado_neumonia
+    label: Diagnóstico confirmado de neumonía
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_filmarray
+  descompensacion_enfermedad_base:
+    id: descompensacion_enfermedad_base
+    label: Descompensación de enfermedad de base
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_hosp_01
+  inmunosuprimido:
+    id: inmunosuprimido
+    label: Paciente inmunosuprimido
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_hosp_02
+  sospecha_germenes_resistentes:
+    id: sospecha_germenes_resistentes
+    label: Sospecha de gérmenes resistentes
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_hosp_03
+  intolerancia_via_oral:
+    id: intolerancia_via_oral
+    label: Intolerancia a la vía oral
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_hosp_04
+  sepsis_origen_pulmonar:
+    id: sepsis_origen_pulmonar
+    label: Sepsis de origen pulmonar
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_hosp_05
+  choque_origen_pulmonar:
+    id: choque_origen_pulmonar
+    label: Choque de origen pulmonar
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_hosp_05
+  compromiso_multilobar:
+    id: compromiso_multilobar
+    label: Compromiso multilobar
+    type: BOOLEAN
+    description: Criterio de hospitalización; concepto distinto de 'infiltrados multilobares'
+      de UCI-UCE.
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_hosp_06
+  derrame_pleural_rx:
+    id: derrame_pleural_rx
+    label: Derrame pleural en los rayos X de tórax
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_hosp_06
+  curb65_score:
+    id: curb65_score
+    label: Escala de severidad CURB-65
+    type: NUMERIC
+    description: El documento no define los componentes ni el cálculo de la escala.
+    provenance:
+      derivation: UNRESOLVED
+      fragment_refs:
+      - frag_p4_hosp_07
+      notes: La fuente referencia la escala sin definir componentes ni cálculo; el
+        puntaje es un dato externo.
+  factores_sociales:
+    id: factores_sociales
+    label: Factores sociales que afecten cumplimiento y seguimiento
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_hosp_08
+  requerimiento_oxigeno_suplementario:
+    id: requerimiento_oxigeno_suplementario
+    label: Requerimiento de oxígeno suplementario
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_hosp_09
+  insuficiencia_respiratoria:
+    id: insuficiencia_respiratoria
+    label: Insuficiencia respiratoria
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_uci_bullet1
+  choque_septico:
+    id: choque_septico
+    label: Choque séptico
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_uci_bullet1
+      - frag_p3_labs_shock
+  lactato_serico:
+    id: lactato_serico
+    label: Lactato sérico
+    type: NUMERIC
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_uci_bullet1
+      notes: Umbral 'mayor de 2' sin unidad declarada en la fuente.
+  falla_renal_aguda_trr:
+    id: falla_renal_aguda_trr
+    label: Falla renal aguda que requiere terapia de reemplazo renal
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_uci_bullet1
+  falla_organica_multiple:
+    id: falla_organica_multiple
+    label: Falla orgánica múltiple
+    type: BOOLEAN
+    description: Término de la sección de laboratorio; distinto de 'falla orgánica
+      multisistémica' de UCI-UCE.
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_labs_shock
+  falla_organica_multisistemica:
+    id: falla_organica_multisistemica
+    label: Falla orgánica multisistémica
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_uci_bullet1
+  sepsis_grave:
+    id: sepsis_grave
+    label: Sepsis grave
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_labs_shock
+  bun:
+    id: bun
+    label: Nitrógeno ureico en sangre (BUN)
+    type: NUMERIC
+    unit: mg/dL
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_hemocultivos
+      - frag_p4_uci_3de
+      notes: Unidad mg/dL declarada en la sección de hemocultivos.
+  fr_respiratoria:
+    id: fr_respiratoria
+    label: Frecuencia respiratoria
+    type: NUMERIC
+    unit: rpm
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_hemocultivos
+      - frag_p4_uci_3de
+      - frag_p5_plan_egreso
+      notes: Unidad rpm declarada en la sección de hemocultivos.
+  hipotension_requiere_lev:
+    id: hipotension_requiere_lev
+    label: Hipotensión que requiera LEV agresivos
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_uci_3de
+  infiltrados_multilobares:
+    id: infiltrados_multilobares
+    label: Infiltrados multilobares
+    type: BOOLEAN
+    description: Criterio de UCI-UCE; concepto distinto de 'compromiso multilobar'
+      de hospitalización.
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_uci_3de
+  pao2_fio2:
+    id: pao2_fio2
+    label: PaO2/FiO2
+    type: NUMERIC
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_uci_3de
+      notes: Umbral 'menores de 250' sin unidad declarada en la fuente.
+  confusion:
+    id: confusion
+    label: Confusión
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_uci_3de
+  hipotermia:
+    id: hipotermia
+    label: Hipotermia
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_uci_3de
+  plaquetas:
+    id: plaquetas
+    label: Plaquetas
+    type: NUMERIC
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_uci_3de
+      notes: Umbral 'menor de 100.000' sin unidad declarada en la fuente.
+  leucocitos:
+    id: leucocitos
+    label: Leucocitos
+    type: NUMERIC
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_hemocultivos
+      - frag_p4_uci_3de
+      notes: Umbrales 'mayor a 15000' y 'menor de 4000' sin unidad declarada en la
+        fuente.
+  pcr:
+    id: pcr
+    label: Proteína C reactiva (PCR)
+    type: NUMERIC
+    unit: mg/dL
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_hemocultivos
+      notes: Umbral 'mayor a 15 mg/dL'.
+  pad:
+    id: pad
+    label: Presión arterial diastólica
+    type: NUMERIC
+    unit: mmHg
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_hemocultivos
+      notes: Umbral 'menor a 60 mmHg'.
+  fc:
+    id: fc
+    label: Frecuencia cardiaca
+    type: NUMERIC
+    unit: lpm
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_hemocultivos
+      - frag_p5_plan_egreso
+      notes: Umbrales 'mayor a 120 lpm' y '<100' (alta).
+  dolor_pleuritico:
+    id: dolor_pleuritico
+    label: Dolor pleurítico
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_hemocultivos
+  no_puede_recoger_muestra_espontanea:
+    id: no_puede_recoger_muestra_espontanea
+    label: No puede recoger la muestra de forma espontánea
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_esputo_inducido
+  celulas_epiteliales_campo:
+    id: celulas_epiteliales_campo
+    label: Células epiteliales por campo
+    type: NUMERIC
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_esputo_calidad
+      notes: Umbral '< de 10' por campo.
+  leucocitos_campo:
+    id: leucocitos_campo
+    label: Leucocitos por campo
+    type: NUMERIC
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_esputo_calidad
+      notes: Umbral 'más de 25' por campo.
+  sin_sospecha_sarscov2:
+    id: sin_sospecha_sarscov2
+    label: Sin sospecha de neumonía por SARSCOV2
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_panel_profundo
+  no_expectora:
+    id: no_expectora
+    label: No expectora
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_panel_hisopado
+  derrame_pleural_unilateral:
+    id: derrame_pleural_unilateral
+    label: Derrame pleural unilateral
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_liquido_pleural
+  espesor_derrame_cm:
+    id: espesor_derrame_cm
+    label: Espesor del derrame pleural
+    type: NUMERIC
+    unit: cm
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_liquido_pleural
+      notes: Umbral 'más de 1 centímetro de espesor'.
+  sin_causa_aparente:
+    id: sin_causa_aparente
+    label: Sin causa aparente
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_liquido_pleural
+  desaturacion:
+    id: desaturacion
+    label: Desaturación
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_labs_gases_desaturacion
+  afebril_horas:
+    id: afebril_horas
+    label: Horas afebril
+    type: DURATION
+    unit: hours
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p5_plan_egreso
+      notes: Duración del estado afebril en horas; umbral 'lleve 48 horas afebril'.
+  pas_sistolica:
+    id: pas_sistolica
+    label: Presión arterial sistólica
+    type: NUMERIC
+    unit: mmHg
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p5_plan_egreso
+      notes: Umbral '> 90mmHg'.
+  saturacion_oxigeno:
+    id: saturacion_oxigeno
+    label: Saturación de oxígeno
+    type: NUMERIC
+    unit: '%'
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p5_plan_egreso
+      notes: Umbral 'mayor de 90'.
+  po2:
+    id: po2
+    label: PO2
+    type: NUMERIC
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p5_plan_egreso
+      notes: Umbral 'mayor de 60' sin unidad declarada.
+  tolera_via_oral:
+    id: tolera_via_oral
+    label: Tolera la vía oral
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p5_plan_egreso
+  comorbilidades_compensadas:
+    id: comorbilidades_compensadas
+    label: Comorbilidades compensadas
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p5_plan_egreso
+  tratamiento_antibiotico_ambulatorio_asegurado:
+    id: tratamiento_antibiotico_ambulatorio_asegurado
+    label: Administración de tratamiento antibiótico ambulatorio asegurada
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p5_plan_egreso
+  condiciones_sociales_adecuadas:
+    id: condiciones_sociales_adecuadas
+    label: Condiciones sociales lo permiten
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p5_plan_egreso
+rules:
+  rule_definicion_nac:
+    id: rule_definicion_nac
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: sintomas_respiratorios_generales
+        expected: true
+      - kind: FLAG
+        variable_ref: alteracion_radiologica
+        expected: true
+      - kind: FLAG
+        variable_ref: sin_otras_causas_evidentes
+        expected: true
+      - operator: OR
+        operands:
+        - operator: NOT
+          operands:
+          - kind: FLAG
+            variable_ref: hospitalizado
+            expected: true
+        - kind: FLAG
+          variable_ref: sintomas_dentro_48h_ingreso
+          expected: true
+    action_refs: []
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p1_definicion_nac
+      notes: Definición operativa de NAC ensamblada desde la frase de DEFINICIONES.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_diagnostico_radiografico:
+    id: rule_diagnostico_radiografico
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: cuadro_clinico_compatible
+        expected: true
+      - kind: FLAG
+        variable_ref: infiltrado_reciente_rx
+        expected: true
+    action_refs: []
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_rx_torax
+      notes: 'Criterio diagnóstico ensamblado: cuadro clínico compatible + infiltrado
+        de reciente aparición.'
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_rx_torax_indicada:
+    id: rule_rx_torax_indicada
+    condition:
+      kind: FLAG
+      variable_ref: signos_sintomas_respiratorios_bajos
+      expected: true
+    action_refs:
+    - act_rx_torax
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_rx_torax
+      notes: Indicación de radiografía en pacientes con signos y síntomas respiratorios
+        bajos.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_rx_repetir_48h:
+    id: rule_rx_repetir_48h
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: rx_inicial_sin_hallazgos
+        expected: true
+      - kind: FLAG
+        variable_ref: sospecha_alta_neumonia
+        expected: true
+    action_refs:
+    - act_rx_torax_repetida_48h
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_rx_repetir
+      notes: Repetir radiografía en 48 horas; el intervalo es dato declarativo.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_tc_torax:
+    id: rule_tc_torax
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: alta_probabilidad_neumonia
+        expected: true
+      - kind: FLAG
+        variable_ref: rx_no_concluyente
+        expected: true
+      - operator: OR
+        operands:
+        - kind: FLAG
+          variable_ref: prioritario_diagnostico
+          expected: true
+        - kind: FLAG
+          variable_ref: sospecha_complicacion
+          expected: true
+    action_refs:
+    - act_tc_torax
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_tc
+      notes: Indicación de tomografía ensamblada desde 'Sólo está indicada en...'.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_tc_neutropenia_febril:
+    id: rule_tc_neutropenia_febril
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: neutropenia_febril
+        expected: true
+      - kind: FLAG
+        variable_ref: signos_sintomas_respiratorios_bajos
+        expected: true
+    action_refs:
+    - act_tc_torax
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_tc_neutropenia
+      notes: Tomografía simple en neutropenia febril.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_labs_sospecha:
+    id: rule_labs_sospecha
+    condition:
+      kind: FLAG
+      variable_ref: sospecha_neumonia
+      expected: true
+    action_refs:
+    - act_hemoleucograma
+    - act_bun
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_labs_sospecha
+      notes: Laboratorios basales ante sospecha.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_labs_hospitalizacion:
+    id: rule_labs_hospitalizacion
+    condition:
+      operator: OR
+      operands:
+      - kind: FLAG
+        variable_ref: descompensacion_enfermedad_base
+        expected: true
+      - kind: FLAG
+        variable_ref: inmunosuprimido
+        expected: true
+      - kind: FLAG
+        variable_ref: sospecha_germenes_resistentes
+        expected: true
+      - kind: FLAG
+        variable_ref: intolerancia_via_oral
+        expected: true
+      - operator: OR
+        operands:
+        - kind: FLAG
+          variable_ref: sepsis_origen_pulmonar
+          expected: true
+        - kind: FLAG
+          variable_ref: choque_origen_pulmonar
+          expected: true
+      - operator: OR
+        operands:
+        - kind: FLAG
+          variable_ref: compromiso_multilobar
+          expected: true
+        - kind: FLAG
+          variable_ref: derrame_pleural_rx
+          expected: true
+      - kind: COMPARISON
+        variable_ref: curb65_score
+        operator: GE
+        operand: 2
+      - kind: FLAG
+        variable_ref: factores_sociales
+        expected: true
+      - kind: FLAG
+        variable_ref: requerimiento_oxigeno_suplementario
+        expected: true
+    action_refs:
+    - act_pcr
+    - act_creatinina
+    - act_lactato
+    - act_sodio
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_labs_hospitalizacion
+      notes: Laboratorios adicionales en pacientes con indicación de hospitalización;
+        la indicación se computa con la misma expresión del criterio de hospitalización.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_labs_shock:
+    id: rule_labs_shock
+    condition:
+      operator: OR
+      operands:
+      - kind: FLAG
+        variable_ref: choque_septico
+        expected: true
+      - kind: FLAG
+        variable_ref: sepsis_grave
+        expected: true
+      - kind: FLAG
+        variable_ref: falla_organica_multiple
+        expected: true
+    action_refs:
+    - act_coagulacion
+    - act_ast
+    - act_alt
+    - act_bilirrubinas
+    - act_gases_arteriales
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_labs_shock
+      notes: Laboratorios en choque séptico, sepsis grave o falla orgánica múltiple.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_labs_desaturacion:
+    id: rule_labs_desaturacion
+    condition:
+      kind: FLAG
+      variable_ref: desaturacion
+      expected: true
+    action_refs:
+    - act_gases_arteriales
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_labs_gases_desaturacion
+      notes: Gases arteriales en desaturación.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_labs_derrame_pleural:
+    id: rule_labs_derrame_pleural
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: derrame_pleural_rx
+        expected: true
+      - operator: AND
+        operands:
+        - kind: FLAG
+          variable_ref: derrame_pleural_unilateral
+          expected: true
+        - kind: COMPARISON
+          variable_ref: espesor_derrame_cm
+          operator: GT
+          operand: 1
+        - kind: FLAG
+          variable_ref: sin_causa_aparente
+          expected: true
+    action_refs:
+    - act_ldh
+    - act_proteinas_sericas
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_labs_derrame
+      - frag_p4_liquido_pleural
+      notes: LDH y proteínas séricas cuando hay derrame pleural e indicación de toracentesis;
+        la indicación se computa con la misma expresión del criterio paraneumónico.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_toracentesis_paraneumonico:
+    id: rule_toracentesis_paraneumonico
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: derrame_pleural_unilateral
+        expected: true
+      - kind: COMPARISON
+        variable_ref: espesor_derrame_cm
+        operator: GT
+        operand: 1
+      - kind: FLAG
+        variable_ref: sin_causa_aparente
+        expected: true
+    action_refs:
+    - act_toracentesis_diagnostica
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_liquido_pleural
+      notes: 'Criterio paraneumónico: unilateral, más de 1 cm, sin causa aparente.'
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_hemocultivos:
+    id: rule_hemocultivos
+    condition:
+      operator: OR
+      operands:
+      - operator: OR
+        operands:
+        - kind: COMPARISON
+          variable_ref: bun
+          operator: GT
+          operand: 30
+        - kind: COMPARISON
+          variable_ref: pcr
+          operator: GT
+          operand: 15
+        - kind: COMPARISON
+          variable_ref: leucocitos
+          operator: GT
+          operand: 15000
+      - operator: AT_LEAST_N
+        operands:
+        - kind: COMPARISON
+          variable_ref: pad
+          operator: LT
+          operand: 60
+        - kind: COMPARISON
+          variable_ref: fc
+          operator: GT
+          operand: 120
+        - kind: COMPARISON
+          variable_ref: fr_respiratoria
+          operator: GT
+          operand: 30
+        - kind: FLAG
+          variable_ref: dolor_pleuritico
+          expected: true
+        threshold: 2
+    action_refs:
+    - act_hemocultivos
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_hemocultivos
+      notes: 'Uno de: BUN>30, PCR>15, leucocitosis>15000; o dos de: PAD<60, FC>120,
+        FR>30, dolor pleurítico. La fuente agrega ''antes de la primera dosis intravenosa
+        de antibióticos'' (restricción de procedimiento, no representable).'
+    applies_to:
+      operator: OR
+      operands:
+      - kind: FLAG
+        variable_ref: descompensacion_enfermedad_base
+        expected: true
+      - kind: FLAG
+        variable_ref: inmunosuprimido
+        expected: true
+      - kind: FLAG
+        variable_ref: sospecha_germenes_resistentes
+        expected: true
+      - kind: FLAG
+        variable_ref: intolerancia_via_oral
+        expected: true
+      - operator: OR
+        operands:
+        - kind: FLAG
+          variable_ref: sepsis_origen_pulmonar
+          expected: true
+        - kind: FLAG
+          variable_ref: choque_origen_pulmonar
+          expected: true
+      - operator: OR
+        operands:
+        - kind: FLAG
+          variable_ref: compromiso_multilobar
+          expected: true
+        - kind: FLAG
+          variable_ref: derrame_pleural_rx
+          expected: true
+      - kind: COMPARISON
+        variable_ref: curb65_score
+        operator: GE
+        operand: 2
+      - kind: FLAG
+        variable_ref: factores_sociales
+        expected: true
+      - kind: FLAG
+        variable_ref: requerimiento_oxigeno_suplementario
+        expected: true
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_gram_cultivo_esputo:
+    id: rule_gram_cultivo_esputo
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: diagnostico_neumonia
+        expected: true
+      - operator: OR
+        operands:
+        - kind: FLAG
+          variable_ref: descompensacion_enfermedad_base
+          expected: true
+        - kind: FLAG
+          variable_ref: inmunosuprimido
+          expected: true
+        - kind: FLAG
+          variable_ref: sospecha_germenes_resistentes
+          expected: true
+        - kind: FLAG
+          variable_ref: intolerancia_via_oral
+          expected: true
+        - operator: OR
+          operands:
+          - kind: FLAG
+            variable_ref: sepsis_origen_pulmonar
+            expected: true
+          - kind: FLAG
+            variable_ref: choque_origen_pulmonar
+            expected: true
+        - operator: OR
+          operands:
+          - kind: FLAG
+            variable_ref: compromiso_multilobar
+            expected: true
+          - kind: FLAG
+            variable_ref: derrame_pleural_rx
+            expected: true
+        - kind: COMPARISON
+          variable_ref: curb65_score
+          operator: GE
+          operand: 2
+        - kind: FLAG
+          variable_ref: factores_sociales
+          expected: true
+        - kind: FLAG
+          variable_ref: requerimiento_oxigeno_suplementario
+          expected: true
+    action_refs:
+    - act_gram_cultivo_esputo
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_esputo_gram
+      notes: Esputo para Gram y cultivo.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_esputo_inducido:
+    id: rule_esputo_inducido
+    condition:
+      operator: AND
+      operands:
+      - operator: AND
+        operands:
+        - kind: FLAG
+          variable_ref: diagnostico_neumonia
+          expected: true
+        - operator: OR
+          operands:
+          - kind: FLAG
+            variable_ref: descompensacion_enfermedad_base
+            expected: true
+          - kind: FLAG
+            variable_ref: inmunosuprimido
+            expected: true
+          - kind: FLAG
+            variable_ref: sospecha_germenes_resistentes
+            expected: true
+          - kind: FLAG
+            variable_ref: intolerancia_via_oral
+            expected: true
+          - operator: OR
+            operands:
+            - kind: FLAG
+              variable_ref: sepsis_origen_pulmonar
+              expected: true
+            - kind: FLAG
+              variable_ref: choque_origen_pulmonar
+              expected: true
+          - operator: OR
+            operands:
+            - kind: FLAG
+              variable_ref: compromiso_multilobar
+              expected: true
+            - kind: FLAG
+              variable_ref: derrame_pleural_rx
+              expected: true
+          - kind: COMPARISON
+            variable_ref: curb65_score
+            operator: GE
+            operand: 2
+          - kind: FLAG
+            variable_ref: factores_sociales
+            expected: true
+          - kind: FLAG
+            variable_ref: requerimiento_oxigeno_suplementario
+            expected: true
+      - kind: FLAG
+        variable_ref: no_puede_recoger_muestra_espontanea
+        expected: true
+    action_refs:
+    - act_esputo_inducido
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_esputo_inducido
+      notes: Esputo inducido por nebulización 15-20 min con solución salina hipertónica
+        (3%) cuando no pueden recoger la muestra espontáneamente.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_esputo_buena_calidad:
+    id: rule_esputo_buena_calidad
+    condition:
+      operator: AND
+      operands:
+      - kind: COMPARISON
+        variable_ref: celulas_epiteliales_campo
+        operator: LT
+        operand: 10
+      - kind: COMPARISON
+        variable_ref: leucocitos_campo
+        operator: GT
+        operand: 25
+    action_refs: []
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_esputo_calidad
+      notes: Definición de muestra de buena calidad.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_filmarray:
+    id: rule_filmarray
+    condition:
+      kind: FLAG
+      variable_ref: diagnostico_confirmado_neumonia
+      expected: true
+    action_refs:
+    - act_filmarray
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_filmarray
+      notes: Solicitud de panel molecular.
+    applies_to:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: diagnostico_confirmado_neumonia
+        expected: true
+      - operator: OR
+        operands:
+        - kind: FLAG
+          variable_ref: descompensacion_enfermedad_base
+          expected: true
+        - kind: FLAG
+          variable_ref: inmunosuprimido
+          expected: true
+        - kind: FLAG
+          variable_ref: sospecha_germenes_resistentes
+          expected: true
+        - kind: FLAG
+          variable_ref: intolerancia_via_oral
+          expected: true
+        - operator: OR
+          operands:
+          - kind: FLAG
+            variable_ref: sepsis_origen_pulmonar
+            expected: true
+          - kind: FLAG
+            variable_ref: choque_origen_pulmonar
+            expected: true
+        - operator: OR
+          operands:
+          - kind: FLAG
+            variable_ref: compromiso_multilobar
+            expected: true
+          - kind: FLAG
+            variable_ref: derrame_pleural_rx
+            expected: true
+        - kind: COMPARISON
+          variable_ref: curb65_score
+          operator: GE
+          operand: 2
+        - kind: FLAG
+          variable_ref: factores_sociales
+          expected: true
+        - kind: FLAG
+          variable_ref: requerimiento_oxigeno_suplementario
+          expected: true
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_filmarray_panel_profundo:
+    id: rule_filmarray_panel_profundo
+    condition:
+      kind: FLAG
+      variable_ref: sin_sospecha_sarscov2
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_panel_profundo
+    applies_to:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: diagnostico_confirmado_neumonia
+        expected: true
+      - operator: OR
+        operands:
+        - kind: FLAG
+          variable_ref: descompensacion_enfermedad_base
+          expected: true
+        - kind: FLAG
+          variable_ref: inmunosuprimido
+          expected: true
+        - kind: FLAG
+          variable_ref: sospecha_germenes_resistentes
+          expected: true
+        - kind: FLAG
+          variable_ref: intolerancia_via_oral
+          expected: true
+        - operator: OR
+          operands:
+          - kind: FLAG
+            variable_ref: sepsis_origen_pulmonar
+            expected: true
+          - kind: FLAG
+            variable_ref: choque_origen_pulmonar
+            expected: true
+        - operator: OR
+          operands:
+          - kind: FLAG
+            variable_ref: compromiso_multilobar
+            expected: true
+          - kind: FLAG
+            variable_ref: derrame_pleural_rx
+            expected: true
+        - kind: COMPARISON
+          variable_ref: curb65_score
+          operator: GE
+          operand: 2
+        - kind: FLAG
+          variable_ref: factores_sociales
+          expected: true
+        - kind: FLAG
+          variable_ref: requerimiento_oxigeno_suplementario
+          expected: true
+    exceptions: []
+    validation_status: EXTRACTED
+    notes: 'Primera opción: cod 502828, muestra profunda (esputo, aspirado traqueal
+      o lavado broncoalveolar). Sin acción: el paquete no selecciona ni ejecuta paneles.'
+  rule_filmarray_panel_hisopado:
+    id: rule_filmarray_panel_hisopado
+    condition:
+      kind: FLAG
+      variable_ref: no_expectora
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_panel_hisopado
+    applies_to:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: diagnostico_confirmado_neumonia
+        expected: true
+      - operator: OR
+        operands:
+        - kind: FLAG
+          variable_ref: descompensacion_enfermedad_base
+          expected: true
+        - kind: FLAG
+          variable_ref: inmunosuprimido
+          expected: true
+        - kind: FLAG
+          variable_ref: sospecha_germenes_resistentes
+          expected: true
+        - kind: FLAG
+          variable_ref: intolerancia_via_oral
+          expected: true
+        - operator: OR
+          operands:
+          - kind: FLAG
+            variable_ref: sepsis_origen_pulmonar
+            expected: true
+          - kind: FLAG
+            variable_ref: choque_origen_pulmonar
+            expected: true
+        - operator: OR
+          operands:
+          - kind: FLAG
+            variable_ref: compromiso_multilobar
+            expected: true
+          - kind: FLAG
+            variable_ref: derrame_pleural_rx
+            expected: true
+        - kind: COMPARISON
+          variable_ref: curb65_score
+          operator: GE
+          operand: 2
+        - kind: FLAG
+          variable_ref: factores_sociales
+          expected: true
+        - kind: FLAG
+          variable_ref: requerimiento_oxigeno_suplementario
+          expected: true
+    exceptions: []
+    validation_status: EXTRACTED
+    notes: 'cod 502162, hisopado nasofaríngeo en pacientes que no espectoran. Sin
+      acción: el paquete no selecciona ni ejecuta paneles.'
+  rule_hosp_criterio_descompensacion:
+    id: rule_hosp_criterio_descompensacion
+    condition:
+      kind: FLAG
+      variable_ref: descompensacion_enfermedad_base
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_hosp_01
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_hosp_criterio_inmunosupresion:
+    id: rule_hosp_criterio_inmunosupresion
+    condition:
+      kind: FLAG
+      variable_ref: inmunosuprimido
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_hosp_02
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_hosp_criterio_germenes_resistentes:
+    id: rule_hosp_criterio_germenes_resistentes
+    condition:
+      kind: FLAG
+      variable_ref: sospecha_germenes_resistentes
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_hosp_03
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_hosp_criterio_intolerancia_oral:
+    id: rule_hosp_criterio_intolerancia_oral
+    condition:
+      kind: FLAG
+      variable_ref: intolerancia_via_oral
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_hosp_04
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_hosp_criterio_sepsis_choque:
+    id: rule_hosp_criterio_sepsis_choque
+    condition:
+      operator: OR
+      operands:
+      - kind: FLAG
+        variable_ref: sepsis_origen_pulmonar
+        expected: true
+      - kind: FLAG
+        variable_ref: choque_origen_pulmonar
+        expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_hosp_05
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_hosp_criterio_multilobar_derrame:
+    id: rule_hosp_criterio_multilobar_derrame
+    condition:
+      operator: OR
+      operands:
+      - kind: FLAG
+        variable_ref: compromiso_multilobar
+        expected: true
+      - kind: FLAG
+        variable_ref: derrame_pleural_rx
+        expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_hosp_06
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_hosp_criterio_curb65:
+    id: rule_hosp_criterio_curb65
+    condition:
+      kind: COMPARISON
+      variable_ref: curb65_score
+      operator: GE
+      operand: 2
+    action_refs: []
+    provenance:
+      derivation: UNRESOLVED
+      fragment_refs:
+      - frag_p4_hosp_07
+      notes: El enunciado 'CURB-65 ≥2' es explícito, pero la fuente no define los
+        componentes ni el cálculo de la escala; el puntaje es un dato externo.
+    exceptions: []
+    validation_status: UNRESOLVED
+  rule_hosp_criterio_factores_sociales:
+    id: rule_hosp_criterio_factores_sociales
+    condition:
+      kind: FLAG
+      variable_ref: factores_sociales
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_hosp_08
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_hosp_criterio_oxigeno:
+    id: rule_hosp_criterio_oxigeno
+    condition:
+      kind: FLAG
+      variable_ref: requerimiento_oxigeno_suplementario
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_hosp_09
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_hospitalizacion:
+    id: rule_hospitalizacion
+    condition:
+      operator: OR
+      operands:
+      - kind: FLAG
+        variable_ref: descompensacion_enfermedad_base
+        expected: true
+      - kind: FLAG
+        variable_ref: inmunosuprimido
+        expected: true
+      - kind: FLAG
+        variable_ref: sospecha_germenes_resistentes
+        expected: true
+      - kind: FLAG
+        variable_ref: intolerancia_via_oral
+        expected: true
+      - operator: OR
+        operands:
+        - kind: FLAG
+          variable_ref: sepsis_origen_pulmonar
+          expected: true
+        - kind: FLAG
+          variable_ref: choque_origen_pulmonar
+          expected: true
+      - operator: OR
+        operands:
+        - kind: FLAG
+          variable_ref: compromiso_multilobar
+          expected: true
+        - kind: FLAG
+          variable_ref: derrame_pleural_rx
+          expected: true
+      - kind: COMPARISON
+        variable_ref: curb65_score
+        operator: GE
+        operand: 2
+      - kind: FLAG
+        variable_ref: factores_sociales
+        expected: true
+      - kind: FLAG
+        variable_ref: requerimiento_oxigeno_suplementario
+        expected: true
+    action_refs:
+    - act_hospitalizar
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_hosp_01
+      - frag_p4_hosp_02
+      - frag_p4_hosp_03
+      - frag_p4_hosp_04
+      - frag_p4_hosp_05
+      - frag_p4_hosp_06
+      - frag_p4_hosp_07
+      - frag_p4_hosp_08
+      - frag_p4_hosp_09
+      notes: Composición OR de las nueve indicaciones de hospitalización.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_uci_criterio_bun:
+    id: rule_uci_criterio_bun
+    condition:
+      kind: COMPARISON
+      variable_ref: bun
+      operator: GT
+      operand: 30
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_uci_3de
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_uci_criterio_fr:
+    id: rule_uci_criterio_fr
+    condition:
+      kind: COMPARISON
+      variable_ref: fr_respiratoria
+      operator: GT
+      operand: 30
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_uci_3de
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_uci_criterio_hipotension_lev:
+    id: rule_uci_criterio_hipotension_lev
+    condition:
+      kind: FLAG
+      variable_ref: hipotension_requiere_lev
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_uci_3de
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_uci_criterio_multilobares:
+    id: rule_uci_criterio_multilobares
+    condition:
+      kind: FLAG
+      variable_ref: infiltrados_multilobares
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_uci_3de
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_uci_criterio_pao2_fio2:
+    id: rule_uci_criterio_pao2_fio2
+    condition:
+      kind: COMPARISON
+      variable_ref: pao2_fio2
+      operator: LT
+      operand: 250
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_uci_3de
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_uci_criterio_confusion:
+    id: rule_uci_criterio_confusion
+    condition:
+      kind: FLAG
+      variable_ref: confusion
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_uci_3de
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_uci_criterio_hipotermia:
+    id: rule_uci_criterio_hipotermia
+    condition:
+      kind: FLAG
+      variable_ref: hipotermia
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_uci_3de
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_uci_criterio_plaquetas:
+    id: rule_uci_criterio_plaquetas
+    condition:
+      kind: COMPARISON
+      variable_ref: plaquetas
+      operator: LT
+      operand: 100000
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_uci_3de
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_uci_criterio_leucocitos:
+    id: rule_uci_criterio_leucocitos
+    condition:
+      kind: COMPARISON
+      variable_ref: leucocitos
+      operator: LT
+      operand: 4000
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_uci_3de
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_uci_criterios_3de:
+    id: rule_uci_criterios_3de
+    condition:
+      operator: AT_LEAST_N
+      operands:
+      - kind: COMPARISON
+        variable_ref: bun
+        operator: GT
+        operand: 30
+      - kind: COMPARISON
+        variable_ref: fr_respiratoria
+        operator: GT
+        operand: 30
+      - kind: FLAG
+        variable_ref: hipotension_requiere_lev
+        expected: true
+      - kind: FLAG
+        variable_ref: infiltrados_multilobares
+        expected: true
+      - kind: COMPARISON
+        variable_ref: pao2_fio2
+        operator: LT
+        operand: 250
+      - kind: FLAG
+        variable_ref: confusion
+        expected: true
+      - kind: FLAG
+        variable_ref: hipotermia
+        expected: true
+      - kind: COMPARISON
+        variable_ref: plaquetas
+        operator: LT
+        operand: 100000
+      - kind: COMPARISON
+        variable_ref: leucocitos
+        operator: LT
+        operand: 4000
+      threshold: 3
+    action_refs: []
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_uci_3de
+      notes: '''3 o más criterios de'' representado como AT_LEAST_N(3, 9 criterios).'
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_uci_bullet1:
+    id: rule_uci_bullet1
+    condition:
+      operator: OR
+      operands:
+      - kind: FLAG
+        variable_ref: insuficiencia_respiratoria
+        expected: true
+      - kind: FLAG
+        variable_ref: choque_septico
+        expected: true
+      - kind: COMPARISON
+        variable_ref: lactato_serico
+        operator: GT
+        operand: 2
+      - kind: FLAG
+        variable_ref: falla_renal_aguda_trr
+        expected: true
+      - kind: FLAG
+        variable_ref: falla_organica_multisistemica
+        expected: true
+    action_refs: []
+    provenance:
+      derivation: INFERRED
+      fragment_refs:
+      - frag_p4_uci_bullet1
+      notes: 'Interpretación estructural de la coma: OR de cinco alternativas (insuficiencia
+        respiratoria; choque séptico; lactato > 2; FRA con TRR; falla orgánica multisistémica).'
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_ingreso_uci_uce:
+    id: rule_ingreso_uci_uce
+    condition:
+      operator: OR
+      operands:
+      - operator: OR
+        operands:
+        - kind: FLAG
+          variable_ref: insuficiencia_respiratoria
+          expected: true
+        - kind: FLAG
+          variable_ref: choque_septico
+          expected: true
+        - kind: COMPARISON
+          variable_ref: lactato_serico
+          operator: GT
+          operand: 2
+        - kind: FLAG
+          variable_ref: falla_renal_aguda_trr
+          expected: true
+        - kind: FLAG
+          variable_ref: falla_organica_multisistemica
+          expected: true
+      - operator: AT_LEAST_N
+        operands:
+        - kind: COMPARISON
+          variable_ref: bun
+          operator: GT
+          operand: 30
+        - kind: COMPARISON
+          variable_ref: fr_respiratoria
+          operator: GT
+          operand: 30
+        - kind: FLAG
+          variable_ref: hipotension_requiere_lev
+          expected: true
+        - kind: FLAG
+          variable_ref: infiltrados_multilobares
+          expected: true
+        - kind: COMPARISON
+          variable_ref: pao2_fio2
+          operator: LT
+          operand: 250
+        - kind: FLAG
+          variable_ref: confusion
+          expected: true
+        - kind: FLAG
+          variable_ref: hipotermia
+          expected: true
+        - kind: COMPARISON
+          variable_ref: plaquetas
+          operator: LT
+          operand: 100000
+        - kind: COMPARISON
+          variable_ref: leucocitos
+          operator: LT
+          operand: 4000
+        threshold: 3
+    action_refs:
+    - act_uci_uce
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_uci_bullet1
+      - frag_p4_uci_3de
+      notes: Composición OR del primer criterio y del criterio de 3 o más.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_plan_egreso:
+    id: rule_plan_egreso
+    condition:
+      operator: AND
+      operands:
+      - kind: TEMPORAL
+        variable_ref: afebril_horas
+        temporal_operator: AT_LEAST_FOR_LAST
+        duration_value: 48
+        duration_unit: hours
+      - kind: COMPARISON
+        variable_ref: pas_sistolica
+        operator: GT
+        operand: 90
+      - kind: COMPARISON
+        variable_ref: fc
+        operator: LT
+        operand: 100
+      - kind: COMPARISON
+        variable_ref: fr_respiratoria
+        operator: LT
+        operand: 24
+      - kind: COMPARISON
+        variable_ref: saturacion_oxigeno
+        operator: GT
+        operand: 90
+      - kind: COMPARISON
+        variable_ref: po2
+        operator: GT
+        operand: 60
+      - kind: FLAG
+        variable_ref: tolera_via_oral
+        expected: true
+      - kind: FLAG
+        variable_ref: comorbilidades_compensadas
+        expected: true
+      - kind: FLAG
+        variable_ref: tratamiento_antibiotico_ambulatorio_asegurado
+        expected: true
+      - kind: FLAG
+        variable_ref: condiciones_sociales_adecuadas
+        expected: true
+    action_refs:
+    - act_egreso
+    - act_educar_recaida
+    - act_cita_revision_4_semanas
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p5_plan_egreso
+      - frag_p6_alta_instrucciones
+      notes: Criterios de alta ensamblados; las instrucciones de recaída y la cita
+        de 4 semanas son acciones declarativas asociadas al alta ('al momento del
+        alta' aproximado por MATCHED de esta regla).
+    exceptions: []
+    validation_status: EXTRACTED
+actions:
+  act_rx_torax:
+    id: act_rx_torax
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_rx_torax
+  act_rx_torax_repetida_48h:
+    id: act_rx_torax_repetida_48h
+    type: REQUEST_TEST
+    payload:
+      intervalo_horas: 48
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_rx_repetir
+      notes: El intervalo de 48 horas es dato declarativo del payload.
+  act_tc_torax:
+    id: act_tc_torax
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_tc
+  act_hemoleucograma:
+    id: act_hemoleucograma
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_labs_sospecha
+  act_bun:
+    id: act_bun
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_labs_sospecha
+  act_pcr:
+    id: act_pcr
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_labs_hospitalizacion
+  act_creatinina:
+    id: act_creatinina
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_labs_hospitalizacion
+  act_lactato:
+    id: act_lactato
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_labs_hospitalizacion
+  act_sodio:
+    id: act_sodio
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_labs_hospitalizacion
+  act_coagulacion:
+    id: act_coagulacion
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_labs_shock
+  act_ast:
+    id: act_ast
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_labs_shock
+  act_alt:
+    id: act_alt
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_labs_shock
+  act_bilirrubinas:
+    id: act_bilirrubinas
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_labs_shock
+  act_gases_arteriales:
+    id: act_gases_arteriales
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_labs_shock
+      - frag_p3_labs_gases_desaturacion
+  act_ldh:
+    id: act_ldh
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_labs_derrame
+  act_proteinas_sericas:
+    id: act_proteinas_sericas
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_labs_derrame
+  act_toracentesis_diagnostica:
+    id: act_toracentesis_diagnostica
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_liquido_pleural
+  act_hemocultivos:
+    id: act_hemocultivos
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_hemocultivos
+  act_gram_cultivo_esputo:
+    id: act_gram_cultivo_esputo
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_esputo_gram
+  act_esputo_inducido:
+    id: act_esputo_inducido
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_esputo_inducido
+  act_filmarray:
+    id: act_filmarray
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_filmarray
+  act_hospitalizar:
+    id: act_hospitalizar
+    type: ADMIT
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_hosp_01
+      - frag_p4_hosp_02
+      - frag_p4_hosp_03
+      - frag_p4_hosp_04
+      - frag_p4_hosp_05
+      - frag_p4_hosp_06
+      - frag_p4_hosp_07
+      - frag_p4_hosp_08
+      - frag_p4_hosp_09
+      notes: Consecuencia de la lista de indicaciones de hospitalización.
+  act_uci_uce:
+    id: act_uci_uce
+    type: ADMIT
+    payload:
+      destino: UCI-UCE
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_uci_bullet1
+      - frag_p4_uci_3de
+      notes: Consecuencia de las indicaciones de ingreso a UCI-UCE.
+  act_egreso:
+    id: act_egreso
+    type: DISCHARGE
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p5_plan_egreso
+  act_educar_recaida:
+    id: act_educar_recaida
+    type: EDUCATE
+    label: 'Signos de recaída: fiebre, disnea, dolor torácico'
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p6_alta_instrucciones
+  act_cita_revision_4_semanas:
+    id: act_cita_revision_4_semanas
+    type: FOLLOW_UP
+    payload:
+      semanas: 4
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p6_alta_instrucciones
+      notes: Cita de revisión a las 4 semanas del alta; dato declarativo del payload.
+test_cases:
+  tc_hosp_curb65_boundary:
+    id: tc_hosp_curb65_boundary
+    inputs:
+      descompensacion_enfermedad_base: false
+      inmunosuprimido: false
+      sospecha_germenes_resistentes: false
+      intolerancia_via_oral: false
+      sepsis_origen_pulmonar: false
+      choque_origen_pulmonar: false
+      compromiso_multilobar: false
+      derrame_pleural_rx: false
+      factores_sociales: false
+      requerimiento_oxigeno_suplementario: false
+      curb65_score: 2
+    expected_results:
+      rule_hosp_criterio_curb65: 'TRUE'
+      rule_hospitalizacion: 'TRUE'
+  tc_hosp_curb65_below:
+    id: tc_hosp_curb65_below
+    inputs:
+      descompensacion_enfermedad_base: false
+      inmunosuprimido: false
+      sospecha_germenes_resistentes: false
+      intolerancia_via_oral: false
+      sepsis_origen_pulmonar: false
+      choque_origen_pulmonar: false
+      compromiso_multilobar: false
+      derrame_pleural_rx: false
+      factores_sociales: false
+      requerimiento_oxigeno_suplementario: false
+      curb65_score: 1
+    expected_results:
+      rule_hosp_criterio_curb65: 'FALSE'
+      rule_hospitalizacion: 'FALSE'
+  tc_hosp_none:
+    id: tc_hosp_none
+    inputs:
+      descompensacion_enfermedad_base: false
+      inmunosuprimido: false
+      sospecha_germenes_resistentes: false
+      intolerancia_via_oral: false
+      sepsis_origen_pulmonar: false
+      choque_origen_pulmonar: false
+      compromiso_multilobar: false
+      derrame_pleural_rx: false
+      factores_sociales: false
+      requerimiento_oxigeno_suplementario: false
+      curb65_score: 0
+    expected_results:
+      rule_hospitalizacion: 'FALSE'
+  tc_hosp_multilobar:
+    id: tc_hosp_multilobar
+    inputs:
+      descompensacion_enfermedad_base: false
+      inmunosuprimido: false
+      sospecha_germenes_resistentes: false
+      intolerancia_via_oral: false
+      sepsis_origen_pulmonar: false
+      choque_origen_pulmonar: false
+      compromiso_multilobar: true
+      derrame_pleural_rx: false
+      factores_sociales: false
+      requerimiento_oxigeno_suplementario: false
+      curb65_score: 0
+    expected_results:
+      rule_hosp_criterio_multilobar_derrame: 'TRUE'
+      rule_hospitalizacion: 'TRUE'
+  tc_hosp_choque_pulmonar:
+    id: tc_hosp_choque_pulmonar
+    inputs:
+      descompensacion_enfermedad_base: false
+      inmunosuprimido: false
+      sospecha_germenes_resistentes: false
+      intolerancia_via_oral: false
+      sepsis_origen_pulmonar: false
+      choque_origen_pulmonar: true
+      compromiso_multilobar: false
+      derrame_pleural_rx: false
+      factores_sociales: false
+      requerimiento_oxigeno_suplementario: false
+      curb65_score: 0
+    expected_results:
+      rule_hosp_criterio_sepsis_choque: 'TRUE'
+      rule_hospitalizacion: 'TRUE'
+  tc_hosp_sepsis_pulmonar:
+    id: tc_hosp_sepsis_pulmonar
+    inputs:
+      descompensacion_enfermedad_base: false
+      inmunosuprimido: false
+      sospecha_germenes_resistentes: false
+      intolerancia_via_oral: false
+      sepsis_origen_pulmonar: true
+      choque_origen_pulmonar: false
+      compromiso_multilobar: false
+      derrame_pleural_rx: false
+      factores_sociales: false
+      requerimiento_oxigeno_suplementario: false
+      curb65_score: 0
+    expected_results:
+      rule_hosp_criterio_sepsis_choque: 'TRUE'
+      rule_hospitalizacion: 'TRUE'
+  tc_hosp_missing_curb65:
+    id: tc_hosp_missing_curb65
+    inputs:
+      descompensacion_enfermedad_base: false
+      inmunosuprimido: false
+      sospecha_germenes_resistentes: false
+      intolerancia_via_oral: false
+      sepsis_origen_pulmonar: false
+      choque_origen_pulmonar: false
+      compromiso_multilobar: false
+      derrame_pleural_rx: false
+      factores_sociales: false
+      requerimiento_oxigeno_suplementario: false
+      curb65_score: null
+    expected_results:
+      rule_hospitalizacion: UNKNOWN
+      rule_labs_hospitalizacion: UNKNOWN
+  tc_uci_3_criterios:
+    id: tc_uci_3_criterios
+    inputs:
+      insuficiencia_respiratoria: false
+      choque_septico: false
+      falla_renal_aguda_trr: false
+      falla_organica_multisistemica: false
+      hipotension_requiere_lev: false
+      confusion: false
+      hipotermia: false
+      lactato_serico: 0
+      bun: 31
+      fr_respiratoria: 31
+      infiltrados_multilobares: true
+      pao2_fio2: 300
+      plaquetas: 200000
+      leucocitos: 8000
+      compromiso_multilobar: false
+      derrame_pleural_rx: false
+    expected_results:
+      rule_uci_criterio_bun: 'TRUE'
+      rule_uci_criterio_fr: 'TRUE'
+      rule_uci_criterio_multilobares: 'TRUE'
+      rule_hosp_criterio_multilobar_derrame: 'FALSE'
+      rule_uci_criterios_3de: 'TRUE'
+      rule_ingreso_uci_uce: 'TRUE'
+  tc_uci_2_criterios:
+    id: tc_uci_2_criterios
+    inputs:
+      insuficiencia_respiratoria: false
+      choque_septico: false
+      falla_renal_aguda_trr: false
+      falla_organica_multisistemica: false
+      hipotension_requiere_lev: false
+      confusion: false
+      hipotermia: false
+      lactato_serico: 0
+      bun: 31
+      fr_respiratoria: 31
+      infiltrados_multilobares: false
+      pao2_fio2: 300
+      plaquetas: 200000
+      leucocitos: 8000
+    expected_results:
+      rule_uci_criterios_3de: 'FALSE'
+      rule_ingreso_uci_uce: 'FALSE'
+  tc_uci_2_plus_unknown:
+    id: tc_uci_2_plus_unknown
+    inputs:
+      insuficiencia_respiratoria: false
+      choque_septico: false
+      falla_renal_aguda_trr: false
+      falla_organica_multisistemica: false
+      hipotension_requiere_lev: false
+      confusion: false
+      hipotermia: null
+      lactato_serico: 0
+      bun: 31
+      fr_respiratoria: 31
+      infiltrados_multilobares: false
+      pao2_fio2: 300
+      plaquetas: 200000
+      leucocitos: 8000
+    expected_results:
+      rule_uci_criterios_3de: UNKNOWN
+      rule_ingreso_uci_uce: UNKNOWN
+  tc_uci_bullet1_lactato:
+    id: tc_uci_bullet1_lactato
+    inputs:
+      insuficiencia_respiratoria: false
+      choque_septico: false
+      falla_renal_aguda_trr: false
+      falla_organica_multisistemica: false
+      hipotension_requiere_lev: false
+      confusion: false
+      hipotermia: false
+      lactato_serico: 2.5
+      bun: 20
+      fr_respiratoria: 20
+      infiltrados_multilobares: false
+      pao2_fio2: 300
+      plaquetas: 200000
+      leucocitos: 8000
+    expected_results:
+      rule_uci_bullet1: 'TRUE'
+      rule_ingreso_uci_uce: 'TRUE'
+  tc_uci_lactato_equal_2:
+    id: tc_uci_lactato_equal_2
+    inputs:
+      insuficiencia_respiratoria: false
+      choque_septico: false
+      falla_renal_aguda_trr: false
+      falla_organica_multisistemica: false
+      hipotension_requiere_lev: false
+      confusion: false
+      hipotermia: false
+      lactato_serico: 2
+      bun: 20
+      fr_respiratoria: 20
+      infiltrados_multilobares: false
+      pao2_fio2: 300
+      plaquetas: 200000
+      leucocitos: 8000
+    expected_results:
+      rule_uci_bullet1: 'FALSE'
+      rule_ingreso_uci_uce: 'FALSE'
+  tc_hemo_or_single:
+    id: tc_hemo_or_single
+    inputs:
+      descompensacion_enfermedad_base: false
+      inmunosuprimido: true
+      sospecha_germenes_resistentes: false
+      intolerancia_via_oral: false
+      sepsis_origen_pulmonar: false
+      choque_origen_pulmonar: false
+      compromiso_multilobar: false
+      derrame_pleural_rx: false
+      factores_sociales: false
+      requerimiento_oxigeno_suplementario: false
+      curb65_score: 0
+      bun: 31
+      pcr: 5
+      leucocitos: 8000
+      pad: 70
+      fc: 80
+      fr_respiratoria: 20
+      dolor_pleuritico: false
+    expected_results:
+      rule_hemocultivos: 'TRUE'
+  tc_hemo_2of4:
+    id: tc_hemo_2of4
+    inputs:
+      descompensacion_enfermedad_base: false
+      inmunosuprimido: true
+      sospecha_germenes_resistentes: false
+      intolerancia_via_oral: false
+      sepsis_origen_pulmonar: false
+      choque_origen_pulmonar: false
+      compromiso_multilobar: false
+      derrame_pleural_rx: false
+      factores_sociales: false
+      requerimiento_oxigeno_suplementario: false
+      curb65_score: 0
+      bun: 20
+      pcr: 5
+      leucocitos: 8000
+      pad: 55
+      fc: 121
+      fr_respiratoria: 20
+      dolor_pleuritico: false
+    expected_results:
+      rule_hemocultivos: 'TRUE'
+  tc_hemo_1of4:
+    id: tc_hemo_1of4
+    inputs:
+      descompensacion_enfermedad_base: false
+      inmunosuprimido: true
+      sospecha_germenes_resistentes: false
+      intolerancia_via_oral: false
+      sepsis_origen_pulmonar: false
+      choque_origen_pulmonar: false
+      compromiso_multilobar: false
+      derrame_pleural_rx: false
+      factores_sociales: false
+      requerimiento_oxigeno_suplementario: false
+      curb65_score: 0
+      bun: 20
+      pcr: 5
+      leucocitos: 8000
+      pad: 55
+      fc: 80
+      fr_respiratoria: 20
+      dolor_pleuritico: false
+    expected_results:
+      rule_hemocultivos: 'FALSE'
+  tc_hemo_no_hosp:
+    id: tc_hemo_no_hosp
+    inputs:
+      descompensacion_enfermedad_base: false
+      inmunosuprimido: false
+      sospecha_germenes_resistentes: false
+      intolerancia_via_oral: false
+      sepsis_origen_pulmonar: false
+      choque_origen_pulmonar: false
+      compromiso_multilobar: false
+      derrame_pleural_rx: false
+      factores_sociales: false
+      requerimiento_oxigeno_suplementario: false
+      curb65_score: 0
+      bun: 20
+      pcr: 5
+      leucocitos: 8000
+      pad: 70
+      fc: 80
+      fr_respiratoria: 20
+      dolor_pleuritico: false
+    expected_results:
+      rule_hemocultivos: 'FALSE'
+  tc_hemo_hosp_unknown:
+    id: tc_hemo_hosp_unknown
+    inputs:
+      descompensacion_enfermedad_base: false
+      inmunosuprimido: false
+      sospecha_germenes_resistentes: false
+      intolerancia_via_oral: false
+      sepsis_origen_pulmonar: false
+      choque_origen_pulmonar: false
+      compromiso_multilobar: false
+      derrame_pleural_rx: false
+      factores_sociales: false
+      requerimiento_oxigeno_suplementario: false
+      curb65_score: null
+      bun: 20
+      pcr: 5
+      leucocitos: 8000
+      pad: 70
+      fc: 80
+      fr_respiratoria: 20
+      dolor_pleuritico: false
+    expected_results:
+      rule_hemocultivos: UNKNOWN
+  tc_egreso_completo_48:
+    id: tc_egreso_completo_48
+    inputs:
+      afebril_horas: 48
+      pas_sistolica: 91
+      fc: 99
+      fr_respiratoria: 23
+      saturacion_oxigeno: 91
+      po2: 61
+      tolera_via_oral: true
+      comorbilidades_compensadas: true
+      tratamiento_antibiotico_ambulatorio_asegurado: true
+      condiciones_sociales_adecuadas: true
+    expected_results:
+      rule_plan_egreso: 'TRUE'
+  tc_egreso_afebril_47:
+    id: tc_egreso_afebril_47
+    inputs:
+      afebril_horas: 47
+      pas_sistolica: 91
+      fc: 99
+      fr_respiratoria: 23
+      saturacion_oxigeno: 91
+      po2: 61
+      tolera_via_oral: true
+      comorbilidades_compensadas: true
+      tratamiento_antibiotico_ambulatorio_asegurado: true
+      condiciones_sociales_adecuadas: true
+    expected_results:
+      rule_plan_egreso: 'FALSE'
+  tc_egreso_pas_90:
+    id: tc_egreso_pas_90
+    inputs:
+      afebril_horas: 48
+      pas_sistolica: 90
+      fc: 99
+      fr_respiratoria: 23
+      saturacion_oxigeno: 91
+      po2: 61
+      tolera_via_oral: true
+      comorbilidades_compensadas: true
+      tratamiento_antibiotico_ambulatorio_asegurado: true
+      condiciones_sociales_adecuadas: true
+    expected_results:
+      rule_plan_egreso: 'FALSE'
+  tc_egreso_missing_po2:
+    id: tc_egreso_missing_po2
+    inputs:
+      afebril_horas: 48
+      pas_sistolica: 91
+      fc: 99
+      fr_respiratoria: 23
+      saturacion_oxigeno: 91
+      po2: null
+      tolera_via_oral: true
+      comorbilidades_compensadas: true
+      tratamiento_antibiotico_ambulatorio_asegurado: true
+      condiciones_sociales_adecuadas: true
+    expected_results:
+      rule_plan_egreso: UNKNOWN
+  tc_rx_repetir:
+    id: tc_rx_repetir
+    inputs:
+      rx_inicial_sin_hallazgos: true
+      sospecha_alta_neumonia: true
+    expected_results:
+      rule_rx_repetir_48h: 'TRUE'
+  tc_pleural_1cm:
+    id: tc_pleural_1cm
+    inputs:
+      derrame_pleural_unilateral: true
+      espesor_derrame_cm: 1.0
+      sin_causa_aparente: true
+      derrame_pleural_rx: false
+    expected_results:
+      rule_toracentesis_paraneumonico: 'FALSE'
+      rule_labs_derrame_pleural: 'FALSE'
+  tc_pleural_1p2cm:
+    id: tc_pleural_1p2cm
+    inputs:
+      derrame_pleural_unilateral: true
+      espesor_derrame_cm: 1.2
+      sin_causa_aparente: true
+      derrame_pleural_rx: true
+    expected_results:
+      rule_toracentesis_paraneumonico: 'TRUE'
+      rule_labs_derrame_pleural: 'TRUE'
+  tc_gram_sin_dx:
+    id: tc_gram_sin_dx
+    inputs:
+      descompensacion_enfermedad_base: false
+      inmunosuprimido: false
+      sospecha_germenes_resistentes: false
+      intolerancia_via_oral: false
+      sepsis_origen_pulmonar: false
+      choque_origen_pulmonar: false
+      compromiso_multilobar: false
+      derrame_pleural_rx: false
+      factores_sociales: false
+      requerimiento_oxigeno_suplementario: false
+      curb65_score: 0
+      diagnostico_neumonia: false
+    expected_results:
+      rule_gram_cultivo_esputo: 'FALSE'
+  tc_filmarray_profundo:
+    id: tc_filmarray_profundo
+    inputs:
+      descompensacion_enfermedad_base: false
+      inmunosuprimido: true
+      sospecha_germenes_resistentes: false
+      intolerancia_via_oral: false
+      sepsis_origen_pulmonar: false
+      choque_origen_pulmonar: false
+      compromiso_multilobar: false
+      derrame_pleural_rx: false
+      factores_sociales: false
+      requerimiento_oxigeno_suplementario: false
+      curb65_score: 0
+      diagnostico_confirmado_neumonia: true
+      sin_sospecha_sarscov2: true
+      no_expectora: false
+    expected_results:
+      rule_filmarray: 'TRUE'
+      rule_filmarray_panel_profundo: 'TRUE'
+      rule_filmarray_panel_hisopado: 'FALSE'
+  tc_filmarray_overlap:
+    id: tc_filmarray_overlap
+    inputs:
+      descompensacion_enfermedad_base: false
+      inmunosuprimido: true
+      sospecha_germenes_resistentes: false
+      intolerancia_via_oral: false
+      sepsis_origen_pulmonar: false
+      choque_origen_pulmonar: false
+      compromiso_multilobar: false
+      derrame_pleural_rx: false
+      factores_sociales: false
+      requerimiento_oxigeno_suplementario: false
+      curb65_score: 0
+      diagnostico_confirmado_neumonia: true
+      sin_sospecha_sarscov2: true
+      no_expectora: true
+    expected_results:
+      rule_filmarray: 'TRUE'
+      rule_filmarray_panel_profundo: 'TRUE'
+      rule_filmarray_panel_hisopado: 'TRUE'
+  tc_definicion_nac_comunidad:
+    id: tc_definicion_nac_comunidad
+    inputs:
+      hospitalizado: false
+      sintomas_dentro_48h_ingreso: false
+      sintomas_respiratorios_generales: true
+      alteracion_radiologica: true
+      sin_otras_causas_evidentes: true
+    expected_results:
+      rule_definicion_nac: 'TRUE'
+  tc_definicion_nac_48h:
+    id: tc_definicion_nac_48h
+    inputs:
+      hospitalizado: true
+      sintomas_dentro_48h_ingreso: true
+      sintomas_respiratorios_generales: true
+      alteracion_radiologica: true
+      sin_otras_causas_evidentes: true
+    expected_results:
+      rule_definicion_nac: 'TRUE'
+  tc_definicion_nac_tardio:
+    id: tc_definicion_nac_tardio
+    inputs:
+      hospitalizado: true
+      sintomas_dentro_48h_ingreso: false
+      sintomas_respiratorios_generales: true
+      alteracion_radiologica: true
+      sin_otras_causas_evidentes: true
+    expected_results:
+      rule_definicion_nac: 'FALSE'
+validation_items:
+  vi_tratamiento_empirico_gap:
+    id: vi_tratamiento_empirico_gap
+    category: gap
+    description: La página 4 termina en el encabezado 'TRATAMIENTO ANTIBIÓTICO EMPÍRICO:'
+      sin contenido y sin imágenes en las páginas 4 y 5; el control de cambios de
+      la versión 9 menciona 'tratamiento empírico según factores de riesgo'. El contenido
+      no está disponible en la capa de texto extraída y no se reconstruye.
+    severity: high
+    related_ids:
+    - frag_p4_tratamiento_heading
+    - frag_p7_control_cambios_v09
+    status: OPEN
+  vi_algoritmos_imagen:
+    id: vi_algoritmos_imagen
+    category: gap
+    description: La página 6 contiene el encabezado 'ALGORITMOS DE DIAGNÓSTICO Y MANEJO:'
+      seguido de una imagen embebida no extraíble como texto; los algoritmos no se
+      representan ni se reconstruyen.
+    severity: high
+    related_ids:
+    - frag_p6_algoritmos
+    status: OPEN
+  vi_curb65_componentes:
+    id: vi_curb65_componentes
+    category: unresolved
+    description: La fuente referencia 'Escala de severidad CURB-65 ≥2' sin definir
+      los componentes ni el cálculo de la escala; curb65_score se modela como dato
+      externo no computable desde la fuente.
+    severity: high
+    related_ids:
+    - curb65_score
+    - rule_hosp_criterio_curb65
+    status: OPEN
+  vi_filmarray_seleccion_panel:
+    id: vi_filmarray_seleccion_panel
+    category: limitation
+    description: Las indicaciones de panel (502828 sin sospecha SARSCOV2; 502162 en
+      quienes no expectoran) pueden satisfacerse simultáneamente; el modelo canónico
+      no tiene semántica de selección/exclusividad y la fuente no provee lógica explícita
+      para resolverlo. Las reglas de panel son declarativas y sin acciones.
+    severity: medium
+    related_ids:
+    - rule_filmarray_panel_profundo
+    - rule_filmarray_panel_hisopado
+    status: OPEN
+  vi_definicion_nac_operacionalizacion:
+    id: vi_definicion_nac_operacionalizacion
+    category: ambiguity
+    description: Componentes de la definición de NAC ('sin otras causas evidentes',
+      'síntomas respiratorios y/o generales') son juicios clínicos que la fuente no
+      operacionaliza; se representan como banderas booleanas directas.
+    severity: low
+    related_ids:
+    - rule_definicion_nac
+    - sin_otras_causas_evidentes
+    status: OPEN
+  vi_uci_bullet1_parsing:
+    id: vi_uci_bullet1_parsing
+    category: ambiguity
+    description: El agrupamiento por comas del primer criterio de UCI-UCE se interpretó
+      como OR de cinco alternativas; la interpretación está documentada en la procedencia
+      de rule_uci_bullet1.
+    severity: low
+    related_ids:
+    - rule_uci_bullet1
+    status: OPEN
+  vi_temporal_no_representable:
+    id: vi_temporal_no_representable
+    category: limitation
+    description: El intervalo 'repetir radiografía en 48 horas', la 'cita de revisión
+      a las 4 semanas' y el vínculo 'al momento del alta' son programaciones futuras
+      que la semántica temporal mínima (duraciones numéricas) no representa; se transportan
+      como datos declarativos en payloads y notas.
+    severity: low
+    related_ids:
+    - rule_rx_repetir_48h
+    - rule_plan_egreso
+    status: OPEN
+  vi_unidades_no_declaradas:
+    id: vi_unidades_no_declaradas
+    category: ambiguity
+    description: La fuente no declara unidades para lactato sérico, plaquetas, leucocitos,
+      PO2 y PaO2/FiO2; las unidades se dejan ausentes en el modelo.
+    severity: low
+    related_ids:
+    - lactato_serico
+    - plaquetas
+    - leucocitos
+    - po2
+    - pao2_fio2
+    status: OPEN
+fragments:
+  frag_p1_metadata:
+    id: frag_p1_metadata
+    document_id: doc-3a1654757801b7b6
+    page: 1
+    section: PROTOCOLO
+    verbatim_text: 'PROTOCOLO DE PRÁCTICA CLÍNICA DE NEUMONÍA ADQUIRIDA EN COMUNIDAD
+      Proceso: Cuidado y tratamiento Código: CT-PL-193 Versión: 9 Fecha aprobación:
+      12-ago-2024'
+  frag_p1_definicion_nac:
+    id: frag_p1_definicion_nac
+    document_id: doc-3a1654757801b7b6
+    page: 1
+    section: PROTOCOLO
+    verbatim_text: La neumonía adquirida en comunidad (NAC) es aquella que se presenta
+      en aparicion de sintomas respiratorios y/o sintomas generales, asociados a alteración
+      en un estudio radiológico del pulmón sin otras causas evidentes, en pacientes
+      no hospitalizados o aquellos hospitalizados en quienes los sintomas o signos
+      de infeccion se presentan dentro de las primeras 48 horas de su ingreso hospitalario
+  frag_p3_rx_torax:
+    id: frag_p3_rx_torax
+    document_id: doc-3a1654757801b7b6
+    page: 3
+    section: 1. RECOMENDACIONES PARA EL DIAGNÓSTICO
+    verbatim_text: 'El diagnóstico de neumonía se basa en un cuadro clínico compatible
+      asociado a un infiltrado pulmonar de reciente aparición en la radiografía de
+      tórax que muestre al menos uno de los siguientes hallazgos: Infiltrados alveolares
+      o intersticiales segmentarios o infiltrados en uno o más lóbulos y que no estaban
+      presentes previamente. La radiografía de tórax se hará en los pacientes con
+      signos y síntomas respiratorios bajos (tos, expec toración, dolor pleurítico,
+      taquipnea, disnea, desaturación y/o alteraciones auscultatorias compatibles).'
+  frag_p3_rx_repetir:
+    id: frag_p3_rx_repetir
+    document_id: doc-3a1654757801b7b6
+    page: 3
+    section: 1. RECOMENDACIONES PARA EL DIAGNÓSTICO
+    verbatim_text: En el caso que la radiografía inicial no muestre hallazgos pero
+      exista una sospecha alta de neumonía debe repetirse la radiografía de tórax
+      en 48 horas.
+  frag_p3_tc:
+    id: frag_p3_tc
+    document_id: doc-3a1654757801b7b6
+    page: 3
+    section: 1. RECOMENDACIONES PARA EL DIAGNÓSTICO
+    verbatim_text: 'Tomografía de tórax (IIA): Sólo está indicada en pacientes con
+      alta pro babilidad de neumonía por clínica, con radiografía de tórax no concluyente
+      y en quien es prioritario hacer el diagnóstico de neumonía o se sospeche alguna
+      complicación (neumonía necro sante, absceso pulmonar o empiema tabicado).'
+  frag_p3_tc_neutropenia:
+    id: frag_p3_tc_neutropenia
+    document_id: doc-3a1654757801b7b6
+    page: 3
+    section: 1. RECOMENDACIONES PARA EL DIAGNÓSTICO
+    verbatim_text: En los casos de neutropenia febril se solicitará tomografía de
+      tórax simple en todos los pacientes con sintomas respiratorios bajos.
+  frag_p3_labs_sospecha:
+    id: frag_p3_labs_sospecha
+    document_id: doc-3a1654757801b7b6
+    page: 3
+    section: 1. RECOMENDACIONES PARA EL DIAGNÓSTICO
+    verbatim_text: Para definir la necesidad de hospitalización, se hará hemoleucograma
+      y nitrógeno ureico en todo paciente con so specha de neumonía.
+  frag_p3_labs_hospitalizacion:
+    id: frag_p3_labs_hospitalizacion
+    document_id: doc-3a1654757801b7b6
+    page: 3
+    section: 1. RECOMENDACIONES PARA EL DIAGNÓSTICO
+    verbatim_text: 'En pacientes con indicación de hospitalización se adicionarán:
+      proteína C reactiva, creatinina, lactato y sodio.'
+  frag_p3_labs_shock:
+    id: frag_p3_labs_shock
+    document_id: doc-3a1654757801b7b6
+    page: 3
+    section: 1. RECOMENDACIONES PARA EL DIAGNÓSTICO
+    verbatim_text: En pacientes con choque séptico, sepsis grave o falla orgánica
+      múltiple se realizarán además pruebas de coagulación, AST, A LT, bilirrubinas
+      y gases arteriales.
+  frag_p3_labs_gases_desaturacion:
+    id: frag_p3_labs_gases_desaturacion
+    document_id: doc-3a1654757801b7b6
+    page: 3
+    section: 1. RECOMENDACIONES PARA EL DIAGNÓSTICO
+    verbatim_text: También se solicitarán gases arteriales en pacientes con desaturación.
+  frag_p3_labs_derrame:
+    id: frag_p3_labs_derrame
+    document_id: doc-3a1654757801b7b6
+    page: 3
+    section: 1. RECOMENDACIONES PARA EL DIAGNÓSTICO
+    verbatim_text: En pacientes con derrame pleural e indicación de toracentesis se
+      solicitarán además deshidrogenasa láctica y proteínas totales en suero para
+      la adecuada interpretación de los hallazgos en el líquido pleural
+  frag_p3_hemocultivos:
+    id: frag_p3_hemocultivos
+    document_id: doc-3a1654757801b7b6
+    page: 3
+    section: 1. RECOMENDACIONES PARA EL DIAGNÓSTICO
+    verbatim_text: 'Deben tomarse en los pacientes hospitalizados por neumonía que
+      presenten una de las siguientes condiciones, nitrógeno ureico en sangre (BUN)
+      mayor a 30 mg/dL, Proteína C Reactiva (PCR) mayor a 15 mg/dL o Leucocitosis
+      mayor a 15000; o en los pacientes que presenten dos de las siguientes condiciones
+      : Presión Arterial Diastólica menor a 60 mmHg, Frecuencia Cardiaca mayor a 120
+      lpm, Frecuencia Respiratoria mayor a 30 rpm o Dolor Pleu rítico.'
+  frag_p3_esputo_gram:
+    id: frag_p3_esputo_gram
+    document_id: doc-3a1654757801b7b6
+    page: 3
+    section: 1. RECOMENDACIONES PARA EL DIAGNÓSTICO
+    verbatim_text: Deben obtenerse muestras de esputo para tinción y cultivo en todo
+      paciente con diagnóstico de neumonía e indicación de hospitalización.
+  frag_p3_esputo_inducido:
+    id: frag_p3_esputo_inducido
+    document_id: doc-3a1654757801b7b6
+    page: 3
+    section: 1. RECOMENDACIONES PARA EL DIAGNÓSTICO
+    verbatim_text: Se tomará la muestra por esputo inducido por nebulización de 15-20
+      minutos con solución salina hipertónica (3%) en pacientes que no pueden recoger
+      la muestra de forma espontánea.
+  frag_p3_esputo_calidad:
+    id: frag_p3_esputo_calidad
+    document_id: doc-3a1654757801b7b6
+    page: 3
+    section: 1. RECOMENDACIONES PARA EL DIAGNÓSTICO
+    verbatim_text: Se define una muestra de esputo de buena calidad cuando tiene <
+      de 10 células epiteliales y más de 25 leucocitos por campo.
+  frag_p3_filmarray:
+    id: frag_p3_filmarray
+    document_id: doc-3a1654757801b7b6
+    page: 3
+    section: 1. RECOMENDACIONES PARA EL DIAGNÓSTICO
+    verbatim_text: 'Filmarray: Prueba de ácidos nucleicos diseñada para la detección
+      rápida y simultánea de virus y bacterias respiratorias, el cual se debe solicitar
+      en todo paciente adulto con diagnóstico confirmado de neumonía e indicación
+      de hospitalización.'
+  frag_p4_panel_profundo:
+    id: frag_p4_panel_profundo
+    document_id: doc-3a1654757801b7b6
+    page: 4
+    section: 2. RECOMENDACIONES PARA EL MANEJO
+    verbatim_text: 'Diagnóstico molecular para panel de neumonía filmarray (cod 502828):
+      como primera opción. Muestra tomada de esputo, aspirado traqueal o lavado broncoalveolar
+      en pacientes sin sospecha de neumonia por SARSCOV2.'
+  frag_p4_panel_hisopado:
+    id: frag_p4_panel_hisopado
+    document_id: doc-3a1654757801b7b6
+    page: 4
+    section: 2. RECOMENDACIONES PARA EL MANEJO
+    verbatim_text: 'Diagnóstico molecular para patógenos respiratorios (cod 502162):
+      muestra tomada de hisopado nasofaríngeo en pacientes que no espectoran.'
+  frag_p4_liquido_pleural:
+    id: frag_p4_liquido_pleural
+    document_id: doc-3a1654757801b7b6
+    page: 4
+    section: 2. RECOMENDACIONES PARA EL MANEJO
+    verbatim_text: Todo paciente con derrame pleural de presunto origen paraneumónico
+      (derrame pleural unilateral de más de 1 centímetro de espesor sin una causa
+      aparente), debe ser llevado a toracentesis diagnóstica.
+  frag_p4_hosp_01:
+    id: frag_p4_hosp_01
+    document_id: doc-3a1654757801b7b6
+    page: 4
+    section: 2. RECOMENDACIONES PARA EL MANEJO
+    verbatim_text: Paciente con descompensación de enfermedad de base
+  frag_p4_hosp_02:
+    id: frag_p4_hosp_02
+    document_id: doc-3a1654757801b7b6
+    page: 4
+    section: 2. RECOMENDACIONES PARA EL MANEJO
+    verbatim_text: Pacientes inmunosuprimidos
+  frag_p4_hosp_03:
+    id: frag_p4_hosp_03
+    document_id: doc-3a1654757801b7b6
+    page: 4
+    section: 2. RECOMENDACIONES PARA EL MANEJO
+    verbatim_text: Sospecha de gérmenes resistentes
+  frag_p4_hosp_04:
+    id: frag_p4_hosp_04
+    document_id: doc-3a1654757801b7b6
+    page: 4
+    section: 2. RECOMENDACIONES PARA EL MANEJO
+    verbatim_text: Intolerancia a la vía oral
+  frag_p4_hosp_05:
+    id: frag_p4_hosp_05
+    document_id: doc-3a1654757801b7b6
+    page: 4
+    section: 2. RECOMENDACIONES PARA EL MANEJO
+    verbatim_text: Sepsis o choque de origen pulmonar
+  frag_p4_hosp_06:
+    id: frag_p4_hosp_06
+    document_id: doc-3a1654757801b7b6
+    page: 4
+    section: 2. RECOMENDACIONES PARA EL MANEJO
+    verbatim_text: Compromiso multilobar o derrame pleural en los rayos X de tórax
+  frag_p4_hosp_07:
+    id: frag_p4_hosp_07
+    document_id: doc-3a1654757801b7b6
+    page: 4
+    section: 2. RECOMENDACIONES PARA EL MANEJO
+    verbatim_text: Escala de severidad CURB-65 ≥2
+  frag_p4_hosp_08:
+    id: frag_p4_hosp_08
+    document_id: doc-3a1654757801b7b6
+    page: 4
+    section: 2. RECOMENDACIONES PARA EL MANEJO
+    verbatim_text: Factores sociales que afecten el cumplimiento y seguimiento del
+      tratamiento
+  frag_p4_hosp_09:
+    id: frag_p4_hosp_09
+    document_id: doc-3a1654757801b7b6
+    page: 4
+    section: 2. RECOMENDACIONES PARA EL MANEJO
+    verbatim_text: Requerimiento de oxigeno suplementario
+  frag_p4_uci_bullet1:
+    id: frag_p4_uci_bullet1
+    document_id: doc-3a1654757801b7b6
+    page: 4
+    section: 2. RECOMENDACIONES PARA EL MANEJO
+    verbatim_text: Insuficiencia respiratoria, choque séptico o lactato sérico mayor
+      de 2, falla renal aguda que requiere terapia de reemplazo renal o falla orgánica
+      multisistémica.
+  frag_p4_uci_3de:
+    id: frag_p4_uci_3de
+    document_id: doc-3a1654757801b7b6
+    page: 4
+    section: 2. RECOMENDACIONES PARA EL MANEJO
+    verbatim_text: 'Paciente que cumpla con 3 o más criterios de: - BUN > 30 - FR
+      > 30 - Hipotensión que requiera LEV agresivos - Infiltrados multilobares - PaO2/FiO2
+      menores de 250 - Confusión - Hipotermia - Plaquetas menor de 100.000 - Leucocitos
+      menor de 4000'
+  frag_p4_tratamiento_heading:
+    id: frag_p4_tratamiento_heading
+    document_id: doc-3a1654757801b7b6
+    page: 4
+    section: 2. RECOMENDACIONES PARA EL MANEJO
+    verbatim_text: 'TRATAMIENTO ANTIBIÓTICO EMPÍRICO:'
+  frag_p5_plan_egreso:
+    id: frag_p5_plan_egreso
+    document_id: doc-3a1654757801b7b6
+    page: 5
+    verbatim_text: Se dará de alta el paciente cuando lleve 48 horas afebril, estable
+      en su condicion hemodinamica (Presion arterial sistolica > 90mmHg, frecuencia
+      cardiaca <100, frecuencia respiratoria <24, saturación de oxígeno mayor de 90,
+      PO2 mayor de 60), tolere la vía oral, las comorbilidades estén compensadas,
+      se asegure la administración de tratamiento antibiótico ambulatorio y las condiciones
+      sociales lo permitan.
+  frag_p6_alta_instrucciones:
+    id: frag_p6_alta_instrucciones
+    document_id: doc-3a1654757801b7b6
+    page: 6
+    verbatim_text: Al momento del alta se indicarán al paciente los signos y síntomas
+      que sugieren recaída de la infección, específicamente fiebre, disnea, dolor
+      torácico. Se dará cita de revisión con medicina interna a las 4 semanas del
+      alta.
+  frag_p6_algoritmos:
+    id: frag_p6_algoritmos
+    document_id: doc-3a1654757801b7b6
+    page: 6
+    section: ALGORITMOS DE DIAGNÓSTICO Y MANEJO
+    verbatim_text: 'ALGORITMOS DE DIAGNÓSTICO Y MANEJO:'
+  frag_p7_control_cambios_v09:
+    id: frag_p7_control_cambios_v09
+    document_id: doc-3a1654757801b7b6
+    page: 7
+    section: CONTROL CAMBIOS
+    verbatim_text: 09 12-ago-2024 Actualización del protocolo institucional para manejo
+      de neumonía adquirida en comunidad en pacientes adultos, indicaciones de pruebas
+      moleculares, tratamiento empírico según factores de riesgo y algoritmo de diagnóstico
+      y tratamiento
+documents:
+  doc-3a1654757801b7b6:
+    document_id: doc-3a1654757801b7b6
+    filename: CT-PL-193 PROTOCOLO PRACTICA CLINICA NEUMONIA ADQUIRIDA EN COMUNIDAD
+      -NAC (v9-ago-2024) (5).pdf
+    sha256: 3a1654757801b7b618661f846f8335ced6fb9e388891d6bca96f1cd81d6f5882
+    file_format: pdf
+    byte_size: 1089336

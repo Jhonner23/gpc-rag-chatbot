@@ -3,10 +3,11 @@
 Flujo (dentro del grafo, ver agents/graph.py):
 
 1. ``tree_prepare_node`` (nodo normal, corre una sola vez): decide que
-   protocolo institucional aplica (NAC/ITU/ninguno) y hace una primera
-   extraccion de variables desde la pregunta original del usuario, con un
-   LLM. Si se repite el nodo `tree_agent` por un `interrupt()`, este nodo NO
-   se vuelve a ejecutar (LangGraph solo reproduce el nodo que quedo pausado).
+   protocolo institucional aplica (descubierto dinamicamente, ver
+   agents/protocol_registry.py) y hace una primera extraccion de variables
+   desde la pregunta original del usuario, con un LLM. Si se repite el nodo
+   `tree_agent` por un `interrupt()`, este nodo NO se vuelve a ejecutar
+   (LangGraph solo reproduce el nodo que quedo pausado).
 
 2. ``tree_agent_node`` (nodo con `interrupt()`): evalua el Case contra el
    motor determinista de `cpg_tree`; si ninguna regla EXTRACTED da MATCHED,
@@ -18,6 +19,10 @@ Solo se acepta como respuesta del arbol una regla con
 `validation_status == EXTRACTED` (nunca UNRESOLVED): esa es la auditoria que
 el usuario pidio explicitamente ("un agente que recorra el arbol y revise su
 resultado").
+
+Los protocolos (que paquetes/package.yaml existen) se descubren en tiempo de
+ejecucion via `protocol_registry` -- agregar un protocolo nuevo es copiar un
+`package.yaml` a `agents/protocols/<id>/<version>/`, sin tocar este archivo.
 """
 
 from __future__ import annotations
@@ -35,39 +40,18 @@ from cpg_tree.engine import Case, evaluate_package
 from cpg_tree.knowledge.enums import VariableType
 from cpg_tree.knowledge.protocol import ProtocolVersion
 from cpg_tree.knowledge.variables import Variable
-from cpg_tree.protocols.itu_v06 import build_itu_package
-from cpg_tree.protocols.nac_v09 import build_nac_package
 
+from gpc_rag.agents.protocol_registry import (
+    available_protocol_ids,
+    describe_available_protocols,
+    get_package,
+)
 from gpc_rag.agents.state import AgentState
 from gpc_rag.agents.tree_support import matched_validated_rules, rank_blocking_variables
 
 logger = logging.getLogger(__name__)
 
 MAX_QUESTIONS = 8
-
-_PACKAGE_BUILDERS = {
-    "NAC": build_nac_package,
-    "ITU": build_itu_package,
-}
-
-_PROTOCOL_SELECT_SYSTEM_PROMPT = """\
-Eres un clasificador que decide a cual protocolo clinico institucional \
-pertenece una pregunta, entre estos dos:
-
-- NAC: Protocolo de neumonia adquirida en comunidad (diagnostico, \
-severidad/CURB-65, criterios de ingreso a UCI, manejo ambulatorio vs \
-hospitalario, alta).
-- ITU: Protocolo de infeccion del tracto urinario y bacteriuria \
-asintomatica en poblacion adulta (ITU alta/baja, pielonefritis, embarazo, \
-cateter, tratamiento).
-
-Si la pregunta no corresponde claramente a ninguno de los dos protocolos, \
-responde NINGUNO.
-
-Responde UNICAMENTE con un objeto JSON de esta forma exacta, sin texto \
-adicional:
-{"protocol": "NAC"} o {"protocol": "ITU"} o {"protocol": "NINGUNO"}
-"""
 
 _EXTRACT_SYSTEM_PROMPT_TEMPLATE = """\
 Eres un extractor de datos clinicos. A partir de la pregunta de un usuario, \
@@ -90,13 +74,48 @@ _SI_WORDS = {"si", "sí", "s", "yes", "y", "verdadero", "true", "positivo", "afi
 _NO_WORDS = {"no", "n", "false", "falso", "negativo"}
 
 
+def _build_protocol_select_prompt() -> str:
+    """Construye el prompt del clasificador a partir de los protocolos que
+    `protocol_registry` encuentre -- nunca hardcodea nombres de protocolo."""
+    protocols = describe_available_protocols()
+    lines = [
+        "Eres un clasificador que decide a cual protocolo clinico "
+        "institucional pertenece una pregunta, entre los siguientes "
+        "(identificados por su id exacto):",
+        "",
+    ]
+    for protocol in protocols:
+        description = protocol.description or protocol.name
+        lines.append(f"- {protocol.id}: {protocol.name} ({description})")
+    lines.append("")
+    lines.append(
+        "Si la pregunta no corresponde claramente a ninguno de estos "
+        "protocolos, responde NINGUNO."
+    )
+    lines.append("")
+    lines.append(
+        "Responde UNICAMENTE con un objeto JSON de esta forma exacta, sin "
+        "texto adicional:"
+    )
+    example = " o ".join(f'{{"protocol": "{p.id}"}}' for p in protocols)
+    lines.append(f"{example} o {{\"protocol\": \"NINGUNO\"}}")
+    return "\n".join(lines)
+
+
 def select_protocol(question: str, cfg: DictConfig) -> str | None:
-    """Devuelve "NAC", "ITU", o None si ningun protocolo institucional aplica."""
+    """Devuelve el id del protocolo institucional detectado, o None si
+    ninguno aplica. La lista de candidatos es dinamica (ver
+    protocol_registry.describe_available_protocols)."""
+    valid_ids = set(available_protocol_ids())
+    if not valid_ids:
+        logger.warning("Agente arbol: no hay protocolos vendorizados en agents/protocols/.")
+        return None
+
     client = Client(host=cfg.env.ollama_url)
     response = client.chat(
         model=cfg.agents.coordinator_model,
         messages=[
-            {"role": "system", "content": _PROTOCOL_SELECT_SYSTEM_PROMPT},
+            {"role": "system", "content": _build_protocol_select_prompt()},
             {"role": "user", "content": question},
         ],
         format="json",
@@ -106,12 +125,12 @@ def select_protocol(question: str, cfg: DictConfig) -> str | None:
     content = response["message"]["content"].strip()
     try:
         parsed = json.loads(content)
-        protocol = str(parsed.get("protocol", "")).strip().upper()
+        protocol_id = str(parsed.get("protocol", "")).strip().upper()
     except (json.JSONDecodeError, AttributeError):
         logger.warning("Agente arbol: no se pudo parsear la seleccion de protocolo (%r)", content)
         return None
-    if protocol in _PACKAGE_BUILDERS:
-        return protocol
+    if protocol_id in valid_ids:
+        return protocol_id
     return None
 
 
@@ -264,11 +283,6 @@ def _render_tree_result(package: ProtocolVersion, rule_eval: Any) -> dict[str, A
         answer_lines.append("")
         answer_lines.extend(f"- {line}" for line in action_lines)
     elif citations:
-        # Algunas reglas de cpg_tree son "criterios" (un hallazgo que cuenta
-        # para una decision) sin una accion/recomendacion de texto asociada
-        # (action_refs vacio). En ese caso no dejamos la respuesta vacia --
-        # mostramos el texto exacto de la guia que hizo match, que es
-        # justamente lo que el usuario necesita ver.
         answer_lines.append("")
         answer_lines.append("Se cumple el siguiente criterio segun la guia:")
         answer_lines.extend(f"- \"{c['verbatim_text']}\"" for c in citations)
@@ -296,7 +310,7 @@ def tree_prepare_node(state: AgentState, cfg: DictConfig) -> dict:
         logger.info("Agente arbol: ningun protocolo institucional aplica a esta pregunta.")
         return {"tree_protocol_id": None, "tree_initial_values": {}}
 
-    package = _PACKAGE_BUILDERS[protocol_id]()
+    package = get_package(protocol_id)
     initial_values = extract_case_values(state["question"], package, cfg)
     logger.info("Agente arbol: protocolo=%s valores_iniciales=%s", protocol_id, initial_values)
     return {"tree_protocol_id": protocol_id, "tree_initial_values": initial_values}
@@ -308,7 +322,7 @@ def tree_agent_node(state: AgentState, cfg: DictConfig) -> dict:  # noqa: ARG001
     if not protocol_id:
         return {"tree_result": None, "tree_questions_asked": 0}
 
-    package = _PACKAGE_BUILDERS[protocol_id]()
+    package = get_package(protocol_id)
     case_values: dict[str, Any] = dict(state.get("tree_initial_values") or {})
     skipped: set[str] = set()
     questions_asked = 0

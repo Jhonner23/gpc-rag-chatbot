@@ -1068,7 +1068,7 @@ dependencies = [
     { name = "ragas" },
     { name = "rank-bm25" },
     { name = "sentence-transformers" },
-    { name = "side-project-cpg-tree-mvp" },
+    { name = "side-project-cpg-tree-mvp-3" },
     { name = "torch", version = "2.14.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
     { name = "torch", version = "2.14.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform != 'darwin'" },
     { name = "uvicorn", extra = ["standard"] },
@@ -1109,7 +1109,7 @@ requires-dist = [
     { name = "ragas", specifier = "==0.2.15" },
     { name = "rank-bm25", specifier = ">=0.2.2" },
     { name = "sentence-transformers", specifier = ">=6.0.1" },
-    { name = "side-project-cpg-tree-mvp", git = "https://github.com/elKiruvi/Side_Project_CPG_Tree_MVP.git" },
+    { name = "side-project-cpg-tree-mvp-3", git = "https://github.com/elKiruvi/Side_Project_CPG_Tree_MVP_3.git" },
     { name = "torch", specifier = ">=2.0", index = "https://download.pytorch.org/whl/cpu" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.52.4" },
 ]
@@ -4374,10 +4374,12 @@ wheels = [
 ]
 
 [[package]]
-name = "side-project-cpg-tree-mvp"
+name = "side-project-cpg-tree-mvp-3"
 version = "0.1.0"
-source = { git = "https://github.com/elKiruvi/Side_Project_CPG_Tree_MVP.git#5e0da4ec0e577a3f5883d4a281948831418d5f3b" }
+source = { git = "https://github.com/elKiruvi/Side_Project_CPG_Tree_MVP_3.git#98ee9236c9f6c2cbf596e36dbbe7ba612b56a30f" }
 dependencies = [
+    { name = "pydantic" },
+    { name = "pymupdf" },
     { name = "pypdf" },
     { name = "pyyaml" },
 ]

@@ -189,7 +189,7 @@ def test_tree_match_is_preferred_over_rag_answer() -> None:
     ):
         mock_coord_client.return_value.chat.return_value = _chat_response('{"verdict": "ADECUADA"}')
         mock_tree_client.return_value.chat.side_effect = [
-            _chat_response('{"protocol": "NAC"}'),
+            _chat_response('{"protocol": "CT-PL-193"}'),
             tree_extraction,
         ]
         mock_eval_client.return_value.chat.return_value = _chat_response('{"verdict": "OK"}')
@@ -223,7 +223,7 @@ def test_tree_wizard_pauses_and_resumes_with_interrupt() -> None:
         # Protocolo NAC, pero la extraccion inicial no saca ningun dato ->
         # el agente arbol tiene que empezar a preguntar.
         mock_tree_client.return_value.chat.side_effect = [
-            _chat_response('{"protocol": "NAC"}'),
+            _chat_response('{"protocol": "CT-PL-193"}'),
             _chat_response("{}"),
         ]
 

@@ -26,7 +26,7 @@ dependencies = [
     "ragas==0.2.15",
     "rank-bm25>=0.2.2",
     "sentence-transformers>=6.0.1",
-    "side-project-cpg-tree-mvp",
+    "side-project-cpg-tree-mvp-3",
     "torch>=2.0",
     "uvicorn[standard]>=0.52.4",
 ]
@@ -86,4 +86,4 @@ explicit = true
 
 [tool.uv.sources]
 torch = [{ index = "pytorch-cpu" }]
-side-project-cpg-tree-mvp = { git = "https://github.com/elKiruvi/Side_Project_CPG_Tree_MVP.git" }
+side-project-cpg-tree-mvp-3 = { git = "https://github.com/elKiruvi/Side_Project_CPG_Tree_MVP_3.git" }

@@ -1,0 +1,4347 @@
+protocol:
+  id: CT-PL-197
+  name: Protocolo infección del tracto urinario (ITU) y bacteriuria asintomática en
+    población adulta
+  description: Atención de pacientes adultos con diagnóstico de bacteriuria asintomática
+    o infección del tracto urinario
+version:
+  version: v06
+  approval_date: '2025-09-30'
+  change_summary: Se cambia nombre a protocolo Infección del Tracto Urinario Adultos.
+    Se cambia definición de ITU complicada. Se actualizan recomendaciones de manejo
+    según clasificación de ITU y factores de riesgo. Se dan consideraciones del manejo
+    de la ITU en la gestante.
+variables:
+  bacteriuria_significativa:
+    id: bacteriuria_significativa
+    label: Bacteriuria significativa (recuento significativo de colonias en orina)
+    type: BOOLEAN
+    description: Criterio de laboratorio de la fuente; no es un umbral fijo de UFC.
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p1_def_ba
+      - frag_p1_def_itu
+      - frag_p1_def_itu_bajo
+      - frag_p1_def_itu_alto
+      notes: La fuente usa 'recuento significativo de colonias bacterianas en muestras
+        de orina' (definiciones de BA e ITU) y 'bacteriuria significativa' (definiciones
+        de ITU bajo y alto) para el mismo criterio de laboratorio; concepto canónico
+        normalizado sin umbral universal (los umbrales numéricos de la página 3 son
+        específicos por contexto).
+  sin_signos_sintomas_itu:
+    id: sin_signos_sintomas_itu
+    label: Sin signos o síntomas atribuibles a ITU
+    type: BOOLEAN
+    description: Negativo directo de la fuente; complementario de signos_sintomas_itu
+      (las pruebas nunca afirman ambos a la vez).
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_ba
+  mujer_no_embarazada:
+    id: mujer_no_embarazada
+    label: Mujer no embarazada
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_ba_cultivos
+  urocultivos_2_mismo_patron:
+    id: urocultivos_2_mismo_patron
+    label: Dos urocultivos con el mismo patógeno y perfil de sensibilidad
+    type: BOOLEAN
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p1_def_ba_cultivos
+      notes: Colapsa '2 urocultivos con el mismo patógeno y perfil de sensibilidad'.
+  hombre:
+    id: hombre
+    label: Hombre
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_ba_cultivos
+  urocultivo_unico:
+    id: urocultivo_unico
+    label: Un urocultivo
+    type: BOOLEAN
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p1_def_ba_cultivos
+      notes: Colapsa '1 [urocultivo] en hombres y pacientes gestantes'.
+  ausencia_piuria_sedimento:
+    id: ausencia_piuria_sedimento
+    label: Ausencia de piuria en el sedimento
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_ba_piuria
+  poblacion_pediatrica:
+    id: poblacion_pediatrica
+    label: Población pediátrica
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_ba_piuria
+  signos_sintomas_itu:
+    id: signos_sintomas_itu
+    label: Signos o síntomas atribuibles a ITU
+    type: BOOLEAN
+    description: Complementario de sin_signos_sintomas_itu.
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_itu
+  alteracion_estructural:
+    id: alteracion_estructural
+    label: Alteración estructural de las vías urinarias
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_itu_complicada_estructural
+  alteracion_funcional:
+    id: alteracion_funcional
+    label: Alteración funcional de las vías urinarias
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_itu_complicada_estructural
+  infeccion_aguda_vejiga_uretra:
+    id: infeccion_aguda_vejiga_uretra
+    label: Infección aguda de la vejiga y/o la uretra
+    type: BOOLEAN
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p1_def_itu_bajo
+      notes: Colapsa 'Infección aguda de la vejiga y/o la uretra'.
+  sin_leucorrea:
+    id: sin_leucorrea
+    label: Ausencia de leucorrea
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_itu_bajo
+  sin_irritacion_vaginal:
+    id: sin_irritacion_vaginal
+    label: Ausencia de irritación vaginal
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_itu_bajo
+  sin_fiebre:
+    id: sin_fiebre
+    label: Ausencia de fiebre
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_itu_bajo
+  sin_dolor_lumbar:
+    id: sin_dolor_lumbar
+    label: Ausencia de dolor lumbar
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_itu_bajo
+  sin_compromiso_sistemico:
+    id: sin_compromiso_sistemico
+    label: Ausencia de compromiso sistémico
+    type: BOOLEAN
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p1_def_itu_bajo
+      notes: 'Fuente: ''compromiso sistémicos''.'
+  infeccion_aguda_rinon:
+    id: infeccion_aguda_rinon
+    label: Infección aguda del riñón
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_itu_alto
+  pielonefritis:
+    id: pielonefritis
+    label: Pielonefritis
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_itu_alto
+      - frag_p1_def_itu_complicada_clinica
+  itu_febril_bacteriemica:
+    id: itu_febril_bacteriemica
+    label: ITU febril o bacteriémica
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_itu_complicada_clinica
+  itu_asociada_cateter:
+    id: itu_asociada_cateter
+    label: ITU asociada a catéter
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_itu_complicada_clinica
+  gestante:
+    id: gestante
+    label: Mujer embarazada (gestante)
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_tto_ba_gestante
+      - frag_p2_embarazada_debe_tratarse
+  en_urgencias:
+    id: en_urgencias
+    label: Paciente en el servicio de urgencias
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p2_citoquimico
+  sospecha_itu:
+    id: sospecha_itu
+    label: Sospecha de ITU
+    type: BOOLEAN
+    description: Sospecha clínica; distinta de infeccion_urinaria (condición establecida).
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p2_citoquimico
+  primer_episodio:
+    id: primer_episodio
+    label: Primer episodio
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p2_citoquimico
+  sintomas_tipicos:
+    id: sintomas_tipicos
+    label: Síntomas típicos
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p2_citoquimico
+  mujer:
+    id: mujer
+    label: Mujer
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p2_citoquimico
+  tirilla_normal:
+    id: tirilla_normal
+    label: Resultado normal de la tirilla de orina
+    type: BOOLEAN
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p2_tirilla_descarta
+      notes: '''un resultado normal'' de la tirilla de orina.'
+  sospecha_clinica_baja:
+    id: sospecha_clinica_baja
+    label: Baja sospecha clínica
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p2_tirilla_descarta
+  leucocitos_orina_campo:
+    id: leucocitos_orina_campo
+    label: Leucocitos en orina por campo
+    type: NUMERIC
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p2_piuria
+      notes: Umbral '>10 leucocitos'; unidad no declarada en la fuente.
+  sonda_recien_insertada:
+    id: sonda_recien_insertada
+    label: Muestra a través de sonda vesical recién insertada
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_urocultivo_positivo_1e2
+  urocultivo_cfu_ml:
+    id: urocultivo_cfu_ml
+    label: Recuento de UFC del urocultivo
+    type: NUMERIC
+    unit: UFC
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_urocultivo_positivo_1e5
+      - frag_p3_urocultivo_positivo_1e3
+      - frag_p3_urocultivo_positivo_1e2
+      notes: Umbrales 10^5, 10^3 y 10^2 UFC por contexto de muestra; los superíndices
+        presentan artefactos OCR en la evidencia ('10 5').
+  muestra_miccion_espontanea:
+    id: muestra_miccion_espontanea
+    label: Muestra obtenida de forma adecuada por micción espontánea
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_urocultivo_positivo_1e5
+  sintomas_no_explicados_otra_patologia:
+    id: sintomas_no_explicados_otra_patologia
+    label: Síntomas no explicados por otra patología
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_urocultivo_positivo_1e3
+  itu_baja_no_complicada:
+    id: itu_baja_no_complicada
+    label: ITU baja no complicada
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_urocultivo_indicacion
+  premenopausica:
+    id: premenopausica
+    label: Mujer premenopáusica
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_urocultivo_indicacion
+  infeccion_urinaria:
+    id: infeccion_urinaria
+    label: Infección urinaria (ITU) establecida
+    type: BOOLEAN
+    description: Entrada clínica externa; distinta de sospecha_itu.
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_analisis_sangre
+      - frag_p3_imagen_urgente
+      notes: La fuente usa 'ITU' (análisis de sangre) e 'infección urinaria' (estudios
+        imaginológicos) para la misma condición establecida del paciente.
+  itu_alta:
+    id: itu_alta
+    label: ITU alta
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_itu_alto
+      - frag_p3_hosp_itu_alta
+  itu_baja:
+    id: itu_baja
+    label: ITU baja
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_itu_bajo
+      - frag_p4_t1_itu_baja
+  procedimiento_invasivo_vias_urinarias:
+    id: procedimiento_invasivo_vias_urinarias
+    label: Procedimiento invasivo de vías urinarias con riesgo de sangrado o disrupción
+      del uroepitelio
+    type: BOOLEAN
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_tto_ba_procedimiento
+      - frag_p4_t1_nota_ba
+      notes: Colapsa 'Procedimiento invasivo de vías urinarias con riesgo de sangrado
+        o disrupción del uroepitelio' (p3) y 'procedimientos urológicos donde se prevé
+        la disrupción del uroepitelio' (p4); ambas son formulaciones de la fuente.
+  choque_septico:
+    id: choque_septico
+    label: Choque séptico
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_hosp_choque_septico
+      - frag_p3_hemocultivos
+      - frag_p3_imagen_urgente
+  intolerancia_via_oral:
+    id: intolerancia_via_oral
+    label: Intolerancia a la vía oral
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_hosp_intolerancia
+  descompensacion_enfermedad_base:
+    id: descompensacion_enfermedad_base
+    label: Descompensación de la enfermedad de base secundaria a la ITU
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_hosp_descompensacion
+  germen_resistente_sin_opcion_ambulatoria:
+    id: germen_resistente_sin_opcion_ambulatoria
+    label: Demostración de germen resistente sin opción de tratamiento antibiótico
+      ambulatorio
+    type: BOOLEAN
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_hosp_resistente
+      notes: Colapsa el bullet completo de la fuente.
+  deterioro_funcion_renal:
+    id: deterioro_funcion_renal
+    label: Deterioro de la función renal asociado a la ITU
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_hosp_funcion_renal
+  absceso_renal_pararrenal:
+    id: absceso_renal_pararrenal
+    label: Absceso renal/pararrenal
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_hosp_absceso
+  soporte_social_inadecuado:
+    id: soporte_social_inadecuado
+    label: Inadecuado soporte social para continuidad de terapia ambulatoria
+    type: BOOLEAN
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_hosp_social
+      notes: Colapsa el bullet completo de la fuente.
+  hospitalizado:
+    id: hospitalizado
+    label: Paciente hospitalizado
+    type: BOOLEAN
+    description: Paciente hospitalizado al momento de la evaluación.
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_analisis_sangre
+  hospitalizacion_48h_ultimos_3meses:
+    id: hospitalizacion_48h_ultimos_3meses
+    label: Hospitalización > 48 horas en los últimos 3 meses
+    type: BOOLEAN
+    description: Entrada clínica/histórica externa; el motor no computa la ventana
+      temporal.
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_t1_nota_fr
+  antibioticos_ultimos_90dias:
+    id: antibioticos_ultimos_90dias
+    label: Uso de antibióticos en los últimos 90 días
+    type: BOOLEAN
+    description: Entrada histórica externa; el motor no computa la ventana.
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_t1_nota_fr
+  colonizacion_blee:
+    id: colonizacion_blee
+    label: Colonización por germen BLEE
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_t1_nota_fr
+  itu_recurrente:
+    id: itu_recurrente
+    label: ITU recurrente
+    type: BOOLEAN
+    description: Entrada histórica externa; el motor no computa la recurrencia.
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_t1_nota_fosfomicina
+      - frag_p5_t2_nota3
+  fiebre:
+    id: fiebre
+    label: Fiebre
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_hemocultivos
+  hipotermia:
+    id: hipotermia
+    label: Hipotermia
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_hemocultivos
+  falla_renal_aguda:
+    id: falla_renal_aguda
+    label: Falla renal aguda
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_imagen_urgente
+  complicacion_local:
+    id: complicacion_local
+    label: Clínica de complicación local
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_imagen_urgente
+  tratamiento_antibiotico_correcto:
+    id: tratamiento_antibiotico_correcto
+    label: Tratamiento antibiótico correcto
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_imagen_urgente
+  sospecha_alteracion:
+    id: sospecha_alteracion
+    label: Tipo de alteración sospechada para imagen
+    type: CATEGORICAL
+    allowed_values:
+    - estructural
+    - funcional
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_imagen_urotomografia
+      - frag_p3_imagen_ecografia
+      notes: Colapsa las dos ramas 'la elección será' (estructural → urotomografía;
+        funcional → ecografía).
+  hematuria:
+    id: hematuria
+    label: Hematuria
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_imagen_gestante
+  dolor:
+    id: dolor
+    label: Dolor
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_imagen_gestante
+  mas_de_un_episodio_itu:
+    id: mas_de_un_episodio_itu
+    label: Más de un episodio de ITU durante el embarazo
+    type: BOOLEAN
+    description: Entrada histórica externa; el motor no cuenta episodios.
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_imagen_gestante
+      notes: Colapsa 'más de un episodio de ITU durante el embarazo'.
+  recurrencia_itu:
+    id: recurrencia_itu
+    label: Recurrencia de la infección
+    type: BOOLEAN
+    description: Entrada histórica externa; el motor no computa la recurrencia.
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_t2_itu_baja_row
+  sospecha_absceso_nefritis_local:
+    id: sospecha_absceso_nefritis_local
+    label: Búsqueda de pequeños abscesos y áreas de nefritis local
+    type: BOOLEAN
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_imagen_tc_abscesos
+      notes: '''cuando se busquen pequeños abscesos y áreas de nefritis local''.'
+  sospecha_litiasis:
+    id: sospecha_litiasis
+    label: Sospecha de litiasis
+    type: BOOLEAN
+    description: Entrada clínica externa; no derivada de hematuria/dolor.
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_imagen_gestante
+  afebril_horas:
+    id: afebril_horas
+    label: Horas afebril
+    type: DURATION
+    unit: hours
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_egreso_afebril
+      notes: Duración del estado afebril en horas; umbral '48 horas afebril'.
+  tas:
+    id: tas
+    label: Presión arterial sistólica
+    type: NUMERIC
+    unit: mmHg
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_egreso_tas
+      notes: '''TAS'' = presión arterial sistólica; umbral ''> 90 mmHg''.'
+  fc:
+    id: fc
+    label: Frecuencia cardiaca
+    type: NUMERIC
+    unit: lpm
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_egreso_fc
+  fr:
+    id: fr
+    label: Frecuencia respiratoria
+    type: NUMERIC
+    unit: rpm
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_egreso_fr
+  sato2:
+    id: sato2
+    label: Saturación de oxígeno
+    type: NUMERIC
+    unit: '%'
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_egreso_sato2_pao2
+      notes: '''Sat O2''; umbral ''> 90%''.'
+  pao2:
+    id: pao2
+    label: PaO2
+    type: NUMERIC
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_egreso_sato2_pao2
+      notes: Umbral '> 60'; unidad no declarada en la fuente.
+  tolera_via_oral:
+    id: tolera_via_oral
+    label: Tolerancia a la vía oral
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_egreso_via_oral
+  comorbilidades_compensadas:
+    id: comorbilidades_compensadas
+    label: Comorbilidades compensadas
+    type: BOOLEAN
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_egreso_comorbilidades
+  tratamiento_ambulatorio_asegurado:
+    id: tratamiento_ambulatorio_asegurado
+    label: Se ha asegurado el tratamiento ambulatorio
+    type: BOOLEAN
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_egreso_tratamiento
+      notes: Colapsa 'Se ha asegurado el tratamiento ambulatorio'.
+  condiciones_sociales_permiten:
+    id: condiciones_sociales_permiten
+    label: Lo permiten las condiciones sociales
+    type: BOOLEAN
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_egreso_social
+      notes: Colapsa 'Lo permiten las condiciones sociales'.
+  fiebre_horas:
+    id: fiebre_horas
+    label: Horas de fiebre persistente
+    type: DURATION
+    unit: hours
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_imagen_urgente
+      notes: Duración de fiebre persistente en horas; acoplada en la fuente a 'tratamiento
+        antibiótico correcto'.
+  tiempo_desde_inicio_terapia_hours:
+    id: tiempo_desde_inicio_terapia_hours
+    label: Horas desde el inicio de la terapia
+    type: DURATION
+    unit: hours
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_reevaluar
+      notes: Tiempo desde el inicio de la terapia para la reevaluación a las 48 horas.
+rules:
+  rule_def_ba:
+    id: rule_def_ba
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: bacteriuria_significativa
+        expected: true
+      - kind: FLAG
+        variable_ref: sin_signos_sintomas_itu
+        expected: true
+    action_refs: []
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p1_def_ba
+      notes: 'Componente 1 de la definición de BA: bacteriuria significativa sin signos
+        ni síntomas atribuibles a ITU; ver rule_def_ba_cultivos y rule_def_ba_piuria_pediatrica.'
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_def_ba_cultivos:
+    id: rule_def_ba_cultivos
+    condition:
+      operator: OR
+      operands:
+      - operator: AND
+        operands:
+        - kind: FLAG
+          variable_ref: mujer_no_embarazada
+          expected: true
+        - kind: FLAG
+          variable_ref: urocultivos_2_mismo_patron
+          expected: true
+      - operator: AND
+        operands:
+        - kind: FLAG
+          variable_ref: hombre
+          expected: true
+        - kind: FLAG
+          variable_ref: urocultivo_unico
+          expected: true
+      - operator: AND
+        operands:
+        - kind: FLAG
+          variable_ref: gestante
+          expected: true
+        - kind: FLAG
+          variable_ref: urocultivo_unico
+          expected: true
+    action_refs: []
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p1_def_ba_cultivos
+      notes: 'Componente 2 de la definición de BA: requisito microbiológico por población
+        de la misma oración fuente.'
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_def_ba_piuria_pediatrica:
+    id: rule_def_ba_piuria_pediatrica
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: poblacion_pediatrica
+        expected: true
+      - kind: FLAG
+        variable_ref: ausencia_piuria_sedimento
+        expected: true
+    action_refs: []
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p1_def_ba_piuria
+      notes: 'Componente 3 de la definición de BA: cláusula pediátrica conservada
+        como evidencia fuera del alcance adulto del protocolo; no es un requisito
+        del BA adulto.'
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_def_itu:
+    id: rule_def_itu
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: bacteriuria_significativa
+        expected: true
+      - kind: FLAG
+        variable_ref: signos_sintomas_itu
+        expected: true
+    action_refs: []
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p1_def_itu
+      notes: Definición de ITU ensamblada desde la frase de DEFINICIONES.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_def_itu_complicada_estructural:
+    id: rule_def_itu_complicada_estructural
+    condition:
+      operator: OR
+      operands:
+      - kind: FLAG
+        variable_ref: alteracion_estructural
+        expected: true
+      - kind: FLAG
+        variable_ref: alteracion_funcional
+        expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_itu_complicada_estructural
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_def_itu_bajo:
+    id: rule_def_itu_bajo
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: infeccion_aguda_vejiga_uretra
+        expected: true
+      - kind: FLAG
+        variable_ref: bacteriuria_significativa
+        expected: true
+      - kind: FLAG
+        variable_ref: sin_leucorrea
+        expected: true
+      - kind: FLAG
+        variable_ref: sin_irritacion_vaginal
+        expected: true
+      - kind: FLAG
+        variable_ref: sin_fiebre
+        expected: true
+      - kind: FLAG
+        variable_ref: sin_dolor_lumbar
+        expected: true
+      - kind: FLAG
+        variable_ref: sin_compromiso_sistemico
+        expected: true
+    action_refs:
+    - act_classify_itu_bajo
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p1_def_itu_bajo
+      - frag_p2_clasificacion_alta_baja
+      notes: Definición de ITU bajo ensamblada; la clasificación alta/baja es necesaria
+        para definir tratamiento y pronóstico.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_def_itu_alto:
+    id: rule_def_itu_alto
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: infeccion_aguda_rinon
+        expected: true
+      - kind: FLAG
+        variable_ref: bacteriuria_significativa
+        expected: true
+    action_refs:
+    - act_classify_itu_alto
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_itu_alto
+      - frag_p2_clasificacion_alta_baja
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_def_itu_complicada_clinica:
+    id: rule_def_itu_complicada_clinica
+    condition:
+      operator: OR
+      operands:
+      - kind: FLAG
+        variable_ref: pielonefritis
+        expected: true
+      - kind: FLAG
+        variable_ref: itu_febril_bacteriemica
+        expected: true
+      - kind: FLAG
+        variable_ref: itu_asociada_cateter
+        expected: true
+    action_refs: []
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p1_def_itu_complicada_clinica
+      notes: Definición de ITU complicada con compromiso más allá de la vejiga; prostatitis
+        excluida de la condición porque la fuente declara que excede los alcances
+        del protocolo (vi_prostatitis_fuera_alcance).
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_citoquimico_orina:
+    id: rule_citoquimico_orina
+    condition:
+      kind: FLAG
+      variable_ref: sospecha_itu
+      expected: true
+    action_refs:
+    - act_citoquimico
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p2_citoquimico
+      notes: 'Citoquímico de orina ante sospecha de ITU en urgencias; excepción: mujeres
+        con primer episodio y síntomas típicos.'
+    applies_to:
+      kind: FLAG
+      variable_ref: en_urgencias
+      expected: true
+    exceptions:
+    - operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: mujer
+        expected: true
+      - kind: FLAG
+        variable_ref: primer_episodio
+        expected: true
+      - kind: FLAG
+        variable_ref: sintomas_tipicos
+        expected: true
+    validation_status: EXTRACTED
+  rule_tirilla_descarta_diagnostico:
+    id: rule_tirilla_descarta_diagnostico
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: tirilla_normal
+        expected: true
+      - kind: FLAG
+        variable_ref: sospecha_clinica_baja
+        expected: true
+    action_refs:
+    - act_descarta_diagnostico_itu
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p2_tirilla_descarta
+      notes: Resultado normal de la tirilla con baja sospecha clínica descarta el
+        diagnóstico.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_piuria_mayor_10:
+    id: rule_piuria_mayor_10
+    condition:
+      kind: COMPARISON
+      variable_ref: leucocitos_orina_campo
+      operator: GT
+      operand: 10
+    action_refs: []
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p2_piuria
+      notes: Criterio de piuria '>10 leucocitos'; correlación descriptiva de la fuente.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_gram_urgencias:
+    id: rule_gram_urgencias
+    condition:
+      kind: FLAG
+      variable_ref: en_urgencias
+      expected: true
+    action_refs:
+    - act_gram_orina
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_gram
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_urocultivo_indicado:
+    id: rule_urocultivo_indicado
+    condition:
+      kind: FLAG
+      variable_ref: sospecha_itu
+      expected: true
+    action_refs:
+    - act_urocultivo
+    - act_restriccion_muestra_previa
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_urocultivo_indicacion
+      - frag_p3_toma_muestra_antibiotico
+      notes: 'Excepción: primer episodio de ITU baja no complicada en mujer premenopáusica.
+        La restricción de tomar la muestra antes de la primera dosis de antibiótico
+        es una instrucción de procedimiento adherida a la indicación del urocultivo;
+        la fuente no le da condición propia.'
+    exceptions:
+    - operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: mujer
+        expected: true
+      - kind: FLAG
+        variable_ref: primer_episodio
+        expected: true
+      - kind: FLAG
+        variable_ref: itu_baja_no_complicada
+        expected: true
+      - kind: FLAG
+        variable_ref: premenopausica
+        expected: true
+    validation_status: EXTRACTED
+  rule_urocultivo_positivo_1e5:
+    id: rule_urocultivo_positivo_1e5
+    condition:
+      operator: AND
+      operands:
+      - kind: COMPARISON
+        variable_ref: urocultivo_cfu_ml
+        operator: GE
+        operand: 100000
+      - kind: FLAG
+        variable_ref: muestra_miccion_espontanea
+        expected: true
+    action_refs:
+    - act_classify_urocultivo_positivo_1e5
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_urocultivo_positivo_1e5
+      notes: Umbral '≥10 5 UFC' en muestra por micción espontánea; artefacto OCR preservado
+        en la evidencia.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_urocultivo_positivo_1e3:
+    id: rule_urocultivo_positivo_1e3
+    condition:
+      operator: AND
+      operands:
+      - kind: COMPARISON
+        variable_ref: urocultivo_cfu_ml
+        operator: GE
+        operand: 1000
+      - kind: FLAG
+        variable_ref: sintomas_no_explicados_otra_patologia
+        expected: true
+    action_refs:
+    - act_classify_urocultivo_positivo_1e3
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_urocultivo_positivo_1e3
+      notes: Umbral '≥10 3 UFC' en paciente con síntomas no explicados por otra patología.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_urocultivo_positivo_1e2:
+    id: rule_urocultivo_positivo_1e2
+    condition:
+      operator: AND
+      operands:
+      - kind: COMPARISON
+        variable_ref: urocultivo_cfu_ml
+        operator: GE
+        operand: 100
+      - kind: FLAG
+        variable_ref: sonda_recien_insertada
+        expected: true
+    action_refs:
+    - act_classify_urocultivo_positivo_1e2
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_urocultivo_positivo_1e2
+      notes: Umbral '≥10 2 UFC' en muestra por sonda vesical recién insertada.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_analisis_sangre:
+    id: rule_analisis_sangre
+    condition:
+      kind: FLAG
+      variable_ref: infeccion_urinaria
+      expected: true
+    action_refs:
+    - act_hemoleucograma
+    - act_ionograma
+    - act_funcion_renal
+    - act_pcr
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_analisis_sangre
+      notes: Muestra de sangre en todo paciente con ITU que sea hospitalizado; la
+        condición de hospitalización es la composición de los criterios de la fuente.
+    applies_to:
+      operator: OR
+      operands:
+      - kind: FLAG
+        variable_ref: choque_septico
+        expected: true
+      - kind: FLAG
+        variable_ref: intolerancia_via_oral
+        expected: true
+      - kind: FLAG
+        variable_ref: itu_alta
+        expected: true
+      - kind: FLAG
+        variable_ref: descompensacion_enfermedad_base
+        expected: true
+      - kind: FLAG
+        variable_ref: germen_resistente_sin_opcion_ambulatoria
+        expected: true
+      - kind: FLAG
+        variable_ref: deterioro_funcion_renal
+        expected: true
+      - kind: FLAG
+        variable_ref: absceso_renal_pararrenal
+        expected: true
+      - kind: FLAG
+        variable_ref: soporte_social_inadecuado
+        expected: true
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_hemocultivos:
+    id: rule_hemocultivos
+    condition:
+      operator: OR
+      operands:
+      - kind: FLAG
+        variable_ref: fiebre
+        expected: true
+      - kind: FLAG
+        variable_ref: hipotermia
+        expected: true
+      - kind: FLAG
+        variable_ref: choque_septico
+        expected: true
+    action_refs:
+    - act_hemocultivos
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_hemocultivos
+      notes: Hemocultivos en pielonefritis aguda que cursa con fiebre, hipotermia
+        o choque séptico.
+    applies_to:
+      kind: FLAG
+      variable_ref: pielonefritis
+      expected: true
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_fr_bgn_resistentes:
+    id: rule_fr_bgn_resistentes
+    condition:
+      operator: OR
+      operands:
+      - kind: FLAG
+        variable_ref: hospitalizacion_48h_ultimos_3meses
+        expected: true
+      - kind: FLAG
+        variable_ref: antibioticos_ultimos_90dias
+        expected: true
+      - kind: FLAG
+        variable_ref: colonizacion_blee
+        expected: true
+    action_refs: []
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_nota_fr
+      notes: Composición OR de los tres factores de riesgo para BGN resistentes declarados
+        por la fuente; expresión compartida por las reglas de selección de tratamiento.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_imagen_urgente:
+    id: rule_imagen_urgente
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: infeccion_urinaria
+        expected: true
+      - operator: OR
+        operands:
+        - kind: FLAG
+          variable_ref: choque_septico
+          expected: true
+        - kind: FLAG
+          variable_ref: falla_renal_aguda
+          expected: true
+        - kind: FLAG
+          variable_ref: complicacion_local
+          expected: true
+        - operator: AND
+          operands:
+          - kind: TEMPORAL
+            variable_ref: fiebre_horas
+            temporal_operator: AT_LEAST_FOR_LAST
+            duration_value: 72
+            duration_unit: hours
+          - kind: FLAG
+            variable_ref: tratamiento_antibiotico_correcto
+            expected: true
+    action_refs:
+    - act_imagen_urgente_eco_tc
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_imagen_urgente
+      notes: Estudios imaginológicos urgentes; 'fiebre persistente después de 72 horas
+        de tratamiento antibiótico correcto' se representa como duración de fiebre
+        ≥72h acoplada a tratamiento correcto (vi_fiebre_72h_dos_condiciones).
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_tc_abscesos_nefritis:
+    id: rule_tc_abscesos_nefritis
+    condition:
+      kind: FLAG
+      variable_ref: sospecha_absceso_nefritis_local
+      expected: true
+    action_refs:
+    - act_tc_contraste
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_imagen_tc_abscesos
+      notes: TC con contraste cuando se busquen pequeños abscesos y áreas de nefritis
+        local.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_imagen_urotomografia:
+    id: rule_imagen_urotomografia
+    condition:
+      kind: MEMBERSHIP
+      variable_ref: sospecha_alteracion
+      values:
+      - estructural
+    action_refs:
+    - act_urotomografia
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_imagen_urotomografia
+      notes: Sospecha de alteración estructural (incluyendo litiasis) → urotomografía.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_imagen_ecografia_funcional:
+    id: rule_imagen_ecografia_funcional
+    condition:
+      kind: MEMBERSHIP
+      variable_ref: sospecha_alteracion
+      values:
+      - funcional
+    action_refs:
+    - act_ecografia_vias_urinarias
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_imagen_ecografia
+      notes: Sospecha de alteración funcional (vaciamiento vesical inadecuado u obstrucción)
+        → ecografía de vías urinarias con residuo postmiccional.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_ecografia_renal_gestante:
+    id: rule_ecografia_renal_gestante
+    condition:
+      operator: OR
+      operands:
+      - kind: FLAG
+        variable_ref: pielonefritis
+        expected: true
+      - kind: FLAG
+        variable_ref: mas_de_un_episodio_itu
+        expected: true
+      - operator: AND
+        operands:
+        - kind: FLAG
+          variable_ref: sospecha_litiasis
+          expected: true
+        - operator: OR
+          operands:
+          - kind: FLAG
+            variable_ref: hematuria
+            expected: true
+          - kind: FLAG
+            variable_ref: dolor
+            expected: true
+    action_refs:
+    - act_ecografia_renal
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_imagen_gestante
+      notes: Ecografía renal en gestantes con pielonefritis, más de un episodio de
+        ITU durante el embarazo, o sospecha de litiasis por hematuria y/o dolor; hematuria/dolor
+        no son indicaciones independientes.
+    applies_to:
+      kind: FLAG
+      variable_ref: gestante
+      expected: true
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_tto_ba_indicado:
+    id: rule_tto_ba_indicado
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: bacteriuria_significativa
+        expected: true
+      - kind: FLAG
+        variable_ref: sin_signos_sintomas_itu
+        expected: true
+      - operator: OR
+        operands:
+        - kind: FLAG
+          variable_ref: gestante
+          expected: true
+        - kind: FLAG
+          variable_ref: procedimiento_invasivo_vias_urinarias
+          expected: true
+    action_refs:
+    - act_tratar_bacteriuria_asintomatica
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_tto_ba_indicaciones
+      - frag_p3_tto_ba_gestante
+      - frag_p3_tto_ba_procedimiento
+      - frag_p2_embarazada_debe_tratarse
+      notes: El encabezado 'Indicaciones de tratamiento de bacteriuria asintomática'
+        define el contexto; el contexto BA se explicita en la condición porque el
+        modelo no tiene campo de alcance por sección.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_hosp_criterio_choque_septico:
+    id: rule_hosp_criterio_choque_septico
+    condition:
+      kind: FLAG
+      variable_ref: choque_septico
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_hosp_choque_septico
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_hosp_criterio_intolerancia_oral:
+    id: rule_hosp_criterio_intolerancia_oral
+    condition:
+      kind: FLAG
+      variable_ref: intolerancia_via_oral
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_hosp_intolerancia
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_hosp_criterio_itu_alta:
+    id: rule_hosp_criterio_itu_alta
+    condition:
+      kind: FLAG
+      variable_ref: itu_alta
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_hosp_itu_alta
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_hosp_criterio_descompensacion:
+    id: rule_hosp_criterio_descompensacion
+    condition:
+      kind: FLAG
+      variable_ref: descompensacion_enfermedad_base
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_hosp_descompensacion
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_hosp_criterio_germen_resistente:
+    id: rule_hosp_criterio_germen_resistente
+    condition:
+      kind: FLAG
+      variable_ref: germen_resistente_sin_opcion_ambulatoria
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_hosp_resistente
+      notes: Colapsa el bullet completo de la fuente.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_hosp_criterio_funcion_renal:
+    id: rule_hosp_criterio_funcion_renal
+    condition:
+      kind: FLAG
+      variable_ref: deterioro_funcion_renal
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_hosp_funcion_renal
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_hosp_criterio_absceso:
+    id: rule_hosp_criterio_absceso
+    condition:
+      kind: FLAG
+      variable_ref: absceso_renal_pararrenal
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_hosp_absceso
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_hosp_criterio_soporte_social:
+    id: rule_hosp_criterio_soporte_social
+    condition:
+      kind: FLAG
+      variable_ref: soporte_social_inadecuado
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_hosp_social
+      notes: Colapsa el bullet completo de la fuente.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_hospitalizacion:
+    id: rule_hospitalizacion
+    condition:
+      operator: OR
+      operands:
+      - kind: FLAG
+        variable_ref: choque_septico
+        expected: true
+      - kind: FLAG
+        variable_ref: intolerancia_via_oral
+        expected: true
+      - kind: FLAG
+        variable_ref: itu_alta
+        expected: true
+      - kind: FLAG
+        variable_ref: descompensacion_enfermedad_base
+        expected: true
+      - kind: FLAG
+        variable_ref: germen_resistente_sin_opcion_ambulatoria
+        expected: true
+      - kind: FLAG
+        variable_ref: deterioro_funcion_renal
+        expected: true
+      - kind: FLAG
+        variable_ref: absceso_renal_pararrenal
+        expected: true
+      - kind: FLAG
+        variable_ref: soporte_social_inadecuado
+        expected: true
+    action_refs:
+    - act_hospitalizar
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_hosp_choque_septico
+      - frag_p3_hosp_intolerancia
+      - frag_p3_hosp_itu_alta
+      - frag_p3_hosp_descompensacion
+      - frag_p3_hosp_resistente
+      - frag_p3_hosp_funcion_renal
+      - frag_p3_hosp_absceso
+      - frag_p3_hosp_social
+      notes: Composición OR de las 8 indicaciones de hospitalización aplicables a
+        adultos; 'Pielonefritis aguda en pacientes pediátricos' queda fuera del alcance
+        adulto (vi_criterio_pediatrico_fuera_alcance).
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_egreso_afebril_48h:
+    id: rule_egreso_afebril_48h
+    condition:
+      kind: TEMPORAL
+      variable_ref: afebril_horas
+      temporal_operator: AT_LEAST_FOR_LAST
+      duration_value: 48
+      duration_unit: hours
+    action_refs: []
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_egreso_afebril
+      notes: '''48 horas afebril'' como duración del estado afebril.'
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_egreso_tas:
+    id: rule_egreso_tas
+    condition:
+      kind: COMPARISON
+      variable_ref: tas
+      operator: GT
+      operand: 90
+    action_refs: []
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_egreso_tas
+      notes: Umbral estricto '> 90 mmHg'.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_egreso_fc:
+    id: rule_egreso_fc
+    condition:
+      kind: COMPARISON
+      variable_ref: fc
+      operator: LT
+      operand: 100
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_egreso_fc
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_egreso_fr:
+    id: rule_egreso_fr
+    condition:
+      kind: COMPARISON
+      variable_ref: fr
+      operator: LT
+      operand: 24
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_egreso_fr
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_egreso_sato2_pao2:
+    id: rule_egreso_sato2_pao2
+    condition:
+      operator: OR
+      operands:
+      - kind: COMPARISON
+        variable_ref: sato2
+        operator: GT
+        operand: 90
+      - kind: COMPARISON
+        variable_ref: pao2
+        operator: GT
+        operand: 60
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_egreso_sato2_pao2
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_egreso_via_oral:
+    id: rule_egreso_via_oral
+    condition:
+      kind: FLAG
+      variable_ref: tolera_via_oral
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_egreso_via_oral
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_egreso_comorbilidades:
+    id: rule_egreso_comorbilidades
+    condition:
+      kind: FLAG
+      variable_ref: comorbilidades_compensadas
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_egreso_comorbilidades
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_egreso_tratamiento:
+    id: rule_egreso_tratamiento
+    condition:
+      kind: FLAG
+      variable_ref: tratamiento_ambulatorio_asegurado
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_egreso_tratamiento
+      notes: Colapsa 'Se ha asegurado el tratamiento ambulatorio'.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_egreso_social:
+    id: rule_egreso_social
+    condition:
+      kind: FLAG
+      variable_ref: condiciones_sociales_permiten
+      expected: true
+    action_refs: []
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_egreso_social
+      notes: Colapsa 'Lo permiten las condiciones sociales'.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_plan_egreso:
+    id: rule_plan_egreso
+    condition:
+      operator: AND
+      operands:
+      - kind: TEMPORAL
+        variable_ref: afebril_horas
+        temporal_operator: AT_LEAST_FOR_LAST
+        duration_value: 48
+        duration_unit: hours
+      - kind: COMPARISON
+        variable_ref: tas
+        operator: GT
+        operand: 90
+      - kind: COMPARISON
+        variable_ref: fc
+        operator: LT
+        operand: 100
+      - kind: COMPARISON
+        variable_ref: fr
+        operator: LT
+        operand: 24
+      - operator: OR
+        operands:
+        - kind: COMPARISON
+          variable_ref: sato2
+          operator: GT
+          operand: 90
+        - kind: COMPARISON
+          variable_ref: pao2
+          operator: GT
+          operand: 60
+      - kind: FLAG
+        variable_ref: tolera_via_oral
+        expected: true
+      - kind: FLAG
+        variable_ref: comorbilidades_compensadas
+        expected: true
+      - kind: FLAG
+        variable_ref: tratamiento_ambulatorio_asegurado
+        expected: true
+      - kind: FLAG
+        variable_ref: condiciones_sociales_permiten
+        expected: true
+    action_refs:
+    - act_egreso
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_egreso_afebril
+      - frag_p3_egreso_tas
+      - frag_p4_egreso_fc
+      - frag_p4_egreso_fr
+      - frag_p4_egreso_sato2_pao2
+      - frag_p4_egreso_via_oral
+      - frag_p4_egreso_comorbilidades
+      - frag_p4_egreso_tratamiento
+      - frag_p4_egreso_social
+      notes: Indicaciones para paso a terapia oral y/o egreso compuestas con AND de
+        los criterios de la fuente.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_t1_itu_baja:
+    id: rule_t1_itu_baja
+    condition:
+      kind: FLAG
+      variable_ref: itu_baja
+      expected: true
+    action_refs:
+    - act_t1_nitrofurantoina
+    - act_t1_cefalexina
+    - act_t1_fosfomicina
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_itu_baja
+      - frag_p4_t1_itu_baja_antibioticos
+      - frag_p4_t1_dosis_baja_ba
+      notes: Fila 'ITU baja (complicada o no complicada)'; las tres acciones PRESCRIBE
+        son alternativas declaradas en la fuente, nunca ejecución simultánea.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_t1_ba_row:
+    id: rule_t1_ba_row
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: bacteriuria_significativa
+        expected: true
+      - kind: FLAG
+        variable_ref: sin_signos_sintomas_itu
+        expected: true
+      - operator: OR
+        operands:
+        - kind: FLAG
+          variable_ref: gestante
+          expected: true
+        - kind: FLAG
+          variable_ref: procedimiento_invasivo_vias_urinarias
+          expected: true
+    action_refs:
+    - act_t1_ba_nitrofurantoina
+    - act_t1_ba_cefalexina
+    - act_t1_ba_fosfomicina
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_ba_row
+      - frag_p4_t1_itu_baja_antibioticos
+      - frag_p4_t1_dosis_baja_ba
+      - frag_p4_t1_nota_ba
+      notes: Fila 'Bacteriuria asintomática**'; la nota ** restringe su tratamiento
+        a gestantes o pacientes con procedimientos urológicos donde se prevé la disrupción
+        del uroepitelio. Alternativas declaradas en la fuente.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_t1_alta_ambulatoria:
+    id: rule_t1_alta_ambulatoria
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: itu_alta
+        expected: true
+      - operator: NOT
+        operands:
+        - kind: FLAG
+          variable_ref: hospitalizado
+          expected: true
+    action_refs:
+    - act_cefalexina_alta_amb
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_ambulatoria
+      - frag_p4_t1_ambulatoria_dosis
+      notes: Fila 'ITU alta ambulatoria' representada como ITU alta no hospitalizada.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_t1_alta_hosp_sin_fr:
+    id: rule_t1_alta_hosp_sin_fr
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: itu_alta
+        expected: true
+      - kind: FLAG
+        variable_ref: hospitalizado
+        expected: true
+      - operator: NOT
+        operands:
+        - operator: OR
+          operands:
+          - kind: FLAG
+            variable_ref: hospitalizacion_48h_ultimos_3meses
+            expected: true
+          - kind: FLAG
+            variable_ref: antibioticos_ultimos_90dias
+            expected: true
+          - kind: FLAG
+            variable_ref: colonizacion_blee
+            expected: true
+    action_refs:
+    - act_cefazolina
+    - act_amikacina
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_sin_fr
+      - frag_p4_t1_sin_fr_drogas
+      - frag_p4_t1_sin_fr_dosis
+      notes: Fila 'ITU alta hospitalaria sin FR para BGN resistentes'; alternativas
+        declaradas en la fuente.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_t1_alta_hosp_con_fr_piperacilina:
+    id: rule_t1_alta_hosp_con_fr_piperacilina
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: itu_alta
+        expected: true
+      - kind: FLAG
+        variable_ref: hospitalizado
+        expected: true
+      - operator: OR
+        operands:
+        - kind: FLAG
+          variable_ref: hospitalizacion_48h_ultimos_3meses
+          expected: true
+        - kind: FLAG
+          variable_ref: antibioticos_ultimos_90dias
+          expected: true
+        - kind: FLAG
+          variable_ref: colonizacion_blee
+          expected: true
+    action_refs:
+    - act_piperacilina_tazobactam
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_con_fr
+      - frag_p4_t1_con_fr_drogas
+      - frag_p4_t1_con_fr_dosis
+      notes: Fila 'ITU alta hospitalaria con FR para BGN resistentes'; piperacilina
+        tazobactam sin restricción de choque declarada.
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_t1_alta_hosp_con_fr_amikacina:
+    id: rule_t1_alta_hosp_con_fr_amikacina
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: itu_alta
+        expected: true
+      - kind: FLAG
+        variable_ref: hospitalizado
+        expected: true
+      - operator: OR
+        operands:
+        - kind: FLAG
+          variable_ref: hospitalizacion_48h_ultimos_3meses
+          expected: true
+        - kind: FLAG
+          variable_ref: antibioticos_ultimos_90dias
+          expected: true
+        - kind: FLAG
+          variable_ref: colonizacion_blee
+          expected: true
+    action_refs:
+    - act_amikacina
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_con_fr
+      - frag_p4_t1_con_fr_drogas
+      - frag_p4_t1_con_fr_dosis
+      - frag_p4_t1_nota_amikacina
+      notes: 'Nota 2: evitar amikacina en choque.'
+    exceptions:
+    - kind: FLAG
+      variable_ref: choque_septico
+      expected: true
+    validation_status: EXTRACTED
+  rule_t1_alta_hosp_con_fr_meropenem:
+    id: rule_t1_alta_hosp_con_fr_meropenem
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: itu_alta
+        expected: true
+      - kind: FLAG
+        variable_ref: hospitalizado
+        expected: true
+      - operator: OR
+        operands:
+        - kind: FLAG
+          variable_ref: hospitalizacion_48h_ultimos_3meses
+          expected: true
+        - kind: FLAG
+          variable_ref: antibioticos_ultimos_90dias
+          expected: true
+        - kind: FLAG
+          variable_ref: colonizacion_blee
+          expected: true
+      - kind: FLAG
+        variable_ref: choque_septico
+        expected: true
+    action_refs:
+    - act_meropenem
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_con_fr
+      - frag_p4_t1_con_fr_drogas
+      - frag_p4_t1_con_fr_dosis
+      - frag_p4_t1_nota_meropenem
+      notes: 'Nota 3: meropenem se administra empíricamente si hay choque.'
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_fosfomicina_preferida:
+    id: rule_fosfomicina_preferida
+    condition:
+      operator: OR
+      operands:
+      - kind: FLAG
+        variable_ref: itu_recurrente
+        expected: true
+      - kind: FLAG
+        variable_ref: antibioticos_ultimos_90dias
+        expected: true
+    action_refs: []
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p4_t1_nota_fosfomicina
+      - frag_p5_t2_nota3
+    exceptions: []
+    validation_status: EXTRACTED
+    notes: Preferencia declarada por la fuente, no selección obligatoria.
+  rule_reevaluar_48h:
+    id: rule_reevaluar_48h
+    condition:
+      kind: TEMPORAL
+      variable_ref: tiempo_desde_inicio_terapia_hours
+      temporal_operator: AT_LEAST_FOR_LAST
+      duration_value: 48
+      duration_unit: hours
+    action_refs:
+    - act_urocultivo_control
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_reevaluar
+      notes: Reevaluar con urocultivo a las 48 horas para ajuste; nota 1 de la fila
+        'ITU alta ambulatoria'.
+    applies_to:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: itu_alta
+        expected: true
+      - operator: NOT
+        operands:
+        - kind: FLAG
+          variable_ref: hospitalizado
+          expected: true
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_t2_ba_gestante:
+    id: rule_t2_ba_gestante
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: bacteriuria_significativa
+        expected: true
+      - kind: FLAG
+        variable_ref: sin_signos_sintomas_itu
+        expected: true
+    action_refs:
+    - act_t2_ba_nitrofurantoina
+    - act_t2_ba_cefalexina
+    - act_t2_ba_fosfomicina
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t2_ba_row
+      notes: Fila 'Bacteriuria asintomática' de la Tabla 2; alternativas declaradas
+        en la fuente.
+    applies_to:
+      kind: FLAG
+      variable_ref: gestante
+      expected: true
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_t2_itu_baja_gestante:
+    id: rule_t2_itu_baja_gestante
+    condition:
+      kind: FLAG
+      variable_ref: itu_baja
+      expected: true
+    action_refs:
+    - act_t2_baja_nitrofurantoina
+    - act_t2_baja_cefalexina
+    - act_t2_baja_fosfomicina
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t2_itu_baja_row
+      notes: Fila 'ITU baja' de la Tabla 2; alternativas declaradas en la fuente.
+    applies_to:
+      kind: FLAG
+      variable_ref: gestante
+      expected: true
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_t2_itu_alta_gestante_cefazolina:
+    id: rule_t2_itu_alta_gestante_cefazolina
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: itu_alta
+        expected: true
+      - operator: NOT
+        operands:
+        - operator: OR
+          operands:
+          - kind: FLAG
+            variable_ref: hospitalizacion_48h_ultimos_3meses
+            expected: true
+          - kind: FLAG
+            variable_ref: antibioticos_ultimos_90dias
+            expected: true
+          - kind: FLAG
+            variable_ref: colonizacion_blee
+            expected: true
+    action_refs:
+    - act_cefazolina
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p5_t2_itu_alta_row
+      - frag_p5_t2_sin_fr
+      notes: 'Cefazolina: * sin factores de riesgo para BGN resistentes.'
+    applies_to:
+      kind: FLAG
+      variable_ref: gestante
+      expected: true
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_t2_itu_alta_gestante_piperacilina:
+    id: rule_t2_itu_alta_gestante_piperacilina
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: itu_alta
+        expected: true
+      - operator: OR
+        operands:
+        - kind: FLAG
+          variable_ref: hospitalizacion_48h_ultimos_3meses
+          expected: true
+        - kind: FLAG
+          variable_ref: antibioticos_ultimos_90dias
+          expected: true
+        - kind: FLAG
+          variable_ref: colonizacion_blee
+          expected: true
+      - operator: NOT
+        operands:
+        - kind: FLAG
+          variable_ref: choque_septico
+          expected: true
+    action_refs:
+    - act_piperacilina_tazobactam
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p5_t2_itu_alta_row
+      - frag_p5_t2_con_fr
+      notes: 'Piperacilina tazobactam: ** con factores de riesgo para BGN resistentes,
+        sin choque.'
+    applies_to:
+      kind: FLAG
+      variable_ref: gestante
+      expected: true
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_t2_itu_alta_gestante_meropenem:
+    id: rule_t2_itu_alta_gestante_meropenem
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: itu_alta
+        expected: true
+      - operator: OR
+        operands:
+        - kind: FLAG
+          variable_ref: hospitalizacion_48h_ultimos_3meses
+          expected: true
+        - kind: FLAG
+          variable_ref: antibioticos_ultimos_90dias
+          expected: true
+        - kind: FLAG
+          variable_ref: colonizacion_blee
+          expected: true
+      - kind: FLAG
+        variable_ref: choque_septico
+        expected: true
+    action_refs:
+    - act_meropenem
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p5_t2_itu_alta_row
+      - frag_p5_t2_con_fr_choque
+      notes: 'Meropenem: *** con factores de riesgo para BGN resistentes, con choque.'
+    applies_to:
+      kind: FLAG
+      variable_ref: gestante
+      expected: true
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_t2_preventiva_baja:
+    id: rule_t2_preventiva_baja
+    condition:
+      operator: AND
+      operands:
+      - kind: FLAG
+        variable_ref: itu_baja
+        expected: true
+      - kind: FLAG
+        variable_ref: recurrencia_itu
+        expected: true
+    action_refs:
+    - act_preventiva_nitrofurantoina
+    - act_preventiva_cefalexina
+    - act_preventiva_tmpsmx
+    - act_preventiva_fosfomicina
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t2_itu_baja_row
+      - frag_p4_t2_preventiva_baja
+      - frag_p5_t2_nota2
+      notes: Terapia preventiva 'sólo si hay recurrencia de la infección'; la decisión
+        se toma con base en cultivos y pruebas de sensibilidad (nota 2). Alternativas
+        declaradas en la fuente.
+    applies_to:
+      kind: FLAG
+      variable_ref: gestante
+      expected: true
+    exceptions: []
+    validation_status: EXTRACTED
+  rule_t2_preventiva_alta:
+    id: rule_t2_preventiva_alta
+    condition:
+      kind: FLAG
+      variable_ref: itu_alta
+      expected: true
+    action_refs:
+    - act_preventiva_nitrofurantoina
+    - act_preventiva_cefalexina
+    - act_preventiva_tmpsmx
+    - act_preventiva_fosfomicina
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p5_t2_itu_alta_row
+      - frag_p5_t2_preventiva_alta
+      - frag_p5_t2_nota2
+      notes: Terapia preventiva indicada ('Sí') en la fila ITU alta de la Tabla 2;
+        la decisión se toma con base en cultivos y pruebas de sensibilidad (nota 2).
+        Alternativas declaradas en la fuente.
+    applies_to:
+      kind: FLAG
+      variable_ref: gestante
+      expected: true
+    exceptions: []
+    validation_status: EXTRACTED
+actions:
+  act_classify_itu_alto:
+    id: act_classify_itu_alto
+    type: CLASSIFY
+    payload:
+      clasificacion: ITU_alta
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_itu_alto
+      - frag_p2_clasificacion_alta_baja
+  act_classify_itu_bajo:
+    id: act_classify_itu_bajo
+    type: CLASSIFY
+    payload:
+      clasificacion: ITU_baja
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p1_def_itu_bajo
+      - frag_p2_clasificacion_alta_baja
+  act_classify_urocultivo_positivo_1e5:
+    id: act_classify_urocultivo_positivo_1e5
+    type: CLASSIFY
+    payload:
+      umbral: '>= 10^5 UFC micción espontánea'
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_urocultivo_positivo_1e5
+      notes: Umbral '≥10 5 UFC' con artefacto OCR preservado en la evidencia.
+  act_classify_urocultivo_positivo_1e3:
+    id: act_classify_urocultivo_positivo_1e3
+    type: CLASSIFY
+    payload:
+      umbral: '>= 10^3 UFC síntomas no explicados'
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_urocultivo_positivo_1e3
+      notes: Umbral '≥10 3 UFC' con síntomas no explicados por otra patología.
+  act_classify_urocultivo_positivo_1e2:
+    id: act_classify_urocultivo_positivo_1e2
+    type: CLASSIFY
+    payload:
+      umbral: '>= 10^2 UFC sonda recién insertada'
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_urocultivo_positivo_1e2
+      notes: Umbral '≥10 2 UFC' en sonda vesical recién insertada.
+  act_descarta_diagnostico_itu:
+    id: act_descarta_diagnostico_itu
+    type: DECISION
+    label: Descarta el diagnóstico de ITU
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p2_tirilla_descarta
+  act_tratar_bacteriuria_asintomatica:
+    id: act_tratar_bacteriuria_asintomatica
+    type: DECISION
+    label: Indicación de tratamiento de bacteriuria asintomática
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_tto_ba_indicaciones
+      - frag_p3_tto_ba_gestante
+      - frag_p3_tto_ba_procedimiento
+      notes: Indicación de tratamiento de bacteriuria asintomática según las dos indicaciones
+        de la fuente.
+  act_citoquimico:
+    id: act_citoquimico
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p2_citoquimico
+  act_gram_orina:
+    id: act_gram_orina
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_gram
+  act_urocultivo:
+    id: act_urocultivo
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_urocultivo_indicacion
+  act_urocultivo_control:
+    id: act_urocultivo_control
+    type: REQUEST_TEST
+    payload:
+      intervalo_horas: 48
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_reevaluar
+      notes: Urocultivo de reevaluación a las 48 horas; intervalo declarativo del
+        payload.
+  act_hemoleucograma:
+    id: act_hemoleucograma
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_analisis_sangre
+  act_ionograma:
+    id: act_ionograma
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_analisis_sangre
+  act_funcion_renal:
+    id: act_funcion_renal
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_analisis_sangre
+  act_pcr:
+    id: act_pcr
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_analisis_sangre
+  act_hemocultivos:
+    id: act_hemocultivos
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_hemocultivos
+  act_imagen_urgente_eco_tc:
+    id: act_imagen_urgente_eco_tc
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_imagen_urgente
+  act_tc_contraste:
+    id: act_tc_contraste
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_imagen_tc_abscesos
+  act_urotomografia:
+    id: act_urotomografia
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_imagen_urotomografia
+  act_ecografia_vias_urinarias:
+    id: act_ecografia_vias_urinarias
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_imagen_ecografia
+  act_ecografia_renal:
+    id: act_ecografia_renal
+    type: REQUEST_TEST
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_imagen_gestante
+  act_hospitalizar:
+    id: act_hospitalizar
+    type: ADMIT
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_hosp_choque_septico
+      - frag_p3_hosp_intolerancia
+      - frag_p3_hosp_itu_alta
+      - frag_p3_hosp_descompensacion
+      - frag_p3_hosp_resistente
+      - frag_p3_hosp_funcion_renal
+      - frag_p3_hosp_absceso
+      - frag_p3_hosp_social
+      notes: Consecuencia de las 8 indicaciones de hospitalización aplicables a adultos;
+        el bullet pediátrico queda fuera del alcance.
+  act_egreso:
+    id: act_egreso
+    type: DISCHARGE
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p3_egreso_afebril
+      - frag_p3_egreso_tas
+      - frag_p4_egreso_fc
+      - frag_p4_egreso_fr
+      - frag_p4_egreso_sato2_pao2
+      - frag_p4_egreso_via_oral
+      - frag_p4_egreso_comorbilidades
+      - frag_p4_egreso_tratamiento
+      - frag_p4_egreso_social
+      notes: Paso a terapia oral y/o egreso cuando se cumplen los criterios de la
+        fuente.
+  act_t1_nitrofurantoina:
+    id: act_t1_nitrofurantoina
+    type: PRESCRIBE
+    payload:
+      medicamento: Nitrofurantoína
+      dosis: 100 mg
+      via: VO
+      frecuencia: cada 6 horas
+      duracion: 5 días
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_itu_baja_antibioticos
+      - frag_p4_t1_dosis_baja_ba
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_t1_cefalexina:
+    id: act_t1_cefalexina
+    type: PRESCRIBE
+    payload:
+      medicamento: Cefalexina
+      dosis: 500 mg
+      via: VO
+      frecuencia: cada 6 horas
+      duracion: 5 días
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_itu_baja_antibioticos
+      - frag_p4_t1_dosis_baja_ba
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_t1_fosfomicina:
+    id: act_t1_fosfomicina
+    type: PRESCRIBE
+    payload:
+      medicamento: Fosfomicina
+      dosis: 3 g
+      via: VO
+      duracion: Dosis única
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_itu_baja_antibioticos
+      - frag_p4_t1_dosis_baja_ba
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_t1_ba_nitrofurantoina:
+    id: act_t1_ba_nitrofurantoina
+    type: PRESCRIBE
+    payload:
+      medicamento: Nitrofurantoína
+      dosis: 100 mg
+      via: VO
+      frecuencia: cada 6 horas
+      duracion: 5 días
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_ba_row
+      - frag_p4_t1_itu_baja_antibioticos
+      - frag_p4_t1_dosis_baja_ba
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_t1_ba_cefalexina:
+    id: act_t1_ba_cefalexina
+    type: PRESCRIBE
+    payload:
+      medicamento: Cefalexina
+      dosis: 500 mg
+      via: VO
+      frecuencia: cada 6 horas
+      duracion: 5 días
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_ba_row
+      - frag_p4_t1_itu_baja_antibioticos
+      - frag_p4_t1_dosis_baja_ba
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_t1_ba_fosfomicina:
+    id: act_t1_ba_fosfomicina
+    type: PRESCRIBE
+    payload:
+      medicamento: Fosfomicina
+      dosis: 3 g
+      via: VO
+      duracion: Dosis única
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_ba_row
+      - frag_p4_t1_itu_baja_antibioticos
+      - frag_p4_t1_dosis_baja_ba
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_cefalexina_alta_amb:
+    id: act_cefalexina_alta_amb
+    type: PRESCRIBE
+    payload:
+      medicamento: Cefalexina
+      dosis: 500 mg
+      via: VO
+      frecuencia: cada 6 horas
+      duracion: 5-7 días
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_ambulatoria
+      - frag_p4_t1_ambulatoria_dosis
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_cefazolina:
+    id: act_cefazolina
+    type: PRESCRIBE
+    payload:
+      medicamento: Cefazolina
+      dosis: 1 g
+      via: IV
+      frecuencia: cada 8 horas
+      duracion: 7 días
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_sin_fr_drogas
+      - frag_p4_t1_sin_fr_dosis
+      - frag_p5_t2_itu_alta_row
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_amikacina:
+    id: act_amikacina
+    type: PRESCRIBE
+    payload:
+      medicamento: Amikacina
+      dosis: 15 mg/kg
+      via: IV
+      frecuencia: cada día
+      duracion: 7 días
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_sin_fr_dosis
+      - frag_p4_t1_con_fr_dosis
+      - frag_p4_t1_nota_amikacina
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_piperacilina_tazobactam:
+    id: act_piperacilina_tazobactam
+    type: PRESCRIBE
+    payload:
+      medicamento: Piperacilina tazobactam
+      dosis: 4.5 g
+      via: IV
+      frecuencia: cada 8 horas
+      duracion: 7 días
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_con_fr_drogas
+      - frag_p4_t1_con_fr_dosis
+      - frag_p5_t2_itu_alta_row
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_meropenem:
+    id: act_meropenem
+    type: PRESCRIBE
+    payload:
+      medicamento: Meropenem
+      dosis: 1 g
+      via: IV
+      frecuencia: cada 8 horas
+      duracion: 7 días
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t1_con_fr_drogas
+      - frag_p4_t1_con_fr_dosis
+      - frag_p4_t1_nota_meropenem
+      - frag_p5_t2_itu_alta_row
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_t2_ba_nitrofurantoina:
+    id: act_t2_ba_nitrofurantoina
+    type: PRESCRIBE
+    payload:
+      medicamento: Nitrofurantoína
+      dosis: 100 mg
+      frecuencia: cada 6 h
+      duracion: 5 días
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t2_ba_row
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_t2_ba_cefalexina:
+    id: act_t2_ba_cefalexina
+    type: PRESCRIBE
+    payload:
+      medicamento: Cefalexina
+      dosis: 500 mg
+      frecuencia: cada 6 h
+      duracion: 5 días
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t2_ba_row
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_t2_ba_fosfomicina:
+    id: act_t2_ba_fosfomicina
+    type: PRESCRIBE
+    payload:
+      medicamento: Fosfomicina
+      dosis: 3 g
+      duracion: Dosis única
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t2_ba_row
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_t2_baja_nitrofurantoina:
+    id: act_t2_baja_nitrofurantoina
+    type: PRESCRIBE
+    payload:
+      medicamento: Nitrofurantoína
+      dosis: 100 mg
+      frecuencia: cada 6 h
+      duracion: 5 días
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t2_itu_baja_row
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_t2_baja_cefalexina:
+    id: act_t2_baja_cefalexina
+    type: PRESCRIBE
+    payload:
+      medicamento: Cefalexina
+      dosis: 500 mg
+      frecuencia: cada 6 h
+      duracion: 5 días
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t2_itu_baja_row
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_t2_baja_fosfomicina:
+    id: act_t2_baja_fosfomicina
+    type: PRESCRIBE
+    payload:
+      medicamento: Fosfomicina
+      dosis: 3 g
+      duracion: Dosis única
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t2_itu_baja_row
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_preventiva_nitrofurantoina:
+    id: act_preventiva_nitrofurantoina
+    type: PRESCRIBE
+    payload:
+      medicamento: Nitrofurantoína
+      dosis: 100 mg
+      frecuencia: cada día
+      duracion: hasta semana 34 gestación
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t2_preventiva_baja
+      - frag_p5_t2_preventiva_alta
+      - frag_p5_t2_nota4
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_preventiva_cefalexina:
+    id: act_preventiva_cefalexina
+    type: PRESCRIBE
+    payload:
+      medicamento: Cefalexina
+      dosis: 500 mg
+      frecuencia: cada día
+      duracion: hasta semana 34 gestación
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t2_preventiva_baja
+      - frag_p5_t2_preventiva_alta
+      - frag_p5_t2_nota4
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_preventiva_tmpsmx:
+    id: act_preventiva_tmpsmx
+    type: PRESCRIBE
+    payload:
+      medicamento: TMP-SMX
+      dosis: 480 mg
+      frecuencia: cada día
+      duracion: hasta semana 34 gestación
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t2_preventiva_baja
+      - frag_p5_t2_preventiva_alta
+      - frag_p5_t2_nota4
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_preventiva_fosfomicina:
+    id: act_preventiva_fosfomicina
+    type: PRESCRIBE
+    payload:
+      medicamento: Fosfomicina
+      dosis: 3 g
+      frecuencia: cada semana
+      duracion: hasta semana 34 gestación
+    provenance:
+      derivation: NORMALIZED
+      fragment_refs:
+      - frag_p4_t2_preventiva_baja
+      - frag_p5_t2_preventiva_alta
+      - frag_p5_t2_nota4
+      notes: Alternativa declarada en la fuente; el payload compone celdas de la tabla
+        y el motor nunca ejecuta ni selecciona entre alternativas.
+  act_restriccion_muestra_previa:
+    id: act_restriccion_muestra_previa
+    type: RESTRICTION
+    label: Tomar la muestra antes de la primera dosis de antibiótico
+    provenance:
+      derivation: SOURCE_STATED
+      fragment_refs:
+      - frag_p3_toma_muestra_antibiotico
+test_cases:
+  tc_def_itu_pos:
+    id: tc_def_itu_pos
+    inputs:
+      bacteriuria_significativa: true
+      signos_sintomas_itu: true
+    expected_results:
+      rule_def_itu: 'TRUE'
+  tc_def_itu_missing:
+    id: tc_def_itu_missing
+    inputs:
+      bacteriuria_significativa: null
+      signos_sintomas_itu: true
+    expected_results:
+      rule_def_itu: UNKNOWN
+  tc_def_ba_cultivos_mujer_2:
+    id: tc_def_ba_cultivos_mujer_2
+    inputs:
+      mujer_no_embarazada: true
+      urocultivos_2_mismo_patron: true
+      hombre: false
+      gestante: false
+      urocultivo_unico: false
+    expected_results:
+      rule_def_ba_cultivos: 'TRUE'
+  tc_def_ba_cultivos_hombre_1:
+    id: tc_def_ba_cultivos_hombre_1
+    inputs:
+      mujer_no_embarazada: false
+      hombre: true
+      urocultivo_unico: true
+      gestante: false
+      urocultivos_2_mismo_patron: false
+    expected_results:
+      rule_def_ba_cultivos: 'TRUE'
+  tc_def_ba_cultivos_gestante_1:
+    id: tc_def_ba_cultivos_gestante_1
+    inputs:
+      gestante: true
+      urocultivo_unico: true
+      mujer_no_embarazada: false
+      hombre: false
+      urocultivos_2_mismo_patron: false
+    expected_results:
+      rule_def_ba_cultivos: 'TRUE'
+  tc_def_ba_cultivos_ninguno:
+    id: tc_def_ba_cultivos_ninguno
+    inputs:
+      mujer_no_embarazada: true
+      urocultivos_2_mismo_patron: false
+      hombre: false
+      gestante: false
+      urocultivo_unico: false
+    expected_results:
+      rule_def_ba_cultivos: 'FALSE'
+  tc_def_ba_piuria_pediatrica:
+    id: tc_def_ba_piuria_pediatrica
+    inputs:
+      poblacion_pediatrica: true
+      ausencia_piuria_sedimento: true
+    expected_results:
+      rule_def_ba_piuria_pediatrica: 'TRUE'
+  tc_def_ba_pos:
+    id: tc_def_ba_pos
+    inputs:
+      bacteriuria_significativa: true
+      sin_signos_sintomas_itu: true
+    expected_results:
+      rule_def_ba: 'TRUE'
+  tc_def_ba_neg:
+    id: tc_def_ba_neg
+    inputs:
+      bacteriuria_significativa: true
+      sin_signos_sintomas_itu: false
+    expected_results:
+      rule_def_ba: 'FALSE'
+  tc_def_ba_missing:
+    id: tc_def_ba_missing
+    inputs:
+      bacteriuria_significativa: null
+      sin_signos_sintomas_itu: true
+    expected_results:
+      rule_def_ba: UNKNOWN
+  tc_def_ba_completa_mujer:
+    id: tc_def_ba_completa_mujer
+    inputs:
+      bacteriuria_significativa: true
+      sin_signos_sintomas_itu: true
+      mujer_no_embarazada: true
+      urocultivos_2_mismo_patron: true
+      hombre: false
+      gestante: false
+      urocultivo_unico: false
+    expected_results:
+      rule_def_ba: 'TRUE'
+      rule_def_ba_cultivos: 'TRUE'
+  tc_def_itu_bajo_pos:
+    id: tc_def_itu_bajo_pos
+    inputs:
+      infeccion_aguda_vejiga_uretra: true
+      bacteriuria_significativa: true
+      sin_leucorrea: true
+      sin_irritacion_vaginal: true
+      sin_fiebre: true
+      sin_dolor_lumbar: true
+      sin_compromiso_sistemico: true
+    expected_results:
+      rule_def_itu_bajo: 'TRUE'
+  tc_def_itu_bajo_con_fiebre:
+    id: tc_def_itu_bajo_con_fiebre
+    inputs:
+      infeccion_aguda_vejiga_uretra: true
+      bacteriuria_significativa: true
+      sin_leucorrea: true
+      sin_irritacion_vaginal: true
+      sin_fiebre: false
+      sin_dolor_lumbar: true
+      sin_compromiso_sistemico: true
+    expected_results:
+      rule_def_itu_bajo: 'FALSE'
+  tc_def_itu_complicada_estructural:
+    id: tc_def_itu_complicada_estructural
+    inputs:
+      alteracion_estructural: true
+      alteracion_funcional: false
+    expected_results:
+      rule_def_itu_complicada_estructural: 'TRUE'
+  tc_def_itu_complicada_clinica:
+    id: tc_def_itu_complicada_clinica
+    inputs:
+      pielonefritis: true
+      itu_febril_bacteriemica: false
+      itu_asociada_cateter: false
+      alteracion_estructural: false
+      alteracion_funcional: false
+    expected_results:
+      rule_def_itu_complicada_clinica: 'TRUE'
+      rule_def_itu_complicada_estructural: 'FALSE'
+  tc_citoquimico_pos:
+    id: tc_citoquimico_pos
+    inputs:
+      en_urgencias: true
+      sospecha_itu: true
+      mujer: false
+    expected_results:
+      rule_citoquimico_orina: 'TRUE'
+  tc_citoquimico_excepcion:
+    id: tc_citoquimico_excepcion
+    inputs:
+      en_urgencias: true
+      sospecha_itu: true
+      mujer: true
+      primer_episodio: true
+      sintomas_tipicos: true
+    expected_results:
+      rule_citoquimico_orina: 'FALSE'
+  tc_citoquimico_missing:
+    id: tc_citoquimico_missing
+    inputs:
+      en_urgencias: null
+      sospecha_itu: true
+    expected_results:
+      rule_citoquimico_orina: UNKNOWN
+  tc_tirilla_descarta:
+    id: tc_tirilla_descarta
+    inputs:
+      tirilla_normal: true
+      sospecha_clinica_baja: true
+    expected_results:
+      rule_tirilla_descarta_diagnostico: 'TRUE'
+  tc_piuria_11:
+    id: tc_piuria_11
+    inputs:
+      leucocitos_orina_campo: 11
+    expected_results:
+      rule_piuria_mayor_10: 'TRUE'
+  tc_piuria_10:
+    id: tc_piuria_10
+    inputs:
+      leucocitos_orina_campo: 10
+    expected_results:
+      rule_piuria_mayor_10: 'FALSE'
+  tc_gram_urgencias:
+    id: tc_gram_urgencias
+    inputs:
+      en_urgencias: true
+    expected_results:
+      rule_gram_urgencias: 'TRUE'
+  tc_urocultivo_pos:
+    id: tc_urocultivo_pos
+    inputs:
+      sospecha_itu: true
+      mujer: false
+    expected_results:
+      rule_urocultivo_indicado: 'TRUE'
+  tc_urocultivo_excepcion:
+    id: tc_urocultivo_excepcion
+    inputs:
+      sospecha_itu: true
+      mujer: true
+      primer_episodio: true
+      itu_baja_no_complicada: true
+      premenopausica: true
+    expected_results:
+      rule_urocultivo_indicado: 'FALSE'
+  tc_urocultivo_1e5:
+    id: tc_urocultivo_1e5
+    inputs:
+      urocultivo_cfu_ml: 100000
+      muestra_miccion_espontanea: true
+    expected_results:
+      rule_urocultivo_positivo_1e5: 'TRUE'
+  tc_urocultivo_1e5_abajo:
+    id: tc_urocultivo_1e5_abajo
+    inputs:
+      urocultivo_cfu_ml: 99999
+      muestra_miccion_espontanea: true
+    expected_results:
+      rule_urocultivo_positivo_1e5: 'FALSE'
+  tc_urocultivo_1e3:
+    id: tc_urocultivo_1e3
+    inputs:
+      urocultivo_cfu_ml: 1000
+      sintomas_no_explicados_otra_patologia: true
+    expected_results:
+      rule_urocultivo_positivo_1e3: 'TRUE'
+  tc_urocultivo_1e2:
+    id: tc_urocultivo_1e2
+    inputs:
+      urocultivo_cfu_ml: 100
+      sonda_recien_insertada: true
+    expected_results:
+      rule_urocultivo_positivo_1e2: 'TRUE'
+  tc_analisis_sangre_hosp:
+    id: tc_analisis_sangre_hosp
+    inputs:
+      choque_septico: true
+      intolerancia_via_oral: false
+      itu_alta: false
+      descompensacion_enfermedad_base: false
+      germen_resistente_sin_opcion_ambulatoria: false
+      deterioro_funcion_renal: false
+      absceso_renal_pararrenal: false
+      soporte_social_inadecuado: false
+      infeccion_urinaria: true
+    expected_results:
+      rule_analisis_sangre: 'TRUE'
+  tc_analisis_sangre_no_hosp:
+    id: tc_analisis_sangre_no_hosp
+    inputs:
+      choque_septico: false
+      intolerancia_via_oral: false
+      itu_alta: false
+      descompensacion_enfermedad_base: false
+      germen_resistente_sin_opcion_ambulatoria: false
+      deterioro_funcion_renal: false
+      absceso_renal_pararrenal: false
+      soporte_social_inadecuado: false
+      infeccion_urinaria: true
+    expected_results:
+      rule_analisis_sangre: 'FALSE'
+  tc_hemocultivos_pos:
+    id: tc_hemocultivos_pos
+    inputs:
+      pielonefritis: true
+      fiebre: true
+      hipotermia: false
+      choque_septico: false
+    expected_results:
+      rule_hemocultivos: 'TRUE'
+  tc_hemocultivos_hipotermia:
+    id: tc_hemocultivos_hipotermia
+    inputs:
+      pielonefritis: true
+      fiebre: false
+      hipotermia: true
+      choque_septico: false
+    expected_results:
+      rule_hemocultivos: 'TRUE'
+  tc_hemocultivos_neg:
+    id: tc_hemocultivos_neg
+    inputs:
+      pielonefritis: true
+      fiebre: false
+      hipotermia: false
+      choque_septico: false
+    expected_results:
+      rule_hemocultivos: 'FALSE'
+  tc_hemocultivos_no_aplica:
+    id: tc_hemocultivos_no_aplica
+    inputs:
+      pielonefritis: false
+      fiebre: true
+    expected_results:
+      rule_hemocultivos: 'FALSE'
+  tc_imagen_shock:
+    id: tc_imagen_shock
+    inputs:
+      infeccion_urinaria: true
+      choque_septico: true
+      falla_renal_aguda: false
+      complicacion_local: false
+      fiebre_horas: 0
+      tratamiento_antibiotico_correcto: false
+    expected_results:
+      rule_imagen_urgente: 'TRUE'
+  tc_imagen_fiebre_72:
+    id: tc_imagen_fiebre_72
+    inputs:
+      infeccion_urinaria: true
+      choque_septico: false
+      falla_renal_aguda: false
+      complicacion_local: false
+      fiebre_horas: 72
+      tratamiento_antibiotico_correcto: true
+    expected_results:
+      rule_imagen_urgente: 'TRUE'
+  tc_imagen_fiebre_71:
+    id: tc_imagen_fiebre_71
+    inputs:
+      infeccion_urinaria: true
+      choque_septico: false
+      falla_renal_aguda: false
+      complicacion_local: false
+      fiebre_horas: 71
+      tratamiento_antibiotico_correcto: true
+    expected_results:
+      rule_imagen_urgente: 'FALSE'
+  tc_imagen_fiebre_72_sin_tto:
+    id: tc_imagen_fiebre_72_sin_tto
+    inputs:
+      infeccion_urinaria: true
+      choque_septico: false
+      falla_renal_aguda: false
+      complicacion_local: false
+      fiebre_horas: 72
+      tratamiento_antibiotico_correcto: false
+    expected_results:
+      rule_imagen_urgente: 'FALSE'
+  tc_imagen_sospecha_solo:
+    id: tc_imagen_sospecha_solo
+    inputs:
+      sospecha_itu: true
+      infeccion_urinaria: false
+      choque_septico: true
+    expected_results:
+      rule_imagen_urgente: 'FALSE'
+  tc_tc_abscesos:
+    id: tc_tc_abscesos
+    inputs:
+      sospecha_absceso_nefritis_local: true
+    expected_results:
+      rule_tc_abscesos_nefritis: 'TRUE'
+  tc_imagen_urotomografia:
+    id: tc_imagen_urotomografia
+    inputs:
+      sospecha_alteracion: estructural
+    expected_results:
+      rule_imagen_urotomografia: 'TRUE'
+      rule_imagen_ecografia_funcional: 'FALSE'
+  tc_imagen_ecografia:
+    id: tc_imagen_ecografia
+    inputs:
+      sospecha_alteracion: funcional
+    expected_results:
+      rule_imagen_ecografia_funcional: 'TRUE'
+  tc_ecografia_renal_gestante:
+    id: tc_ecografia_renal_gestante
+    inputs:
+      gestante: true
+      pielonefritis: true
+    expected_results:
+      rule_ecografia_renal_gestante: 'TRUE'
+  tc_ecografia_renal_episodios:
+    id: tc_ecografia_renal_episodios
+    inputs:
+      gestante: true
+      mas_de_un_episodio_itu: true
+      pielonefritis: false
+      sospecha_litiasis: false
+      hematuria: false
+      dolor: false
+    expected_results:
+      rule_ecografia_renal_gestante: 'TRUE'
+  tc_ecografia_renal_litiasis_pos:
+    id: tc_ecografia_renal_litiasis_pos
+    inputs:
+      gestante: true
+      sospecha_litiasis: true
+      hematuria: true
+      dolor: false
+      pielonefritis: false
+      mas_de_un_episodio_itu: false
+    expected_results:
+      rule_ecografia_renal_gestante: 'TRUE'
+  tc_ecografia_renal_dolor_solo:
+    id: tc_ecografia_renal_dolor_solo
+    inputs:
+      gestante: true
+      dolor: true
+      sospecha_litiasis: false
+      pielonefritis: false
+      mas_de_un_episodio_itu: false
+      hematuria: false
+    expected_results:
+      rule_ecografia_renal_gestante: 'FALSE'
+  tc_ecografia_renal_hematuria_sola:
+    id: tc_ecografia_renal_hematuria_sola
+    inputs:
+      gestante: true
+      hematuria: true
+      sospecha_litiasis: false
+      pielonefritis: false
+      mas_de_un_episodio_itu: false
+      dolor: false
+    expected_results:
+      rule_ecografia_renal_gestante: 'FALSE'
+  tc_ecografia_renal_no_gestante:
+    id: tc_ecografia_renal_no_gestante
+    inputs:
+      gestante: false
+      pielonefritis: true
+    expected_results:
+      rule_ecografia_renal_gestante: 'FALSE'
+  tc_hosp_choque:
+    id: tc_hosp_choque
+    inputs:
+      choque_septico: true
+      intolerancia_via_oral: false
+      itu_alta: false
+      descompensacion_enfermedad_base: false
+      germen_resistente_sin_opcion_ambulatoria: false
+      deterioro_funcion_renal: false
+      absceso_renal_pararrenal: false
+      soporte_social_inadecuado: false
+    expected_results:
+      rule_hosp_criterio_choque_septico: 'TRUE'
+      rule_hospitalizacion: 'TRUE'
+  tc_hosp_intolerancia:
+    id: tc_hosp_intolerancia
+    inputs:
+      choque_septico: false
+      intolerancia_via_oral: true
+      itu_alta: false
+      descompensacion_enfermedad_base: false
+      germen_resistente_sin_opcion_ambulatoria: false
+      deterioro_funcion_renal: false
+      absceso_renal_pararrenal: false
+      soporte_social_inadecuado: false
+    expected_results:
+      rule_hosp_criterio_intolerancia_oral: 'TRUE'
+      rule_hospitalizacion: 'TRUE'
+  tc_hosp_itu_alta:
+    id: tc_hosp_itu_alta
+    inputs:
+      choque_septico: false
+      intolerancia_via_oral: false
+      itu_alta: true
+      descompensacion_enfermedad_base: false
+      germen_resistente_sin_opcion_ambulatoria: false
+      deterioro_funcion_renal: false
+      absceso_renal_pararrenal: false
+      soporte_social_inadecuado: false
+    expected_results:
+      rule_hosp_criterio_itu_alta: 'TRUE'
+      rule_hospitalizacion: 'TRUE'
+  tc_hosp_descompensacion:
+    id: tc_hosp_descompensacion
+    inputs:
+      choque_septico: false
+      intolerancia_via_oral: false
+      itu_alta: false
+      descompensacion_enfermedad_base: true
+      germen_resistente_sin_opcion_ambulatoria: false
+      deterioro_funcion_renal: false
+      absceso_renal_pararrenal: false
+      soporte_social_inadecuado: false
+    expected_results:
+      rule_hosp_criterio_descompensacion: 'TRUE'
+      rule_hospitalizacion: 'TRUE'
+  tc_hosp_germen_resistente:
+    id: tc_hosp_germen_resistente
+    inputs:
+      choque_septico: false
+      intolerancia_via_oral: false
+      itu_alta: false
+      descompensacion_enfermedad_base: false
+      germen_resistente_sin_opcion_ambulatoria: true
+      deterioro_funcion_renal: false
+      absceso_renal_pararrenal: false
+      soporte_social_inadecuado: false
+    expected_results:
+      rule_hosp_criterio_germen_resistente: 'TRUE'
+      rule_hospitalizacion: 'TRUE'
+  tc_hosp_funcion_renal:
+    id: tc_hosp_funcion_renal
+    inputs:
+      choque_septico: false
+      intolerancia_via_oral: false
+      itu_alta: false
+      descompensacion_enfermedad_base: false
+      germen_resistente_sin_opcion_ambulatoria: false
+      deterioro_funcion_renal: true
+      absceso_renal_pararrenal: false
+      soporte_social_inadecuado: false
+    expected_results:
+      rule_hosp_criterio_funcion_renal: 'TRUE'
+      rule_hospitalizacion: 'TRUE'
+  tc_hosp_absceso:
+    id: tc_hosp_absceso
+    inputs:
+      choque_septico: false
+      intolerancia_via_oral: false
+      itu_alta: false
+      descompensacion_enfermedad_base: false
+      germen_resistente_sin_opcion_ambulatoria: false
+      deterioro_funcion_renal: false
+      absceso_renal_pararrenal: true
+      soporte_social_inadecuado: false
+    expected_results:
+      rule_hosp_criterio_absceso: 'TRUE'
+      rule_hospitalizacion: 'TRUE'
+  tc_hosp_soporte_social:
+    id: tc_hosp_soporte_social
+    inputs:
+      choque_septico: false
+      intolerancia_via_oral: false
+      itu_alta: false
+      descompensacion_enfermedad_base: false
+      germen_resistente_sin_opcion_ambulatoria: false
+      deterioro_funcion_renal: false
+      absceso_renal_pararrenal: false
+      soporte_social_inadecuado: true
+    expected_results:
+      rule_hosp_criterio_soporte_social: 'TRUE'
+      rule_hospitalizacion: 'TRUE'
+  tc_hosp_ninguno:
+    id: tc_hosp_ninguno
+    inputs:
+      choque_septico: false
+      intolerancia_via_oral: false
+      itu_alta: false
+      descompensacion_enfermedad_base: false
+      germen_resistente_sin_opcion_ambulatoria: false
+      deterioro_funcion_renal: false
+      absceso_renal_pararrenal: false
+      soporte_social_inadecuado: false
+    expected_results:
+      rule_hospitalizacion: 'FALSE'
+  tc_hosp_unknown:
+    id: tc_hosp_unknown
+    inputs:
+      choque_septico: null
+      intolerancia_via_oral: false
+      itu_alta: false
+      descompensacion_enfermedad_base: false
+      germen_resistente_sin_opcion_ambulatoria: false
+      deterioro_funcion_renal: false
+      absceso_renal_pararrenal: false
+      soporte_social_inadecuado: false
+    expected_results:
+      rule_hospitalizacion: UNKNOWN
+  tc_egreso_completo:
+    id: tc_egreso_completo
+    inputs:
+      afebril_horas: 48
+      tas: 91
+      fc: 99
+      fr: 23
+      sato2: 91
+      pao2: 61
+      tolera_via_oral: true
+      comorbilidades_compensadas: true
+      tratamiento_ambulatorio_asegurado: true
+      condiciones_sociales_permiten: true
+    expected_results:
+      rule_plan_egreso: 'TRUE'
+  tc_egreso_afebril_47:
+    id: tc_egreso_afebril_47
+    inputs:
+      afebril_horas: 47
+      tas: 91
+      fc: 99
+      fr: 23
+      sato2: 91
+      pao2: 61
+      tolera_via_oral: true
+      comorbilidades_compensadas: true
+      tratamiento_ambulatorio_asegurado: true
+      condiciones_sociales_permiten: true
+    expected_results:
+      rule_plan_egreso: 'FALSE'
+  tc_egreso_tas_90:
+    id: tc_egreso_tas_90
+    inputs:
+      afebril_horas: 48
+      tas: 90
+      fc: 99
+      fr: 23
+      sato2: 91
+      pao2: 61
+      tolera_via_oral: true
+      comorbilidades_compensadas: true
+      tratamiento_ambulatorio_asegurado: true
+      condiciones_sociales_permiten: true
+    expected_results:
+      rule_egreso_tas: 'FALSE'
+      rule_plan_egreso: 'FALSE'
+  tc_egreso_fc_100:
+    id: tc_egreso_fc_100
+    inputs:
+      afebril_horas: 48
+      tas: 91
+      fc: 100
+      fr: 23
+      sato2: 91
+      pao2: 61
+      tolera_via_oral: true
+      comorbilidades_compensadas: true
+      tratamiento_ambulatorio_asegurado: true
+      condiciones_sociales_permiten: true
+    expected_results:
+      rule_egreso_fc: 'FALSE'
+      rule_plan_egreso: 'FALSE'
+  tc_egreso_fr_24:
+    id: tc_egreso_fr_24
+    inputs:
+      afebril_horas: 48
+      tas: 91
+      fc: 99
+      fr: 24
+      sato2: 91
+      pao2: 61
+      tolera_via_oral: true
+      comorbilidades_compensadas: true
+      tratamiento_ambulatorio_asegurado: true
+      condiciones_sociales_permiten: true
+    expected_results:
+      rule_egreso_fr: 'FALSE'
+      rule_plan_egreso: 'FALSE'
+  tc_egreso_sato2_90_pao2_61:
+    id: tc_egreso_sato2_90_pao2_61
+    inputs:
+      afebril_horas: 48
+      tas: 91
+      fc: 99
+      fr: 23
+      sato2: 90
+      pao2: 61
+      tolera_via_oral: true
+      comorbilidades_compensadas: true
+      tratamiento_ambulatorio_asegurado: true
+      condiciones_sociales_permiten: true
+    expected_results:
+      rule_egreso_sato2_pao2: 'TRUE'
+      rule_plan_egreso: 'TRUE'
+  tc_egreso_sato2_90_pao2_60:
+    id: tc_egreso_sato2_90_pao2_60
+    inputs:
+      afebril_horas: 48
+      tas: 91
+      fc: 99
+      fr: 23
+      sato2: 90
+      pao2: 60
+      tolera_via_oral: true
+      comorbilidades_compensadas: true
+      tratamiento_ambulatorio_asegurado: true
+      condiciones_sociales_permiten: true
+    expected_results:
+      rule_egreso_sato2_pao2: 'FALSE'
+      rule_plan_egreso: 'FALSE'
+  tc_egreso_missing_pao2:
+    id: tc_egreso_missing_pao2
+    inputs:
+      afebril_horas: 48
+      tas: 91
+      fc: 99
+      fr: 23
+      sato2: 90
+      pao2: null
+      tolera_via_oral: true
+      comorbilidades_compensadas: true
+      tratamiento_ambulatorio_asegurado: true
+      condiciones_sociales_permiten: true
+    expected_results:
+      rule_egreso_sato2_pao2: UNKNOWN
+      rule_plan_egreso: UNKNOWN
+  tc_t1_itu_baja:
+    id: tc_t1_itu_baja
+    inputs:
+      itu_baja: true
+    expected_results:
+      rule_t1_itu_baja: 'TRUE'
+  tc_t1_ba_gestante:
+    id: tc_t1_ba_gestante
+    inputs:
+      bacteriuria_significativa: true
+      sin_signos_sintomas_itu: true
+      gestante: true
+      procedimiento_invasivo_vias_urinarias: false
+    expected_results:
+      rule_t1_ba_row: 'TRUE'
+  tc_t1_ba_no_indicada:
+    id: tc_t1_ba_no_indicada
+    inputs:
+      bacteriuria_significativa: true
+      sin_signos_sintomas_itu: true
+      gestante: false
+      procedimiento_invasivo_vias_urinarias: false
+    expected_results:
+      rule_t1_ba_row: 'FALSE'
+  tc_t1_ba_procedimiento:
+    id: tc_t1_ba_procedimiento
+    inputs:
+      bacteriuria_significativa: true
+      sin_signos_sintomas_itu: true
+      gestante: false
+      procedimiento_invasivo_vias_urinarias: true
+    expected_results:
+      rule_t1_ba_row: 'TRUE'
+  tc_tto_ba_gestante_con_ba:
+    id: tc_tto_ba_gestante_con_ba
+    inputs:
+      bacteriuria_significativa: true
+      sin_signos_sintomas_itu: true
+      gestante: true
+      procedimiento_invasivo_vias_urinarias: false
+    expected_results:
+      rule_tto_ba_indicado: 'TRUE'
+  tc_tto_ba_procedimiento_con_ba:
+    id: tc_tto_ba_procedimiento_con_ba
+    inputs:
+      bacteriuria_significativa: true
+      sin_signos_sintomas_itu: true
+      gestante: false
+      procedimiento_invasivo_vias_urinarias: true
+    expected_results:
+      rule_tto_ba_indicado: 'TRUE'
+  tc_tto_ba_gestante_sin_ba:
+    id: tc_tto_ba_gestante_sin_ba
+    inputs:
+      bacteriuria_significativa: false
+      sin_signos_sintomas_itu: true
+      gestante: true
+      procedimiento_invasivo_vias_urinarias: false
+    expected_results:
+      rule_tto_ba_indicado: 'FALSE'
+  tc_tto_ba_procedimiento_sin_ba:
+    id: tc_tto_ba_procedimiento_sin_ba
+    inputs:
+      bacteriuria_significativa: false
+      sin_signos_sintomas_itu: true
+      gestante: false
+      procedimiento_invasivo_vias_urinarias: true
+    expected_results:
+      rule_tto_ba_indicado: 'FALSE'
+  tc_tto_ba_missing:
+    id: tc_tto_ba_missing
+    inputs:
+      bacteriuria_significativa: null
+      sin_signos_sintomas_itu: true
+      gestante: true
+      procedimiento_invasivo_vias_urinarias: false
+    expected_results:
+      rule_tto_ba_indicado: UNKNOWN
+  tc_t1_alta_amb:
+    id: tc_t1_alta_amb
+    inputs:
+      itu_alta: true
+      hospitalizado: false
+    expected_results:
+      rule_t1_alta_ambulatoria: 'TRUE'
+  tc_t1_alta_hosp_sin_fr:
+    id: tc_t1_alta_hosp_sin_fr
+    inputs:
+      hospitalizacion_48h_ultimos_3meses: false
+      antibioticos_ultimos_90dias: false
+      colonizacion_blee: false
+      itu_alta: true
+      hospitalizado: true
+    expected_results:
+      rule_t1_alta_hosp_sin_fr: 'TRUE'
+      rule_t1_alta_hosp_con_fr_piperacilina: 'FALSE'
+  tc_t1_alta_hosp_con_fr:
+    id: tc_t1_alta_hosp_con_fr
+    inputs:
+      itu_alta: true
+      hospitalizado: true
+      hospitalizacion_48h_ultimos_3meses: true
+    expected_results:
+      rule_fr_bgn_resistentes: 'TRUE'
+      rule_t1_alta_hosp_con_fr_piperacilina: 'TRUE'
+      rule_t1_alta_hosp_sin_fr: 'FALSE'
+  tc_t1_con_fr_amikacina_sin_choque:
+    id: tc_t1_con_fr_amikacina_sin_choque
+    inputs:
+      itu_alta: true
+      hospitalizado: true
+      antibioticos_ultimos_90dias: true
+      choque_septico: false
+    expected_results:
+      rule_t1_alta_hosp_con_fr_amikacina: 'TRUE'
+      rule_t1_alta_hosp_con_fr_meropenem: 'FALSE'
+  tc_t1_con_fr_meropenem_choque:
+    id: tc_t1_con_fr_meropenem_choque
+    inputs:
+      itu_alta: true
+      hospitalizado: true
+      colonizacion_blee: true
+      choque_septico: true
+    expected_results:
+      rule_t1_alta_hosp_con_fr_amikacina: 'FALSE'
+      rule_t1_alta_hosp_con_fr_meropenem: 'TRUE'
+  tc_fosfomicina_preferida:
+    id: tc_fosfomicina_preferida
+    inputs:
+      itu_recurrente: true
+      antibioticos_ultimos_90dias: false
+    expected_results:
+      rule_fosfomicina_preferida: 'TRUE'
+  tc_reevaluar_48h:
+    id: tc_reevaluar_48h
+    inputs:
+      itu_alta: true
+      hospitalizado: false
+      tiempo_desde_inicio_terapia_hours: 48
+    expected_results:
+      rule_reevaluar_48h: 'TRUE'
+  tc_reevaluar_47h:
+    id: tc_reevaluar_47h
+    inputs:
+      itu_alta: true
+      hospitalizado: false
+      tiempo_desde_inicio_terapia_hours: 47
+    expected_results:
+      rule_reevaluar_48h: 'FALSE'
+  tc_t2_ba_gestante:
+    id: tc_t2_ba_gestante
+    inputs:
+      gestante: true
+      bacteriuria_significativa: true
+      sin_signos_sintomas_itu: true
+    expected_results:
+      rule_t2_ba_gestante: 'TRUE'
+  tc_t2_ba_no_gestante:
+    id: tc_t2_ba_no_gestante
+    inputs:
+      gestante: false
+      bacteriuria_significativa: true
+      sin_signos_sintomas_itu: true
+    expected_results:
+      rule_t2_ba_gestante: 'FALSE'
+  tc_t2_itu_baja_gestante:
+    id: tc_t2_itu_baja_gestante
+    inputs:
+      gestante: true
+      itu_baja: true
+    expected_results:
+      rule_t2_itu_baja_gestante: 'TRUE'
+  tc_t2_itu_baja_no_gestante:
+    id: tc_t2_itu_baja_no_gestante
+    inputs:
+      gestante: false
+      itu_baja: true
+    expected_results:
+      rule_t2_itu_baja_gestante: 'FALSE'
+  tc_t2_alta_cefazolina:
+    id: tc_t2_alta_cefazolina
+    inputs:
+      hospitalizacion_48h_ultimos_3meses: false
+      antibioticos_ultimos_90dias: false
+      colonizacion_blee: false
+      gestante: true
+      itu_alta: true
+    expected_results:
+      rule_t2_itu_alta_gestante_cefazolina: 'TRUE'
+      rule_t2_itu_alta_gestante_piperacilina: 'FALSE'
+      rule_t2_itu_alta_gestante_meropenem: 'FALSE'
+  tc_t2_alta_piperacilina:
+    id: tc_t2_alta_piperacilina
+    inputs:
+      gestante: true
+      itu_alta: true
+      antibioticos_ultimos_90dias: true
+      choque_septico: false
+    expected_results:
+      rule_t2_itu_alta_gestante_cefazolina: 'FALSE'
+      rule_t2_itu_alta_gestante_piperacilina: 'TRUE'
+      rule_t2_itu_alta_gestante_meropenem: 'FALSE'
+  tc_t2_alta_meropenem:
+    id: tc_t2_alta_meropenem
+    inputs:
+      gestante: true
+      itu_alta: true
+      colonizacion_blee: true
+      choque_septico: true
+    expected_results:
+      rule_t2_itu_alta_gestante_cefazolina: 'FALSE'
+      rule_t2_itu_alta_gestante_piperacilina: 'FALSE'
+      rule_t2_itu_alta_gestante_meropenem: 'TRUE'
+  tc_t2_preventiva_baja_recurrencia:
+    id: tc_t2_preventiva_baja_recurrencia
+    inputs:
+      gestante: true
+      itu_baja: true
+      recurrencia_itu: true
+    expected_results:
+      rule_t2_preventiva_baja: 'TRUE'
+  tc_t2_preventiva_baja_sin_recurrencia:
+    id: tc_t2_preventiva_baja_sin_recurrencia
+    inputs:
+      gestante: true
+      itu_baja: true
+      recurrencia_itu: false
+    expected_results:
+      rule_t2_preventiva_baja: 'FALSE'
+  tc_t2_preventiva_alta:
+    id: tc_t2_preventiva_alta
+    inputs:
+      gestante: true
+      itu_alta: true
+    expected_results:
+      rule_t2_preventiva_alta: 'TRUE'
+validation_items:
+  vi_recuento_significativo_umbral:
+    id: vi_recuento_significativo_umbral
+    category: gap
+    description: DEFINICIONES usa 'recuento significativo de colonias bacterianas'
+      / 'bacteriuria significativa' sin umbral numérico; los umbrales de la página
+      3 son específicos por contexto y no se codifican como umbral universal de la
+      variable bacteriuria_significativa.
+    severity: high
+    related_ids:
+    - bacteriuria_significativa
+    - rule_def_ba
+    - rule_def_itu
+    status: OPEN
+  vi_urocultivo_umbrales_ocr:
+    id: vi_urocultivo_umbrales_ocr
+    category: ambiguity
+    description: Los umbrales de positividad del urocultivo contienen artefactos OCR/superíndices
+      ('10 5', 'o btenida'); la evidencia verbatim los preserva y la representación
+      numérica normalizada está documentada en la procedencia.
+    severity: low
+    related_ids:
+    - frag_p3_urocultivo_positivo_1e5
+    status: OPEN
+  vi_nota_doble_asterisco:
+    id: vi_nota_doble_asterisco
+    category: ambiguity
+    description: El marcador '**' aparece dos veces en las notas de la Tabla 1 (fila
+      de bacteriuria asintomática y definición de FR para BGN resistentes); ambas
+      notas se conservan como fragmentos separados.
+    severity: low
+    related_ids:
+    - frag_p4_t1_nota_ba
+    - frag_p4_t1_nota_fr
+    status: OPEN
+  vi_seleccion_antibiotico_alternativas:
+    id: vi_seleccion_antibiotico_alternativas
+    category: limitation
+    description: Las tablas declaran alternativas ('Nitrofurantoína o Cefalexina o
+      Fosfomicina') sin lógica de selección; las múltiples acciones PRESCRIBE de una
+      regla son alternativas declaradas en la fuente y nunca se ejecutan simultáneamente.
+      Fase 7 debe renderizarlas unidas por 'o', nunca como prescripciones simultáneas.
+    severity: high
+    related_ids:
+    - rule_t1_itu_baja
+    - rule_t1_ba_row
+    - rule_t2_ba_gestante
+    status: OPEN
+  vi_restricciones_procedimiento:
+    id: vi_restricciones_procedimiento
+    category: limitation
+    description: La instrucción de tomar la muestra antes de la primera dosis de antibiótico
+      está adherida a la indicación del urocultivo; los detalles de procedimiento
+      (desechar 15-30 ml iniciales, sonda recién insertada) permanecen declarativos.
+    severity: low
+    related_ids:
+    - rule_urocultivo_indicado
+    - act_restriccion_muestra_previa
+    status: OPEN
+  vi_evitar_primer_trimestre_ambiguedad:
+    id: vi_evitar_primer_trimestre_ambiguedad
+    category: ambiguity
+    description: '''Evitar en primer trimestre'' aparece en la columna de observaciones
+      de las filas ITU baja y ITU alta de la Tabla 2 sin nombrar el medicamento; la
+      capa de texto no permite mapearlo a un fármaco específico, por lo que no se
+      codifica como restricción por medicamento.'
+    severity: medium
+    related_ids:
+    - frag_p5_t2_observacion_trimestre
+    - frag_p4_t2_itu_baja_row
+    status: OPEN
+  vi_semana34_calendar:
+    id: vi_semana34_calendar
+    category: limitation
+    description: '''Hasta semana 34 gestación'', el posible cambio a cefalexina o
+      nitrofurantoína en la semana 34 ''si el microorganismo es sensible'' y ''administrar
+      hasta la finalización del embarazo'' son construcciones de calendario no computables
+      por el motor; se transportan en payloads y notas.'
+    severity: medium
+    related_ids:
+    - frag_p5_t2_nota4
+    - act_preventiva_nitrofurantoina
+    status: OPEN
+  vi_historia_clinica_no_computable:
+    id: vi_historia_clinica_no_computable
+    category: limitation
+    description: Hospitalización >48h en los últimos 3 meses, uso de antibióticos
+      en los últimos 90 días, recurrencia y número de episodios son entradas clínicas/históricas
+      externas; el motor no computa historias ni calendarios.
+    severity: medium
+    related_ids:
+    - hospitalizacion_48h_ultimos_3meses
+    - antibioticos_ultimos_90dias
+    - mas_de_un_episodio_itu
+    - recurrencia_itu
+    - itu_recurrente
+    status: OPEN
+  vi_fiebre_72h_dos_condiciones:
+    id: vi_fiebre_72h_dos_condiciones
+    category: ambiguity
+    description: '''Fiebre persistente después de 72 horas de tratamiento antibiótico
+      correcto'' acopla duración de fiebre y adecuación del tratamiento; se representa
+      como duración ≥72h AND tratamiento correcto.'
+    severity: low
+    related_ids:
+    - fiebre_horas
+    - tratamiento_antibiotico_correcto
+    - rule_imagen_urgente
+    status: OPEN
+  vi_criterio_pediatrico_fuera_alcance:
+    id: vi_criterio_pediatrico_fuera_alcance
+    category: scope
+    description: El bullet 'Pielonefritis aguda en pacientes pediátricos' se conserva
+      como evidencia fuente (frag_p3_hosp_pediatrica); no se crea regla ejecutable
+      porque el alcance del protocolo excluye neonatos y niños. La composición de
+      hospitalización usa las 8 indicaciones aplicables a adultos.
+    severity: medium
+    related_ids:
+    - frag_p3_hosp_pediatrica
+    status: OPEN
+  vi_prostatitis_fuera_alcance:
+    id: vi_prostatitis_fuera_alcance
+    category: scope
+    description: La fuente incluye prostatitis en la definición de ITU complicada
+      y declara que 'excede los alcances del presente protocolo'; se conserva como
+      evidencia y en las notas de la regla, sin acción operativa inventada.
+    severity: medium
+    related_ids:
+    - frag_p1_def_itu_complicada_clinica
+    - rule_def_itu_complicada_clinica
+    status: OPEN
+  vi_ajuste_urocultivo_antibiograma:
+    id: vi_ajuste_urocultivo_antibiograma
+    category: limitation
+    description: '''Siempre debe ajustarse según resultados de urocultivo y antibiograma''
+      y ''la decisión se toma con base en los cultivos y pruebas de sensibilidad''
+      son instrucciones procedimentales no computables; se transportan en la procedencia.'
+    severity: low
+    related_ids:
+    - frag_p5_t2_nota1
+    - frag_p5_t2_nota2
+    status: OPEN
+fragments:
+  frag_p1_metadata:
+    id: frag_p1_metadata
+    document_id: doc-800af94bc0654138
+    page: 1
+    section: PROTOCOLO
+    verbatim_text: PROTOCOLO INFECCION DEL TRACTO URINARIO (ITU) Y BACTERIURIA ASINTOMATICA
+      EN POBLACION ADULTA
+  frag_p1_codigo_version:
+    id: frag_p1_codigo_version
+    document_id: doc-800af94bc0654138
+    page: 1
+    section: PROTOCOLO
+    verbatim_text: 'Proceso: Cuidado y tratamiento Código: CT-PL-197 Versión: 06 Fecha
+      aprobación: 30-sep-2025'
+  frag_p1_alcance:
+    id: frag_p1_alcance
+    document_id: doc-800af94bc0654138
+    page: 1
+    verbatim_text: '2. ALCANCE: Esta guía aplica para todo el personal médico que
+      interviene en la atención de pacientes adultos, excluyendo neonatos y niños
+      con diagnóstico de bacteriuria asintomática o ITU.'
+  frag_p1_def_ba:
+    id: frag_p1_def_ba
+    document_id: doc-800af94bc0654138
+    page: 1
+    section: 3. DEFINICIONES
+    verbatim_text: 'Bacteriuria asintomática: Recuento significativo de colonias bacterianas
+      en muestras de orina, colectadas apropiadamente, provenientes de pacientes sin
+      signos o síntomas atribuibles a ITU.'
+  frag_p1_def_ba_cultivos:
+    id: frag_p1_def_ba_cultivos
+    document_id: doc-800af94bc0654138
+    page: 1
+    section: 3. DEFINICIONES
+    verbatim_text: Se requiere 2 urocultivos con el mismo patógeno y perfil de sensibilidad
+      en mujeres no embarazadas, 1 en hombres y pacientes gestantes.
+  frag_p1_def_ba_piuria:
+    id: frag_p1_def_ba_piuria
+    document_id: doc-800af94bc0654138
+    page: 1
+    section: 3. DEFINICIONES
+    verbatim_text: En población pediátrica debe haber ausencia de piuria en el sedimento.
+  frag_p1_def_itu:
+    id: frag_p1_def_itu
+    document_id: doc-800af94bc0654138
+    page: 1
+    section: 3. DEFINICIONES
+    verbatim_text: 'Infección del tracto urinario: Recuento significativo de colonias
+      bacterianas en muestras de orina, colectadas apropiadamente, en pacientes con
+      signos o síntomas atribuibles a ITU'
+  frag_p1_def_itu_complicada_estructural:
+    id: frag_p1_def_itu_complicada_estructural
+    document_id: doc-800af94bc0654138
+    page: 1
+    section: 3. DEFINICIONES
+    verbatim_text: 'Infección del tracto urinario complicada: ITU que ocurre en presencia
+      de alterac iones estructurales o funcionales de las vías urinarias'
+  frag_p1_def_itu_bajo:
+    id: frag_p1_def_itu_bajo
+    document_id: doc-800af94bc0654138
+    page: 1
+    section: 3. DEFINICIONES
+    verbatim_text: 'Infección del tracto urinario bajo (cistitis y uretritis): Infección
+      aguda de la vejiga y/o la uretra, acompañada por bacteriuria significativa,
+      en ausencia de leucorrea, irritación vaginal, fiebre, d olor lumbar y compromiso
+      sistémicos'
+  frag_p1_def_itu_alto:
+    id: frag_p1_def_itu_alto
+    document_id: doc-800af94bc0654138
+    page: 1
+    section: 3. DEFINICIONES
+    verbatim_text: 'Infección del tracto urinario alto (pielonefritis): Infección
+      aguda del riñón acompañada por bacteriuria significativa.'
+  frag_p1_def_itu_complicada_clinica:
+    id: frag_p1_def_itu_complicada_clinica
+    document_id: doc-800af94bc0654138
+    page: 1
+    section: 3. DEFINICIONES
+    verbatim_text: 'ITU complicada: infección en mujeres u hombres, con compromiso
+      más allá de la vejiga, incluyendo pielonefritis, ITU febril o bacteriémica,
+      ITU asociada a catéter y prostatitis (este último tema excede los alcances del
+      presente protocolo).'
+  frag_p2_clasificacion_alta_baja:
+    id: frag_p2_clasificacion_alta_baja
+    document_id: doc-800af94bc0654138
+    page: 2
+    verbatim_text: La presentación clínica de la ITU permite clasificar la infección
+      como alta o baja, clasificación necesaria para definir el tratamiento y el pronóstico.
+  frag_p2_no_sintomas_itu:
+    id: frag_p2_no_sintomas_itu
+    document_id: doc-800af94bc0654138
+    page: 2
+    verbatim_text: No se consideran síntomas compatibles con ITU la orina turb ia
+      o de mal olor.
+  frag_p2_embarazada_debe_tratarse:
+    id: frag_p2_embarazada_debe_tratarse
+    document_id: doc-800af94bc0654138
+    page: 2
+    verbatim_text: En mujeres embarazadas, la bacteriuria asintomática debe tratarse
+      porque se ha asociado con un mayor riesgo de pielonefritis
+  frag_p2_citoquimico:
+    id: frag_p2_citoquimico
+    document_id: doc-800af94bc0654138
+    page: 2
+    section: 5. Diagnóstico
+    verbatim_text: Se debe realizar citoquímico de orina a todo paciente en el servicio
+      de urgencias con sospecha de ITU, excepto mujeres con primer episodio y síntomas
+      típicos.
+  frag_p2_tirilla_descarta:
+    id: frag_p2_tirilla_descarta
+    document_id: doc-800af94bc0654138
+    page: 2
+    section: 5. Diagnóstico
+    verbatim_text: La tirilla de orina es una herramienta de tamizaje para el diagnóstico,
+      un resultado normal en pacientes con baja sospecha clínica descarta el diagnóstico.
+  frag_p2_piuria:
+    id: frag_p2_piuria
+    document_id: doc-800af94bc0654138
+    page: 2
+    section: 5. Diagnóstico
+    verbatim_text: Hay una alta correlación entre la presencia de piuria (>10 leucocitos)
+      e infección, su ausencia puede sugerir colonización
+  frag_p3_gram:
+    id: frag_p3_gram
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 5. Diagnóstico
+    verbatim_text: 'Gram de orina sin centrifugar: Suministra información inmediata
+      sobre la naturaleza de la infección y sirve para guiar el tratamiento empírico,
+      por lo que debe realizarse en todos los pacientes en el servicio de urgencias.'
+  frag_p3_urocultivo_indicacion:
+    id: frag_p3_urocultivo_indicacion
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 5. Diagnóstico
+    verbatim_text: Debe solicitarse en todos los casos, excepto primer episodio de
+      ITU baja no complicada en mujer premenopáusica.
+  frag_p3_urocultivo_positivo_1e5:
+    id: frag_p3_urocultivo_positivo_1e5
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 5. Diagnóstico
+    verbatim_text: Los urocultivos se consideran positivos con el crecimiento de ≥10
+      5 UFC de una bacteria en una muestra de orina o btenida de forma adecuada por
+      micción espontánea
+  frag_p3_urocultivo_positivo_1e3:
+    id: frag_p3_urocultivo_positivo_1e3
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 5. Diagnóstico
+    verbatim_text: con un crecimiento ≥10 3 UFC en un paciente con síntomas no explicados
+      por otra patología
+  frag_p3_urocultivo_positivo_1e2:
+    id: frag_p3_urocultivo_positivo_1e2
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 5. Diagnóstico
+    verbatim_text: el crecimiento de ≥10 2 UFC de una bacteria en una muestra de orina
+      obtenida a través de una sonda vesical recién insertada.
+  frag_p3_toma_muestra_antibiotico:
+    id: frag_p3_toma_muestra_antibiotico
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 5. Diagnóstico
+    verbatim_text: 'Toma de la muestra: debe tomarse antes de la primera dosis de
+      antibiótico'
+  frag_p3_analisis_sangre:
+    id: frag_p3_analisis_sangre
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 5. Diagnóstico
+    verbatim_text: En todo paciente con ITU que sea hospitalizado debe obtenerse muestra
+      de sangre para hemoleucograma, ionograma, función renal y proteína C reactiva
+      (PCR).
+  frag_p3_hemocultivos:
+    id: frag_p3_hemocultivos
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 5. Diagnóstico
+    verbatim_text: Los hemocultivos deben solicitarse en todos los casos de pielonefritis
+      aguda que cursan con fiebre, hipotermia o ch oque séptico.
+  frag_p3_imagen_urgente:
+    id: frag_p3_imagen_urgente
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 5. Diagnóstico
+    verbatim_text: La realización urgente de ecografía o la tomografía (TC) con contraste
+      está indicada en pacientes con infección urinaria y choque séptico asociado,
+      falla renal aguda, clínica de complicación local o fiebre persistente después
+      de 72 horas de tratamiento antibiótico correcto.
+  frag_p3_imagen_tc_abscesos:
+    id: frag_p3_imagen_tc_abscesos
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 5. Diagnóstico
+    verbatim_text: Se hará TC con contraste cuando se busquen pequeños abscesos y
+      áreas de nefritis local, por la mayor sensibilidad del estudio.
+  frag_p3_imagen_urotomografia:
+    id: frag_p3_imagen_urotomografia
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 5. Diagnóstico
+    verbatim_text: en los casos de sospecha de alteración estructural, incluyendo
+      la litiasis de vías urinarias la elección será urotomografía
+  frag_p3_imagen_ecografia:
+    id: frag_p3_imagen_ecografia
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 5. Diagnóstico
+    verbatim_text: para los casos en los cuales se sospecha una alteración funcional,
+      especialmente por inadecuado vaciamiento vesical o trastornos obstructivos de
+      las vías urinarias, la elección será ecografía de vías urinarias con medición
+      del residuo postmiccional.
+  frag_p3_imagen_gestante:
+    id: frag_p3_imagen_gestante
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 5. Diagnóstico
+    verbatim_text: En las mujeres embarazadas se hará ecografía renal en todas las
+      pacientes con pielonefritis, más de un episodio de ITU durante el embarazo,
+      sospecha de litiasis por hematuria y/o dolor.
+  frag_p3_tto_ba_indicaciones:
+    id: frag_p3_tto_ba_indicaciones
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 6. TRATAMIENTO
+    verbatim_text: Indicaciones de tratamiento de bacteriuria asintomática
+  frag_p3_tto_ba_gestante:
+    id: frag_p3_tto_ba_gestante
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 6. TRATAMIENTO
+    verbatim_text: Mujer embarazada
+  frag_p3_tto_ba_procedimiento:
+    id: frag_p3_tto_ba_procedimiento
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 6. TRATAMIENTO
+    verbatim_text: Procedimiento invasivo de vías urinarias con riesgo de sangrado
+      o disrupción del uroepitelio
+  frag_p3_hosp_choque_septico:
+    id: frag_p3_hosp_choque_septico
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 6. TRATAMIENTO
+    verbatim_text: Choque séptico
+  frag_p3_hosp_intolerancia:
+    id: frag_p3_hosp_intolerancia
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 6. TRATAMIENTO
+    verbatim_text: Intolerancia a la vía oral
+  frag_p3_hosp_itu_alta:
+    id: frag_p3_hosp_itu_alta
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 6. TRATAMIENTO
+    verbatim_text: ITU alta
+  frag_p3_hosp_descompensacion:
+    id: frag_p3_hosp_descompensacion
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 6. TRATAMIENTO
+    verbatim_text: Descompensación de la enfermedad de base secundaria a la ITU
+  frag_p3_hosp_resistente:
+    id: frag_p3_hosp_resistente
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 6. TRATAMIENTO
+    verbatim_text: Demostración de germen resistente sin opción de tratamiento antibiótico    ambulatorio
+  frag_p3_hosp_funcion_renal:
+    id: frag_p3_hosp_funcion_renal
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 6. TRATAMIENTO
+    verbatim_text: Deterioro de la función renal asociado a la ITU
+  frag_p3_hosp_absceso:
+    id: frag_p3_hosp_absceso
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 6. TRATAMIENTO
+    verbatim_text: Absceso renal/pararrenal.
+  frag_p3_hosp_pediatrica:
+    id: frag_p3_hosp_pediatrica
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 6. TRATAMIENTO
+    verbatim_text: Pielonefritis aguda en pacientes pediátricos.
+  frag_p3_hosp_social:
+    id: frag_p3_hosp_social
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 6. TRATAMIENTO
+    verbatim_text: Inadecuado soporte social para continuidad de terapia ambulatoria
+  frag_p3_egreso_afebril:
+    id: frag_p3_egreso_afebril
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 6. TRATAMIENTO
+    verbatim_text: 48 horas afebril
+  frag_p3_egreso_tas:
+    id: frag_p3_egreso_tas
+    document_id: doc-800af94bc0654138
+    page: 3
+    section: 6. TRATAMIENTO
+    verbatim_text: TAS > 90 mmHg
+  frag_p4_egreso_fc:
+    id: frag_p4_egreso_fc
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: FC < 100 lpm
+  frag_p4_egreso_fr:
+    id: frag_p4_egreso_fr
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: FR < 24 rpm
+  frag_p4_egreso_sato2_pao2:
+    id: frag_p4_egreso_sato2_pao2
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: Sat O2 > 90% o PaO2 > 60
+  frag_p4_egreso_via_oral:
+    id: frag_p4_egreso_via_oral
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: Tolerancia a la vía oral
+  frag_p4_egreso_comorbilidades:
+    id: frag_p4_egreso_comorbilidades
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: Comorbilidades compensadas
+  frag_p4_egreso_tratamiento:
+    id: frag_p4_egreso_tratamiento
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: Se ha asegurado el tratamiento ambulatorio
+  frag_p4_egreso_social:
+    id: frag_p4_egreso_social
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: Lo permiten las condiciones sociales
+  frag_p4_t1_itu_baja:
+    id: frag_p4_t1_itu_baja
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: ITU baja (complicada o no complicada)
+  frag_p4_t1_itu_baja_antibioticos:
+    id: frag_p4_t1_itu_baja_antibioticos
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: Nitrofurantoína o Cefalexina o Fosfomicina*
+  frag_p4_t1_ba_row:
+    id: frag_p4_t1_ba_row
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: Bacteriuria asintomática**
+  frag_p4_t1_dosis_baja_ba:
+    id: frag_p4_t1_dosis_baja_ba
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: 100 mg VO cada 6 horas 500 mg VO cada 6 horas 3 g VO 5 días 5 días
+      Dosis única
+  frag_p4_t1_ambulatoria:
+    id: frag_p4_t1_ambulatoria
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: ITU alta ambulatoria Cefalexina 1
+  frag_p4_t1_ambulatoria_dosis:
+    id: frag_p4_t1_ambulatoria_dosis
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: 500 mg VO cada 6 horas 5-7 días
+  frag_p4_t1_reevaluar:
+    id: frag_p4_t1_reevaluar
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: 1 Reevaluar con urocultivo a las 48 horas para ajuste
+  frag_p4_t1_sin_fr:
+    id: frag_p4_t1_sin_fr
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: ITU alta hospitalaria sin FR para BGN resistentes
+  frag_p4_t1_sin_fr_drogas:
+    id: frag_p4_t1_sin_fr_drogas
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: Cefazolina o Amikacina
+  frag_p4_t1_sin_fr_dosis:
+    id: frag_p4_t1_sin_fr_dosis
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: 1 g IV cada 8 horas 15 mg/kg IV cada día 7 días 7 días
+  frag_p4_t1_con_fr:
+    id: frag_p4_t1_con_fr
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: ITU alta hospitalaria con FR para BGN resistentes***
+  frag_p4_t1_con_fr_drogas:
+    id: frag_p4_t1_con_fr_drogas
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: Piperacilina tazobactam o Amikacina2 o Meropenem3
+  frag_p4_t1_con_fr_dosis:
+    id: frag_p4_t1_con_fr_dosis
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: 4.5 g IV cada 8 horas 15 mg/kg IV cada día 1 g IV cada 8 horas
+      7 días
+  frag_p4_t1_nota_amikacina:
+    id: frag_p4_t1_nota_amikacina
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: 2 Evitar en choque
+  frag_p4_t1_nota_meropenem:
+    id: frag_p4_t1_nota_meropenem
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: 3 Administrar empíricamente si hay choque
+  frag_p4_t1_nota_fosfomicina:
+    id: frag_p4_t1_nota_fosfomicina
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: '*Preferir en pacientes quienes tienen ITU recurrente o han estado
+      expuestas a terapia antimicrobiana en los últimos 90 días.'
+  frag_p4_t1_nota_ba:
+    id: frag_p4_t1_nota_ba
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: '**Recordar su tratamiento sólo en gestantes o pacientes quienes
+      serán sometidos a procedimientos urológicos donde se prevé la disrupción del
+      uroepitelio'
+  frag_p4_t1_nota_fr:
+    id: frag_p4_t1_nota_fr
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: 6. TRATAMIENTO
+    verbatim_text: '**FR BGN resistentes: hospitalización > 48 horas en los últimos
+      3 meses, uso de antibióticos en últimos 90 días, colonización por germen BLEE.'
+  frag_p4_t2_heading:
+    id: frag_p4_t2_heading
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: Tabla 2. Consideraciones manejo de la ITU en la paciente gestante
+    verbatim_text: Tabla 2. Consideraciones manejo de la ITU en la paciente gestante
+  frag_p4_t2_ba_row:
+    id: frag_p4_t2_ba_row
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: Tabla 2. Consideraciones manejo de la ITU en la paciente gestante
+    verbatim_text: Bacteriuria asintomática Nitrofurantoína  Cefalexina Fosfomicina3
+      100 mg cada 6 h 500 mg cada 6 h 3 g 5 días 5 días Dosis única No No
+  frag_p4_t2_itu_baja_row:
+    id: frag_p4_t2_itu_baja_row
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: Tabla 2. Consideraciones manejo de la ITU en la paciente gestante
+    verbatim_text: ITU baja Nitrofurantoína o Cefalexina o Fosfomicina 3 100 mg cada
+      6 h 500 mg cada 6 h 5 días 5 días Dosis única No Sólo si hay recurrencia de
+      la infección
+  frag_p4_t2_preventiva_baja:
+    id: frag_p4_t2_preventiva_baja
+    document_id: doc-800af94bc0654138
+    page: 4
+    section: Tabla 2. Consideraciones manejo de la ITU en la paciente gestante
+    verbatim_text: Nitrofurantoína 100 mg cada día Cefalexina 500 mg cada día TMP-SMX
+      480 mg cada día Hasta semana 34  gestación
+  frag_p5_t2_itu_alta_row:
+    id: frag_p5_t2_itu_alta_row
+    document_id: doc-800af94bc0654138
+    page: 5
+    section: Tabla 2. Consideraciones manejo de la ITU en la paciente gestante
+    verbatim_text: ITU alta Cefazolina* o Piperacilina tazobactam** o Meropenem***
+      1 g IV cada 8 horas 4.5 g IV cada 8 horas 1 g IV cada 8 horas 7 días No Sí
+  frag_p5_t2_preventiva_alta:
+    id: frag_p5_t2_preventiva_alta
+    document_id: doc-800af94bc0654138
+    page: 5
+    section: Tabla 2. Consideraciones manejo de la ITU en la paciente gestante
+    verbatim_text: Nitrofurantoína 100 mg cada día Cefalexina 500 mg cada día TMP-SMX
+      480 mg cada día Fosfomicina 3 g cada semana Hasta semana 34  gestación4
+  frag_p5_t2_observacion_trimestre:
+    id: frag_p5_t2_observacion_trimestre
+    document_id: doc-800af94bc0654138
+    page: 5
+    section: Tabla 2. Consideraciones manejo de la ITU en la paciente gestante
+    verbatim_text: Evitar en primer trimestre. Hasta semana 34 gestación4
+  frag_p5_t2_nota1:
+    id: frag_p5_t2_nota1
+    document_id: doc-800af94bc0654138
+    page: 5
+    section: Tabla 2. Consideraciones manejo de la ITU en la paciente gestante
+    verbatim_text: 1Esta es la terapia empírica. Siempre debe ajustarse según resultados
+      de urocultivo y antibiograma
+  frag_p5_t2_nota2:
+    id: frag_p5_t2_nota2
+    document_id: doc-800af94bc0654138
+    page: 5
+    section: Tabla 2. Consideraciones manejo de la ITU en la paciente gestante
+    verbatim_text: 2La decisión se toma con base en los cultivos y pruebas de sensibilidad
+  frag_p5_t2_nota3:
+    id: frag_p5_t2_nota3
+    document_id: doc-800af94bc0654138
+    page: 5
+    section: Tabla 2. Consideraciones manejo de la ITU en la paciente gestante
+    verbatim_text: 3 Preferir en pacientes quienes tienen ITU recurrente o han estado
+      expuestas a terapia antimicrobiana en los últimos 90 días.
+  frag_p5_t2_nota4:
+    id: frag_p5_t2_nota4
+    document_id: doc-800af94bc0654138
+    page: 5
+    section: Tabla 2. Consideraciones manejo de la ITU en la paciente gestante
+    verbatim_text: 4 A la semana 34 podría hacerse cambio a cefalexina o nitrofurantoína,
+      si el microorganismo es sensible. Administrar hasta la finalización del embarazo.
+  frag_p5_t2_sin_fr:
+    id: frag_p5_t2_sin_fr
+    document_id: doc-800af94bc0654138
+    page: 5
+    section: Tabla 2. Consideraciones manejo de la ITU en la paciente gestante
+    verbatim_text: '*Sin factores de riesgo para BGN resistentes'
+  frag_p5_t2_con_fr:
+    id: frag_p5_t2_con_fr
+    document_id: doc-800af94bc0654138
+    page: 5
+    section: Tabla 2. Consideraciones manejo de la ITU en la paciente gestante
+    verbatim_text: '**Con factores de riesgo para BGN resistentes, sin choque'
+  frag_p5_t2_con_fr_choque:
+    id: frag_p5_t2_con_fr_choque
+    document_id: doc-800af94bc0654138
+    page: 5
+    section: Tabla 2. Consideraciones manejo de la ITU en la paciente gestante
+    verbatim_text: '***Con factores de riesgo para BGN resistentes, con choque'
+  frag_p5_control_cambios_v06:
+    id: frag_p5_control_cambios_v06
+    document_id: doc-800af94bc0654138
+    page: 5
+    section: CONTROL DE CAMBIOS
+    verbatim_text: 06 30 – Septiembre- 2025 Se cambia nombre a protocolo Infección
+      del Tracto Urinario Adultos. Se cambia definición de ITU complicada. Se actualizan
+      recomendaciones de manejo según clasificación de ITU y factores de riesgo. Se
+      dan consideraciones del manejo de la ITU en la gestante.
+documents:
+  doc-800af94bc0654138:
+    document_id: doc-800af94bc0654138
+    filename: CT-PL-197 PROTOCOLO INFECCION TRACTO URINARIO -ITU ADULTOS (v6-sep-2025).pdf
+    sha256: 800af94bc0654138a8e213cd1e42ad2e6021a955226a142b36c5b3f24e24777a
+    file_format: pdf
+    byte_size: 272638
