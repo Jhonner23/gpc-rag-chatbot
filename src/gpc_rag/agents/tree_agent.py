@@ -258,11 +258,27 @@ def _render_tree_result(package: ProtocolVersion, rule_eval: Any) -> dict[str, A
 
     answer_lines = [
         f"Segun el arbol de decision del protocolo {package.protocol.id} "
-        f"({package.protocol.name}), regla '{rule.id}':",
+        f"({package.protocol.name}):",
     ]
     if action_lines:
         answer_lines.append("")
         answer_lines.extend(f"- {line}" for line in action_lines)
+    elif citations:
+        # Algunas reglas de cpg_tree son "criterios" (un hallazgo que cuenta
+        # para una decision) sin una accion/recomendacion de texto asociada
+        # (action_refs vacio). En ese caso no dejamos la respuesta vacia --
+        # mostramos el texto exacto de la guia que hizo match, que es
+        # justamente lo que el usuario necesita ver.
+        answer_lines.append("")
+        answer_lines.append("Se cumple el siguiente criterio segun la guia:")
+        answer_lines.extend(f"- \"{c['verbatim_text']}\"" for c in citations)
+    else:
+        answer_lines.append("")
+        answer_lines.append(
+            "(La regla aplico, pero no tiene una recomendacion ni cita de texto "
+            "asociada en la base de conocimiento -- revisar con el equipo que "
+            "mantiene el protocolo.)"
+        )
 
     return {
         "protocol_id": package.protocol.id,
