@@ -150,3 +150,6 @@ eval/ragas_results.csv
 # que genera cada corrida no.
 eval/comparacion_rag_arbol.md
 *.tar.gz
+
+# Evaluacion de recuperacion: texto exportado del indice (derivado, no se versiona)
+eval/chunks_protocolos.json
