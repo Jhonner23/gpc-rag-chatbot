@@ -5,25 +5,26 @@
       v
 coordinator_filter --(no adecuada)----------------------------------+
       |                                                              |
-   (adecuada)                                                        |
-      v                                                              |
-  tree_prepare  (decide protocolo NAC/ITU/ninguno + 1ra extraccion)  |
+   (adecuada, fan-out en paralelo)                                   |
       |                                                              |
-      v                                                              |
-  tree_agent  (motor cpg_tree; interrupt() -> wizard si faltan datos)|
-      |                                                              |
-      v                                                              |
-     rag  <----------------------+                                  |
-      |                          | (reintento,                      |
-      v                          |  maximo 1 vez)                    |
-  evaluator ---------------------+                                  |
-      |                                                              |
-  (aprobada, o ya no quedan reintentos)                              |
-      |                                                              |
-      v                                                              |
-  comparador  (arbol auditado si hizo match, si no el RAG evaluado)  |
-      |                                                              |
-      v                                                              v
+      +-------------------+                                          |
+      |                   |                                          |
+      v                   v                                          |
+  tree_prepare           rag  <----------------------+                |
+      |                   |                           | (reintento,   |
+      v                   v                           |  max 1 vez)   |
+  tree_agent          evaluator ------------------------+               |
+  (interrupt() ->         |                                             |
+   wizard si faltan   (aprobada, o ya no quedan reintentos)              |
+   datos)                 |                                             |
+      |                   v                                            |
+      |               rag_done  (nodo de sincronizacion, sin efecto)    |
+      |                   |                                            |
+      +---------+---------+                                            |
+                v                                                       |
+           comparador  (arbol auditado si hizo match,                   |
+                        si no el RAG evaluado)                          |
+                v                                                       v
                       coordinator_finalize --> END
 
 El coordinador es el UNICO agente que decide que ve el usuario final
@@ -36,6 +37,15 @@ wizard -- ver agents/tree_agent.py. Esa pausa/resume se identifica con un
 `thread_id` que persiste en el checkpointer (ver run_agentic): la API
 (api/main.py) se lo devuelve al chat, y el chat se lo reenvia junto con la
 respuesta a la pregunta pendiente.
+
+Nota sobre el paralelismo (tree_agent / rag): ambas ramas se lanzan desde
+`coordinator_filter` en el mismo "super-step" de LangGraph. Si `tree_agent`
+pausa con `interrupt()`, el grafo completo se detiene al terminar ese
+super-step -- cualquier super-step posterior de la rama RAG (p.ej. un
+reintento) NO se ejecuta hasta que el usuario responda TODAS las preguntas
+pendientes del arbol y esa rama quede resuelta sin mas interrupciones. El
+nodo `rag_done` es el punto de union: `comparador` solo se dispara cuando
+`tree_agent` Y `rag_done` ya completaron.
 """
 
 from __future__ import annotations
@@ -95,13 +105,22 @@ def _prepare_retry_node(state: AgentState) -> dict:
     return {"extra_instruction": instruction, "retry_count": state.get("retry_count", 0) + 1}
 
 
+def _rag_done_node(state: AgentState) -> dict:  # noqa: ARG001 -- nodo de sincronizacion
+    """Nodo sin efecto sobre el estado: solo sirve de punto de union para
+    que `comparador` espere a que la rama RAG (incluido su loop de
+    reintento) haya terminado, en paralelo con la rama del arbol."""
+    return {}
+
+
 def _coordinator_finalize_node(state: AgentState) -> dict:
     final_answer, final_sources = build_final_output(state)
     return {"final_answer": final_answer, "final_sources": final_sources}
 
 
-def _route_after_filter(state: AgentState) -> str:
-    return "rag" if state.get("is_appropriate") else "finalize"
+def _route_after_filter(state: AgentState) -> list[str]:
+    if state.get("is_appropriate"):
+        return ["tree_prepare", "rag"]
+    return ["coordinator_finalize"]
 
 
 def _route_after_evaluator(state: AgentState) -> str:
@@ -125,24 +144,24 @@ def build_agent_graph(
     graph.add_node("rag", lambda s: _rag_node(s, pipeline))
     graph.add_node("evaluator", lambda s: _evaluator_node(s, cfg))
     graph.add_node("prepare_retry", _prepare_retry_node)
+    graph.add_node("rag_done", _rag_done_node)
     graph.add_node("comparador", compare_and_choose)
     graph.add_node("coordinator_finalize", _coordinator_finalize_node)
 
     graph.set_entry_point("coordinator_filter")
-    graph.add_conditional_edges(
-        "coordinator_filter",
-        _route_after_filter,
-        {"rag": "tree_prepare", "finalize": "coordinator_finalize"},
-    )
+    graph.add_conditional_edges("coordinator_filter", _route_after_filter)
     graph.add_edge("tree_prepare", "tree_agent")
-    graph.add_edge("tree_agent", "rag")
     graph.add_edge("rag", "evaluator")
     graph.add_conditional_edges(
         "evaluator",
         _route_after_evaluator,
-        {"finalize": "comparador", "retry": "prepare_retry"},
+        {"finalize": "rag_done", "retry": "prepare_retry"},
     )
     graph.add_edge("prepare_retry", "rag")
+
+    # Punto de sincronizacion: comparador no corre hasta que la rama del
+    # arbol (tree_agent) Y la rama RAG (rag_done) hayan terminado.
+    graph.add_edge(["tree_agent", "rag_done"], "comparador")
     graph.add_edge("comparador", "coordinator_finalize")
     graph.add_edge("coordinator_finalize", END)
 
