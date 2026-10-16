@@ -21,14 +21,29 @@ class SourceOut(BaseModel):
     score: float
 
 
+class AgentPanelOut(BaseModel):
+    """Aportacion de un agente (arbol, RAG), con su estado y sus fuentes."""
+
+    agent: str
+    title: str
+    status: str
+    eligible: bool
+    content: str
+    sources: list[SourceOut] = []
+
+
 class ChatResponse(BaseModel):
     """Si `pending_question` viene con texto, la conversacion esta pausada
     esperando esa respuesta -- `answer`/`sources` vienen vacios, y hay que
     reenviar `thread_id` + la respuesta del usuario en el siguiente POST
-    (como `answer` del ChatRequest) para continuar."""
+    (como `answer` del ChatRequest) para continuar.
+
+    Con la capa de agentes, `answer` es la sugerencia consolidada y `panels`
+    trae la respuesta de cada agente por separado."""
 
     question: str
     answer: str | None = None
     sources: list[SourceOut] = []
+    panels: list[AgentPanelOut] = []
     pending_question: str | None = None
     thread_id: str | None = None

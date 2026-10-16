@@ -69,7 +69,7 @@ from omegaconf import DictConfig
 
 from gpc_rag.agents.coordinator import build_final_output, filter_query
 from gpc_rag.agents.evaluator import NO_VERIFICABLE, evaluate_answer_status
-from gpc_rag.agents.integrator import integrate
+from gpc_rag.agents.integrator import build_agent_panels, integrate
 from gpc_rag.agents.state import AgentState
 from gpc_rag.agents.timeouts import rag_timeout
 from gpc_rag.agents.tree_agent import tree_agent_node, tree_prepare_node
@@ -305,4 +305,5 @@ def run_agentic(  # noqa: PLR0913 -- parametros nombrados, entrada principal de 
         question=result_state.get("question", question),
         answer=result_state["final_answer"],
         sources=result_state.get("final_sources", []),
+        panels=build_agent_panels(result_state),
     )

@@ -14,8 +14,10 @@ tenia match, si no el RAG). Ahora:
   cerrada), se publica la composicion determinista: las aportaciones
   verificadas en bloques, sin redaccion nueva.
 
-En todos los casos se informa el estado de cada agente y las discrepancias
-detectadas por el verificador, y nunca se agregan hechos clinicos nuevos.
+En todos los casos se informan las discrepancias detectadas por el
+verificador, y nunca se agregan hechos clinicos nuevos. El estado de cada
+agente se informa en su propio panel (build_agent_panels), que el chat
+muestra junto a la sugerencia consolidada.
 
 El integrador NO le habla al usuario directamente: deja su resultado en
 state["integrated_*"] y el coordinador (coordinator.build_final_output)
@@ -34,7 +36,7 @@ from omegaconf import DictConfig
 from gpc_rag.agents.schemas import FIDELITY_SCHEMA
 from gpc_rag.agents.state import AgentState
 from gpc_rag.agents.timeouts import llm_timeout
-from gpc_rag.common.models import Chunk, RetrievedChunk
+from gpc_rag.common.models import AgentPanel, Chunk, RetrievedChunk
 from gpc_rag.common.refusal import is_refusal
 
 logger = logging.getLogger(__name__)
@@ -129,20 +131,10 @@ def _agent_label(contribution: dict[str, Any]) -> str:
     return label
 
 
-def _status_line(tree: dict[str, Any], rag: dict[str, Any]) -> str:
-    return (
-        f"_Estado de los agentes: árbol de decisión, {_agent_label(tree)}; "
-        f"RAG, {_agent_label(rag)}._"
-    )
-
-
-def _with_annotations(
-    body: str, tree: dict, rag: dict, discrepancies: list[str]
-) -> str:
+def _with_annotations(body: str, discrepancies: list[str]) -> str:
     parts = [body.strip()]
     if discrepancies:
         parts.append("**Nota sobre las fuentes:** " + " ".join(discrepancies))
-    parts.append(_status_line(tree, rag))
     return "\n\n".join(parts)
 
 
@@ -265,7 +257,7 @@ def integrate(state: AgentState, cfg: DictConfig) -> dict:
         logger.info("Integrador: arbol + RAG, modalidad=%s", mode)
         return {
             "integration_mode": mode,
-            "integrated_answer": _with_annotations(body, tree, rag, discrepancies),
+            "integrated_answer": _with_annotations(body, discrepancies),
             "integrated_sources": tree_sources + rag_sources,
         }
 
@@ -274,9 +266,7 @@ def integrate(state: AgentState, cfg: DictConfig) -> dict:
         logger.info("Integrador: una sola aportacion elegible (%s)", single["agent"])
         return {
             "integration_mode": "unica",
-            "integrated_answer": _with_annotations(
-                single["content"], tree, rag, discrepancies
-            ),
+            "integrated_answer": _with_annotations(single["content"], discrepancies),
             "integrated_sources": tree_sources + rag_sources,
         }
 
@@ -288,6 +278,97 @@ def integrate(state: AgentState, cfg: DictConfig) -> dict:
     )
     return {
         "integration_mode": "sin_aportaciones",
-        "integrated_answer": _with_annotations(body, tree, rag, []),
+        "integrated_answer": _with_annotations(body, []),
         "integrated_sources": [],
     }
+
+
+# Paneles por agente ---------------------------------------------------------
+
+_PANEL_TITLES = {
+    "arbol": "Árbol de decisión",
+    "rag": "RAG (documentos de los protocolos)",
+}
+
+# Texto del panel cuando el agente no tiene una aportacion publicable. Las
+# aportaciones no verificadas NO se muestran (falla cerrada): solo se
+# explica por que el agente no llego a una respuesta.
+_TREE_NO_ANSWER = {
+    "abstencion": "ningún protocolo institucional aplica a la pregunta.",
+    "informacion_faltante": "faltaron datos del caso para evaluar las reglas.",
+    "ausencia_de_coincidencias": "ninguna regla auditada del protocolo se cumplió.",
+    "error_tecnico": "ocurrió un error técnico.",
+}
+_RAG_NO_ANSWER = {
+    "ausencia_de_coincidencias": "No se recuperaron fragmentos relacionados con la pregunta.",
+    "error_tecnico": "El RAG no pudo completarse por un error técnico.",
+}
+_HIDDEN_REASON = {
+    "sin_procedencia": "no tiene procedencia verificable",
+    "rechazada_por_evaluador": "fue rechazada por el evaluador",
+    "no_verificable": "no fue posible verificarla",
+    "no_relacionada": "no está relacionada con la pregunta",
+}
+
+
+def _tree_panel_text(tree: dict[str, Any]) -> str:
+    if tree["eligible"]:
+        return tree["content"]
+    if tree["status"] == "respuesta_fundamentada":
+        reason = _HIDDEN_REASON.get(tree.get("verification"), "no fue verificada")
+        return f"El árbol de decisión no llegó a una respuesta: la regla encontrada {reason}."
+    reason = _TREE_NO_ANSWER.get(tree["status"], tree["status"])
+    return f"El árbol de decisión no llegó a una respuesta: {reason}"
+
+
+def _rag_panel_text(rag: dict[str, Any]) -> str:
+    if rag["eligible"]:
+        return rag["content"]
+    if rag["status"] == "abstencion" and rag.get("content"):
+        return rag["content"]
+    if rag["status"] == "respuesta_fundamentada":
+        reason = _HIDDEN_REASON.get(rag.get("verification"), "no fue verificada")
+        return f"La respuesta del RAG no se muestra porque {reason}."
+    return _RAG_NO_ANSWER.get(rag["status"], rag["status"])
+
+
+def build_agent_panels(state: AgentState) -> list[AgentPanel]:
+    """Un panel por agente, a partir de las aportaciones del verificador.
+
+    No llama a ningun modelo: solo presenta lo que ya decidio el verificador.
+    Vacio si no hubo aportaciones (p. ej. el coordinador rechazo la
+    pregunta). Cuando exista el agente de casos similares, su aportacion
+    tendra su propio panel con el mismo contrato.
+    """
+    contributions = state.get("contributions") or []
+    by_agent = {c["agent"]: c for c in contributions}
+    panels: list[AgentPanel] = []
+
+    tree = by_agent.get("arbol")
+    if tree is not None:
+        panels.append(
+            AgentPanel(
+                agent="arbol",
+                title=_PANEL_TITLES["arbol"],
+                status=_agent_label(tree),
+                eligible=tree["eligible"],
+                content=_tree_panel_text(tree),
+                sources=(
+                    tree_result_as_sources(state["tree_result"]) if tree["eligible"] else []
+                ),
+            )
+        )
+
+    rag = by_agent.get("rag")
+    if rag is not None:
+        panels.append(
+            AgentPanel(
+                agent="rag",
+                title=_PANEL_TITLES["rag"],
+                status=_agent_label(rag),
+                eligible=rag["eligible"],
+                content=_rag_panel_text(rag),
+                sources=list(state.get("sources", []) or []) if rag["eligible"] else [],
+            )
+        )
+    return panels

@@ -45,21 +45,55 @@ class PendingTreeQuestion:
     question: str
 
 
+def _sources_as_dicts(sources: list[RetrievedChunk]) -> list[dict]:
+    return [
+        {
+            "source_file": rc.chunk.source_file,
+            "section": rc.chunk.section,
+            "page": rc.chunk.page,
+            "score": round(rc.score, 4),
+        }
+        for rc in sources
+    ]
+
+
+@dataclass
+class AgentPanel:
+    """Lo que aporto un agente (arbol, RAG y, a futuro, casos similares),
+    para mostrarlo por separado junto a la sugerencia consolidada. Solo trae
+    contenido y fuentes si la aportacion fue verificada; si no, `content`
+    explica por que el agente no llego a una respuesta publicable."""
+
+    agent: str
+    title: str
+    status: str
+    eligible: bool
+    content: str
+    sources: list[RetrievedChunk] = field(default_factory=list)
+
+    def as_dict(self) -> dict:
+        return {
+            "agent": self.agent,
+            "title": self.title,
+            "status": self.status,
+            "eligible": self.eligible,
+            "content": self.content,
+            "sources": _sources_as_dicts(self.sources),
+        }
+
+
 @dataclass
 class RagAnswer:
-    """Respuesta final del pipeline de RAG, lista para mostrar al usuario."""
+    """Respuesta final del pipeline de RAG, lista para mostrar al usuario.
+
+    `answer` es la sugerencia consolidada (o la respuesta directa del RAG si
+    no se usa la capa de agentes); `panels` trae la aportacion de cada
+    agente por separado (vacio fuera de la capa de agentes)."""
 
     question: str
     answer: str
     sources: list[RetrievedChunk] = field(default_factory=list)
+    panels: list[AgentPanel] = field(default_factory=list)
 
     def sources_as_dicts(self) -> list[dict]:
-        return [
-            {
-                "source_file": rc.chunk.source_file,
-                "section": rc.chunk.section,
-                "page": rc.chunk.page,
-                "score": round(rc.score, 4),
-            }
-            for rc in self.sources
-        ]
+        return _sources_as_dicts(self.sources)

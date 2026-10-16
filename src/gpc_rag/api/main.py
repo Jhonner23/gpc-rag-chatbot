@@ -13,7 +13,7 @@ from fastapi import FastAPI, HTTPException
 from langgraph.checkpoint.memory import MemorySaver
 
 from gpc_rag.agents.graph import run_agentic
-from gpc_rag.api.schemas import ChatRequest, ChatResponse, SourceOut
+from gpc_rag.api.schemas import AgentPanelOut, ChatRequest, ChatResponse, SourceOut
 from gpc_rag.common.models import PendingTreeQuestion
 from gpc_rag.pipelines.query_pipeline import get_pipeline
 
@@ -111,4 +111,5 @@ def chat(request: ChatRequest) -> ChatResponse:
         question=result.question,
         answer=result.answer,
         sources=[SourceOut(**s) for s in result.sources_as_dicts()],
+        panels=[AgentPanelOut(**p.as_dict()) for p in result.panels],
     )

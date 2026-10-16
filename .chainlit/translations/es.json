@@ -132,7 +132,7 @@
             "title": "Panel de configuraci\u00f3n",
             "customize": "Personaliza la configuraci\u00f3n de tu chat aqu\u00ed"
         },
-        "watermark": "Los LLM pueden cometer errores. Verifica la informaci\u00f3n importante."
+        "watermark": "El asistente puede cometer errores. Verifica la informaci\u00f3n importante."
     },
     "threadHistory": {
         "sidebar": {

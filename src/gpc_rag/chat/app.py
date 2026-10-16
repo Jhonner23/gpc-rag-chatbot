@@ -2,7 +2,14 @@
 
 Cliente HTTP delgado sobre la API FastAPI (pipeline RAG + agentes de la
 seccion 9 de la arquitectura: coordinador, agente arbol, RAG, evaluador,
-comparador).
+verificador, integrador).
+
+Con la capa de agentes, cada respuesta se muestra en dos niveles: arriba, la
+respuesta de cada agente en su propio panel, lado a lado (arbol de decision y
+RAG; a futuro, casos similares); debajo, la "Sugerencia", que es la respuesta
+consolidada del integrador. Los paneles se arman con HTML minimo y clases de
+public/custom.css (requiere unsafe_allow_html = true en .chainlit/config.toml);
+el texto de los agentes se escapa para que no inyecte HTML.
 
 El agente arbol puede pausar la conversacion para preguntar, una variable a
 la vez, un dato que le falta (ver agents/tree_agent.py). Mientras eso pasa,
@@ -47,11 +54,43 @@ def _format_sources(sources: list[dict]) -> str:
     if not sources:
         return ""
     lines = [
-        f"- **{s['source_file']}** — Sección: {s['section']}"
-        + (f", Pág. {s['page']}" if s.get("page") is not None else "")
+        f"- **{_escape(s['source_file'])}**, sección: {_escape(str(s['section']))}"
+        + (f", pág. {s['page']}" if s.get("page") is not None else "")
         for s in sources
     ]
     return "\n\n**Fuentes consultadas:**\n" + "\n".join(lines)
+
+
+def _escape(text: str) -> str:
+    """Evita que el texto de un agente se interprete como HTML (los paneles
+    se renderizan con unsafe_allow_html). El markdown se conserva."""
+    return text.replace("&", "&amp;").replace("<", "&lt;")
+
+
+def _panel_html(panel: dict) -> str:
+    # Las lineas en blanco alrededor del contenido son necesarias para que
+    # el markdown dentro del <div> se siga interpretando como markdown.
+    css = "gpc-panel" if panel["eligible"] else "gpc-panel gpc-panel-vacio"
+    return (
+        f'<div class="{css}">\n'
+        f'<div class="gpc-panel-titulo">{_escape(panel["title"])}</div>\n'
+        f'<div class="gpc-panel-estado">{_escape(panel["status"])}</div>\n\n'
+        f"{_escape(panel['content']).strip()}"
+        f"{_format_sources(panel.get('sources', []))}\n\n"
+        "</div>"
+    )
+
+
+def _format_with_panels(answer: str, panels: list[dict]) -> str:
+    cards = "\n".join(_panel_html(p) for p in panels)
+    return (
+        f'<div class="gpc-paneles">\n{cards}\n</div>\n\n'
+        '<div class="gpc-sugerencia">\n'
+        '<div class="gpc-panel-titulo">Sugerencia</div>\n'
+        '<div class="gpc-panel-estado">respuesta consolidada a partir de los agentes</div>\n\n'
+        f"{_escape(answer).strip()}\n\n"
+        "</div>"
+    )
 
 
 async def _call_chat_api(payload: dict) -> dict | None:
@@ -100,6 +139,10 @@ async def on_message(message: cl.Message) -> None:
 
     cl.user_session.set(_PENDING_THREAD_KEY, None)
     answer_text = data["answer"]
-    sources_block = "" if is_refusal(answer_text) else _format_sources(data.get("sources", []))
-    thinking.content = answer_text + sources_block
+    panels = data.get("panels") or []
+    if panels:
+        thinking.content = _format_with_panels(answer_text, panels)
+    else:
+        sources_block = "" if is_refusal(answer_text) else _format_sources(data.get("sources", []))
+        thinking.content = _escape(answer_text) + sources_block
     await thinking.update()

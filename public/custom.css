@@ -29,3 +29,43 @@
   background-position: left center;
   pointer-events: none;
 }
+
+
+/* Respuesta por agente: paneles lado a lado (arbol de decision, RAG y, a
+   futuro, casos similares) y la sugerencia consolidada debajo. En pantallas
+   angostas los paneles se apilan. */
+.gpc-paneles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.gpc-panel,
+.gpc-sugerencia {
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.gpc-panel-vacio {
+  color: hsl(var(--muted-foreground));
+}
+
+.gpc-sugerencia {
+  border-width: 2px;
+  border-color: hsl(var(--primary));
+}
+
+.gpc-panel-titulo {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.gpc-panel-estado {
+  font-size: 0.8rem;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 0.25rem;
+}

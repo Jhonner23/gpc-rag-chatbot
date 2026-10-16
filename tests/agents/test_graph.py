@@ -71,6 +71,7 @@ def test_coordinator_rejects_inappropriate_question_without_calling_rag() -> Non
 
     assert pipeline.calls == []  # el agente RAG nunca se invoco
     assert "no es clinica" in result.answer
+    assert result.panels == []
     assert result.sources == []
 
 
@@ -91,7 +92,12 @@ def test_approves_and_returns_answer_with_sources_when_evaluator_ok() -> None:
     assert len(pipeline.calls) == 1
     assert pipeline.calls[0] is None  # sin instruccion de reintento
     assert result.answer.startswith("Respuesta bien fundamentada.")
-    assert "árbol de decisión, abstención; RAG, respuesta fundamentada (verificada)" in result.answer
+    tree_panel, rag_panel = result.panels
+    assert tree_panel.status == "abstención"
+    assert tree_panel.content.startswith("El árbol de decisión no llegó a una respuesta")
+    assert rag_panel.status == "respuesta fundamentada (verificada)"
+    assert rag_panel.content.startswith("Respuesta bien fundamentada.")
+    assert len(rag_panel.sources) == 1
     assert len(result.sources) == 1
 
 
@@ -210,7 +216,12 @@ def test_tree_and_rag_are_integrated_into_single_answer() -> None:
 
     assert isinstance(result, RagAnswer)
     assert result.answer.startswith("Respuesta consolidada del protocolo CT-PL-193 y del RAG.")
-    assert "árbol de decisión, respuesta fundamentada (verificada); RAG, respuesta fundamentada (verificada)" in result.answer
+    assert [p.status for p in result.panels] == [
+        "respuesta fundamentada (verificada)",
+        "respuesta fundamentada (verificada)",
+    ]
+    assert "arbol de decision del protocolo CT-PL-193" in result.panels[0].content
+    assert result.panels[0].sources and result.panels[1].sources
     methods = {s.retrieval_method for s in result.sources}
     assert methods == {"arbol", "rerank"}
     assert mock_integ_client.return_value.chat.call_count == 2  # sintesis + fidelidad
@@ -295,7 +306,10 @@ def test_tree_answer_is_published_alone_when_rag_is_rejected() -> None:
     mock_integ_client.return_value.chat.assert_not_called()
     assert "arbol de decision del protocolo CT-PL-193" in result.answer
     assert "RAG mal fundamentado" not in result.answer
-    assert "RAG, respuesta fundamentada (no publicada: rechazada por el evaluador)" in result.answer
+    rag_panel = result.panels[1]
+    assert rag_panel.status == "respuesta fundamentada (no publicada: rechazada por el evaluador)"
+    assert "RAG mal fundamentado" not in rag_panel.content
+    assert rag_panel.sources == []
     assert all(s.retrieval_method == "arbol" for s in result.sources)
 
 
@@ -319,7 +333,8 @@ def test_unreadable_evaluator_verdict_fails_closed_without_regenerating_rag() ->
     assert len(pipeline.calls) == 1
     assert mock_eval_client.return_value.chat.call_count == 2  # juicio + 1 reintento
     assert "No puedo confirmar" in result.answer
-    assert "no publicada: no fue posible verificarla" in result.answer
+    assert result.panels[1].status == "respuesta fundamentada (no publicada: no fue posible verificarla)"
+    assert "Respuesta del RAG." not in result.panels[1].content
     assert result.sources == []
 
 
@@ -431,7 +446,8 @@ def test_rag_technical_error_does_not_break_the_answer() -> None:
 
     mock_eval_client.return_value.chat.assert_not_called()
     assert "arbol de decision del protocolo CT-PL-193" in result.answer
-    assert "RAG, error técnico" in result.answer
+    assert result.panels[1].status == "error técnico"
+    assert "error técnico" in result.panels[1].content
 
 
 def test_rag_branch_timeout_is_reported_as_technical_error() -> None:
@@ -458,7 +474,8 @@ def test_rag_branch_timeout_is_reported_as_technical_error() -> None:
 
     assert "Respuesta tardia" not in result.answer
     assert "No puedo confirmar" in result.answer
-    assert "RAG, error técnico" in result.answer
+    assert result.panels[1].status == "error técnico"
+    assert "error técnico" in result.panels[1].content
     assert result.sources == []
 
 
@@ -479,7 +496,8 @@ def test_tree_technical_error_does_not_break_the_answer() -> None:
         result = run_agentic("¿Cual es el tratamiento de la NAC?", _CFG, pipeline)
 
     assert result.answer.startswith("Respuesta bien fundamentada.")
-    assert "árbol de decisión, error técnico" in result.answer
+    assert result.panels[0].status == "error técnico"
+    assert result.panels[0].content.startswith("El árbol de decisión no llegó a una respuesta")
     assert len(result.sources) == 1
 
 
@@ -541,5 +559,6 @@ def test_unrelated_tree_contribution_is_not_published() -> None:
 
     mock_integ_client.return_value.chat.assert_not_called()
     assert result.answer.startswith("Respuesta del RAG con su cita.")
-    assert "no publicada: no relacionada con la pregunta" in result.answer
+    assert result.panels[0].status == "respuesta fundamentada (no publicada: no relacionada con la pregunta)"
+    assert "no está relacionada con la pregunta" in result.panels[0].content
     assert all(s.retrieval_method == "rerank" for s in result.sources)
