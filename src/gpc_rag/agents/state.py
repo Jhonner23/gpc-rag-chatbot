@@ -25,24 +25,33 @@ class AgentState(TypedDict, total=False):
     tree_initial_values: dict[str, Any]  # primera extraccion, antes de preguntar
     tree_result: dict[str, Any] | None  # ver tree_agent._render_tree_result
     tree_questions_asked: int
+    tree_outcome: str | None  # "informacion_faltante" | "ausencia_de_coincidencias" sin match
+    tree_error: str | None  # error tecnico de la rama del arbol
 
     # Agente RAG (retrieval + generacion)
     answer: str
     sources: list[RetrievedChunk]
     extra_instruction: str | None  # se llena si el evaluador pide reintentar
+    rag_error: str | None  # error tecnico o tiempo maximo excedido en la rama del RAG
 
     # Agente evaluador (guardrail en linea, antes de responder al usuario)
     eval_ok: bool
+    eval_status: str  # "aprobada" | "rechazada" | "no_verificable" (falla cerrada)
     eval_feedback: str | None
     retry_count: int
 
-    # Agente comparador: decide si la respuesta final sale del arbol o del
-    # RAG (ver agents/comparator.py). El coordinador sigue siendo el UNICO
-    # que arma lo que ve el usuario (build_final_output), pero lo hace a
-    # partir de lo que el comparador deja aqui.
-    chosen_source: str  # "arbol" | "rag"
-    chosen_answer: str
-    chosen_sources: list[RetrievedChunk]
+    # Agente verificador de evidencia (ver agents/verifier.py): una
+    # aportacion por agente con un contrato comun (agent, status, eligible,
+    # content, references, detail) y las discrepancias de version detectadas.
+    contributions: list[dict[str, Any]]
+    discrepancies: list[str]
+
+    # Integrador maestro (ver agents/integrator.py): respuesta consolidada.
+    # El coordinador sigue siendo el UNICO que arma lo que ve el usuario
+    # (build_final_output), a partir de lo que el integrador deja aqui.
+    integration_mode: str  # "sintesis" | "composicion" | "unica" | "sin_aportaciones"
+    integrated_answer: str
+    integrated_sources: list[RetrievedChunk]
 
     # Salida final: la arma el coordinador (unico agente que "habla" con el
     # usuario), decide si se muestran fuentes o no segun el resultado.

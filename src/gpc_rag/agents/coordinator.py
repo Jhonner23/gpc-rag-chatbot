@@ -10,9 +10,7 @@ resultados y los devuelve"):
    tema (eso requiere el contexto real, y lo hace el agente RAG/evaluador
    despues) -- solo si vale la pena intentarlo.
 2. `build_final_output`: es el UNICO punto que arma lo que ve el usuario
-   final. Decide si se muestran las fuentes consultadas (no tiene sentido
-   mostrarlas si la pregunta fue rechazada o si el evaluador no aprobo la
-   respuesta ni despues del reintento).
+   final, a partir de la respuesta consolidada del integrador maestro.
 
 Nota sobre el formato de salida: se usa el modo JSON nativo de Ollama
 (`format="json"`) en vez de pedir un formato de texto libre ("responde
@@ -21,8 +19,11 @@ confiable instrucciones de formato en texto libre (se vio el mismo problema
 con RAGAS, ver claude/evaluacion-rag-gpc.md), pero Ollama SI puede forzar que
 el modelo emita JSON valido a nivel de grammar/decoding. Aun asi, el parseo
 de ese JSON puede fallar (el modelo puede omitir una clave, etc.) -- ante eso
-se falla "abierto" (se aprueba) en vez de bloquear al usuario por un problema
-del juez, no de su pregunta.
+el FILTRO de admision falla "abierto" (admite la pregunta) en vez de bloquear
+al usuario por un problema del juez, no de su pregunta. Esto es distinto de
+la publicacion de respuestas, que si falla cerrada (ver evaluator.py,
+verifier.py e integrator.py): admitir una pregunta no publica contenido
+clinico, todavia debe pasar por la verificacion.
 """
 
 from __future__ import annotations
@@ -34,6 +35,7 @@ from ollama import Client
 from omegaconf import DictConfig
 
 from gpc_rag.agents.state import AgentState
+from gpc_rag.agents.timeouts import llm_timeout
 from gpc_rag.common.models import RetrievedChunk
 
 logger = logging.getLogger(__name__)
@@ -78,7 +80,7 @@ _FALLBACK_AFTER_FAILED_EVAL = (
 
 def filter_query(question: str, cfg: DictConfig) -> tuple[bool, str | None]:
     """Devuelve (es_adecuada, motivo_de_rechazo_o_None)."""
-    client = Client(host=cfg.env.ollama_url)
+    client = Client(host=cfg.env.ollama_url, timeout=llm_timeout(cfg))
     response = client.chat(
         model=cfg.agents.coordinator_model,
         messages=[
@@ -118,27 +120,21 @@ def build_final_output(state: AgentState) -> tuple[str, list[RetrievedChunk]]:
 
     Prioridad:
     1. Rechazo del coordinador (filter_query) -- ni se intenta nada mas.
-    2. Decision del agente comparador (agents/comparator.py), si corrio:
-       la respuesta del arbol (auditada, EXTRACTED) si tuvo match, o si no
-       la respuesta del RAG ya evaluada.
+    2. Respuesta consolidada del integrador maestro (agents/integrator.py),
+       construida solo con las aportaciones que el verificador declaro
+       elegibles (agents/verifier.py).
     3. Fallback directo al resultado del evaluador, para cuando el grafo se
-       use sin la rama del arbol (compatibilidad).
+       use sin verificador ni integrador (compatibilidad).
 
-    Solo se muestran fuentes cuando hay una respuesta admitida y aprobada --
-    en cualquier otro caso se omiten, para no sugerir enganosamente que se
-    encontro informacion relevante.
+    Solo se muestran fuentes de aportaciones verificadas; en cualquier otro
+    caso se omiten, para no sugerir enganosamente que se encontro
+    informacion relevante.
     """
     if not state.get("is_appropriate", True):
         return state.get("rejection_reason") or _DEFAULT_REJECTION, []
 
-    if "chosen_source" in state:
-        # El arbol gana aunque el evaluador haya rechazado al RAG (su propia
-        # auditoria -- validation_status EXTRACTED -- es independiente). Pero
-        # si el comparador cayo al RAG, hay que seguir respetando el rechazo
-        # del evaluador en vez de mostrar una respuesta no aprobada.
-        if state.get("chosen_source") == "rag" and not state.get("eval_ok", True):
-            return _FALLBACK_AFTER_FAILED_EVAL, []
-        return state.get("chosen_answer", ""), state.get("chosen_sources", [])
+    if "integrated_answer" in state:
+        return state.get("integrated_answer", ""), state.get("integrated_sources", [])
 
     if state.get("eval_ok", True):
         return state.get("answer", ""), state.get("sources", [])

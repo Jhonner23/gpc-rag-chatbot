@@ -47,6 +47,7 @@ from gpc_rag.agents.protocol_registry import (
     get_package,
 )
 from gpc_rag.agents.state import AgentState
+from gpc_rag.agents.timeouts import llm_timeout
 from gpc_rag.agents.tree_support import matched_validated_rules, rank_blocking_variables
 
 logger = logging.getLogger(__name__)
@@ -111,7 +112,7 @@ def select_protocol(question: str, cfg: DictConfig) -> str | None:
         logger.warning("Agente arbol: no hay protocolos vendorizados en agents/protocols/.")
         return None
 
-    client = Client(host=cfg.env.ollama_url)
+    client = Client(host=cfg.env.ollama_url, timeout=llm_timeout(cfg))
     response = client.chat(
         model=cfg.agents.coordinator_model,
         messages=[
@@ -176,7 +177,7 @@ def extract_case_values(
     Tolerante: una clave invalida o un valor con el tipo equivocado se
     descarta individualmente en vez de invalidar toda la extraccion.
     """
-    client = Client(host=cfg.env.ollama_url)
+    client = Client(host=cfg.env.ollama_url, timeout=llm_timeout(cfg))
     system_prompt = _EXTRACT_SYSTEM_PROMPT_TEMPLATE.format(
         catalog=_variable_catalog_text(package.variables)
     )
@@ -296,6 +297,7 @@ def _render_tree_result(package: ProtocolVersion, rule_eval: Any) -> dict[str, A
 
     return {
         "protocol_id": package.protocol.id,
+        "protocol_version": str(getattr(package, "version", "") or ""),
         "rule_id": rule.id,
         "actions": action_lines,
         "citations": citations,
@@ -320,13 +322,16 @@ def tree_agent_node(state: AgentState, cfg: DictConfig) -> dict:  # noqa: ARG001
     """Nodo con interrupt(): evalua y, si hace falta, pregunta estilo wizard."""
     protocol_id = state.get("tree_protocol_id")
     if not protocol_id:
-        return {"tree_result": None, "tree_questions_asked": 0}
+        return {"tree_result": None, "tree_questions_asked": 0, "tree_outcome": None}
 
     package = get_package(protocol_id)
     case_values: dict[str, Any] = dict(state.get("tree_initial_values") or {})
     skipped: set[str] = set()
     questions_asked = 0
     matches: list[Any] = []
+    # Sin match: "ausencia_de_coincidencias" si ya no quedan variables por
+    # preguntar; "informacion_faltante" si se agoto el limite de preguntas.
+    outcome = "ausencia_de_coincidencias"
 
     for _ in range(MAX_QUESTIONS):
         case = Case.from_inputs(case_values)
@@ -357,6 +362,7 @@ def tree_agent_node(state: AgentState, cfg: DictConfig) -> dict:  # noqa: ARG001
         case = Case.from_inputs(case_values)
         evaluation = evaluate_package(package, case)
         matches = matched_validated_rules(evaluation)
+        outcome = "informacion_faltante"
 
     if not matches:
         logger.info(
@@ -364,8 +370,12 @@ def tree_agent_node(state: AgentState, cfg: DictConfig) -> dict:  # noqa: ARG001
             questions_asked,
             protocol_id,
         )
-        return {"tree_result": None, "tree_questions_asked": questions_asked}
+        return {
+            "tree_result": None,
+            "tree_questions_asked": questions_asked,
+            "tree_outcome": outcome,
+        }
 
     result = _render_tree_result(package, matches[0])
     logger.info("Agente arbol: MATCH regla=%s protocolo=%s", result["rule_id"], protocol_id)
-    return {"tree_result": result, "tree_questions_asked": questions_asked}
+    return {"tree_result": result, "tree_questions_asked": questions_asked, "tree_outcome": None}

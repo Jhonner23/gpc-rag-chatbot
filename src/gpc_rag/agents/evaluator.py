@@ -18,6 +18,12 @@ hasta fabricaba citas externas inexistentes):
    definicion, la respuesta correcta cuando las guias no cubren el tema, y
    el heuristico de texto (common/refusal.py) ha demostrado ser mucho mas
    confiable que el juicio del LLM local para este caso puntual.
+
+Falla cerrada (cambio posterior, para alinear el sistema con la
+fundamentacion de la arquitectura multiagente): si el veredicto no es
+interpretable se reintenta el juicio una vez, y si sigue sin serlo la
+respuesta queda `no_verificable` y no se publica. Antes se aprobaba por
+defecto.
 """
 
 from __future__ import annotations
@@ -28,6 +34,7 @@ import logging
 from ollama import Client
 from omegaconf import DictConfig
 
+from gpc_rag.agents.timeouts import llm_timeout
 from gpc_rag.common.models import RetrievedChunk
 from gpc_rag.common.refusal import is_refusal
 
@@ -67,52 +74,82 @@ def _format_context(sources: list[RetrievedChunk]) -> str:
     return "\n\n".join(blocks) if blocks else "(sin contexto recuperado)"
 
 
+_JUDGE_ATTEMPTS = 2  # 1 intento + 1 reintento del juicio si el JSON no es interpretable
+
+APROBADA = "aprobada"
+RECHAZADA = "rechazada"
+NO_VERIFICABLE = "no_verificable"
+
+
+def evaluate_answer_status(
+    question: str,
+    sources: list[RetrievedChunk],
+    answer: str,
+    cfg: DictConfig,
+) -> tuple[str, str | None]:
+    """Devuelve (estado, motivo) con estado en {aprobada, rechazada, no_verificable}.
+
+    Falla CERRADA: si el juez no devuelve un veredicto interpretable, se
+    reintenta el juicio una vez; si vuelve a fallar, la respuesta queda como
+    `no_verificable` y no se publica (antes se aprobaba por defecto). Un
+    veredicto ilegible es un problema del juez, no de la respuesta, por eso
+    `no_verificable` NO dispara la regeneracion del RAG (ver graph.py).
+    """
+    if is_refusal(answer):
+        logger.info(
+            "Evaluador: respuesta ya tiene forma de rechazo bien formado; se aprueba sin llamar al LLM."
+        )
+        return APROBADA, None
+
+    client = Client(host=cfg.env.ollama_url, timeout=llm_timeout(cfg))
+    user_prompt = (
+        f"CONTEXTO:\n{_format_context(sources)}\n\n"
+        f"PREGUNTA:\n{question}\n\n"
+        f"RESPUESTA A AUDITAR:\n{answer}"
+    )
+    for attempt in range(1, _JUDGE_ATTEMPTS + 1):
+        response = client.chat(
+            model=cfg.agents.evaluator_model,
+            messages=[
+                {"role": "system", "content": _EVALUATOR_SYSTEM_PROMPT},
+                {"role": "user", "content": user_prompt},
+            ],
+            format="json",
+            options={"temperature": 0.0, "num_predict": 200},
+            stream=False,
+        )
+        content = response["message"]["content"].strip()
+        try:
+            parsed = json.loads(content)
+            verdict = str(parsed.get("verdict", "")).strip().upper()
+        except (json.JSONDecodeError, AttributeError):
+            logger.warning(
+                "Evaluador: veredicto no interpretable (intento %d/%d): %r",
+                attempt,
+                _JUDGE_ATTEMPTS,
+                content,
+            )
+            continue
+
+        if verdict == "OK":
+            return APROBADA, None
+        if verdict == "RECHAZADA":
+            reason = str(parsed.get("reason", "")).strip()
+            return RECHAZADA, reason or "La respuesta no paso la auditoria."
+        logger.warning(
+            "Evaluador: veredicto inesperado (intento %d/%d): %r", attempt, _JUDGE_ATTEMPTS, verdict
+        )
+
+    logger.warning("Evaluador: sin veredicto interpretable; la respuesta queda como no verificable.")
+    return NO_VERIFICABLE, "No fue posible verificar la respuesta contra el contexto recuperado."
+
+
 def evaluate_answer(
     question: str,
     sources: list[RetrievedChunk],
     answer: str,
     cfg: DictConfig,
 ) -> tuple[bool, str | None]:
-    """Devuelve (aprobada, motivo_de_rechazo_o_None)."""
-    if is_refusal(answer):
-        logger.info(
-            "Evaluador: respuesta ya tiene forma de rechazo bien formado; se aprueba sin llamar al LLM."
-        )
-        return True, None
-
-    client = Client(host=cfg.env.ollama_url)
-    user_prompt = (
-        f"CONTEXTO:\n{_format_context(sources)}\n\n"
-        f"PREGUNTA:\n{question}\n\n"
-        f"RESPUESTA A AUDITAR:\n{answer}"
-    )
-    response = client.chat(
-        model=cfg.agents.evaluator_model,
-        messages=[
-            {"role": "system", "content": _EVALUATOR_SYSTEM_PROMPT},
-            {"role": "user", "content": user_prompt},
-        ],
-        format="json",
-        options={"temperature": 0.0, "num_predict": 200},
-        stream=False,
-    )
-    content = response["message"]["content"].strip()
-
-    try:
-        parsed = json.loads(content)
-        verdict = str(parsed.get("verdict", "")).strip().upper()
-    except (json.JSONDecodeError, AttributeError):
-        logger.warning(
-            "Evaluador: no se pudo parsear el JSON del veredicto (%r); se aprueba por defecto.",
-            content,
-        )
-        return True, None
-
-    if verdict == "OK":
-        return True, None
-    if verdict == "RECHAZADA":
-        reason = str(parsed.get("reason", "")).strip()
-        return False, reason or "La respuesta no paso la auditoria."
-
-    logger.warning("Evaluador: veredicto inesperado (%r); se aprueba por defecto.", verdict)
-    return True, None
+    """Compatibilidad: (aprobada, motivo). Solo `aprobada` cuenta como True."""
+    status, reason = evaluate_answer_status(question, sources, answer, cfg)
+    return status == APROBADA, reason
