@@ -10,6 +10,8 @@ protocolo en vez de priorizar.
 
 from __future__ import annotations
 
+import re
+import unicodedata
 from collections import Counter
 from collections.abc import Mapping
 
@@ -19,6 +21,7 @@ from cpg_tree.knowledge.conditions import Condition, LogicalExpression, LogicalO
 from cpg_tree.knowledge.enums import ValidationStatus
 from cpg_tree.knowledge.protocol import ProtocolVersion
 from cpg_tree.knowledge.rules import Rule
+from rank_bm25 import BM25Okapi
 
 
 def collect_variable_refs(operand: LogicalOperand) -> set[str]:
@@ -72,7 +75,10 @@ def rank_blocking_variables(
     for rule_eval in evaluation.rule_results:
         if rule_eval.outcome is not RuleOutcome.INDETERMINATE:
             continue
-        if only_validated and rule_eval.validation_status is not ValidationStatus.EXTRACTED:
+        if (
+            only_validated
+            and rule_eval.validation_status is not ValidationStatus.EXTRACTED
+        ):
             continue
         rule = package.rules[rule_eval.rule_id]
         for variable_id in rule_variable_refs(rule):
@@ -88,7 +94,8 @@ def has_validated_match(
     """True si al menos una regla EXTRACTED (nunca UNRESOLVED) dio MATCHED."""
     del rule_results_by_outcome  # reservado para uso futuro (debug/trazabilidad)
     return any(
-        r.outcome is RuleOutcome.MATCHED and r.validation_status is ValidationStatus.EXTRACTED
+        r.outcome is RuleOutcome.MATCHED
+        and r.validation_status is ValidationStatus.EXTRACTED
         for r in evaluation.rule_results
     )
 
@@ -98,5 +105,112 @@ def matched_validated_rules(evaluation: EvaluationResult):
     return [
         r
         for r in evaluation.rule_results
-        if r.outcome is RuleOutcome.MATCHED and r.validation_status is ValidationStatus.EXTRACTED
+        if r.outcome is RuleOutcome.MATCHED
+        and r.validation_status is ValidationStatus.EXTRACTED
+    ]
+
+
+# Palabras frecuentes que no ayudan a distinguir reglas (incluye terminos que
+# aparecen en casi todas las preguntas clinicas, como "paciente" o "manejo").
+_STOPWORDS = {
+    "de",
+    "la",
+    "el",
+    "en",
+    "y",
+    "a",
+    "los",
+    "las",
+    "del",
+    "que",
+    "se",
+    "con",
+    "por",
+    "para",
+    "un",
+    "una",
+    "o",
+    "al",
+    "es",
+    "su",
+    "sus",
+    "lo",
+    "como",
+    "mas",
+    "sobre",
+    "cual",
+    "cuales",
+    "debe",
+    "deben",
+    "cuando",
+    "donde",
+    "paciente",
+    "pacientes",
+    "manejo",
+    "guia",
+    "guias",
+    "protocolo",
+    "recomienda",
+    "recomendaciones",
+    "recomendado",
+    "presentan",
+    "disponibles",
+}
+
+
+def _tokens(text: str) -> list[str]:
+    text = unicodedata.normalize("NFKD", (text or "").lower())
+    text = "".join(c for c in text if not unicodedata.combining(c))
+    return [
+        w for w in re.findall(r"[a-z0-9]+", text) if len(w) > 2 and w not in _STOPWORDS
+    ]
+
+
+def _rule_search_text(package: ProtocolVersion, rule: Rule) -> str:
+    parts = [rule.id.replace("_", " "), rule.notes or ""]
+    for fragment_id in rule.provenance.fragment_refs:
+        fragment = package.fragments.get(fragment_id)
+        if fragment is not None:
+            parts += [fragment.section or "", fragment.verbatim_text or ""]
+    for action_id in rule.action_refs:
+        action = package.actions.get(action_id)
+        if action is not None:
+            payload = " ".join(str(v) for v in (action.payload or {}).values())
+            parts += [action.id.replace("_", " "), action.label or "", payload]
+    return " ".join(parts)
+
+
+def rank_rules_for_query(
+    package: ProtocolVersion,
+    question: str,
+    *,
+    top_k: int = 3,
+    min_ratio: float = 0.4,
+) -> list[str]:
+    """Reglas auditadas (EXTRACTED) mas relacionadas con una pregunta
+    informativa, por similitud lexica BM25 entre la pregunta y el texto de la
+    regla (id, notas, fragmentos fuente y acciones). Determinista, sin LLM.
+
+    Devuelve hasta `top_k` ids, solo con puntaje positivo y de al menos
+    `min_ratio` del mejor puntaje, para no arrastrar reglas marginales.
+    """
+    rules = [
+        r
+        for r in package.rules.values()
+        if r.validation_status is ValidationStatus.EXTRACTED
+    ]
+    query = _tokens(question)
+    if not rules or not query:
+        return []
+    bm25 = BM25Okapi([_tokens(_rule_search_text(package, r)) for r in rules])
+    scored = sorted(
+        zip(rules, bm25.get_scores(query), strict=True),
+        key=lambda x: x[1],
+        reverse=True,
+    )
+    best = scored[0][1]
+    if best <= 0:
+        return []
+    return [
+        r.id for r, score in scored[:top_k] if score > 0 and score >= best * min_ratio
     ]

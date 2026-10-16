@@ -34,6 +34,7 @@ import logging
 from ollama import Client
 from omegaconf import DictConfig
 
+from gpc_rag.agents.schemas import FILTER_SCHEMA
 from gpc_rag.agents.state import AgentState
 from gpc_rag.agents.timeouts import llm_timeout
 from gpc_rag.common.models import RetrievedChunk
@@ -87,7 +88,7 @@ def filter_query(question: str, cfg: DictConfig) -> tuple[bool, str | None]:
             {"role": "system", "content": _FILTER_SYSTEM_PROMPT},
             {"role": "user", "content": question},
         ],
-        format="json",
+        format=FILTER_SCHEMA,
         options={"temperature": 0.0, "num_predict": 150},
         stream=False,
     )

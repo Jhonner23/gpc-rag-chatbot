@@ -21,9 +21,17 @@ def _chat(text: str) -> dict:
     return {"message": {"content": text}}
 
 
-def _verify(state: dict, judge: str = '{"contradiccion": false}') -> dict:
+_RELATED = '{"relacionada": true}'
+
+
+def _verify(
+    state: dict, judge: str = '{"contradiccion": false}', related: str = _RELATED
+) -> dict:
+    """El primer llamado al juez es la relacion del arbol; el resto, contradicciones."""
     with patch("gpc_rag.agents.verifier.Client") as mock_client:
-        mock_client.return_value.chat.return_value = _chat(judge)
+        mock_client.return_value.chat.side_effect = [_chat(related)] + [
+            _chat(judge)
+        ] * 4
         return verify_contributions(state, _CFG)
 
 
@@ -138,3 +146,14 @@ def test_tree_outcome_states() -> None:
     state["tree_error"] = "Error tecnico: RuntimeError."
     tree, _ = _verify(state)["contributions"]
     assert tree["status"] == "error_tecnico"
+
+
+def test_unrelated_tree_contribution_is_not_eligible() -> None:
+    out = _verify(
+        _state("CT-PL-193 (v9).pdf", "CT-PL-193_v9.pdf"),
+        related='{"relacionada": false}',
+    )
+    tree, rag = out["contributions"]
+    assert tree["verification"] == "no_relacionada" and not tree["eligible"]
+    assert rag["eligible"]
+    assert out["discrepancies"] == []  # sin dos aportaciones elegibles no se comparan

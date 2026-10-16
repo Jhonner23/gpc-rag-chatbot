@@ -22,6 +22,7 @@ class AgentState(TypedDict, total=False):
     # evalua deterministicamente contra cpg_tree, con preguntas tipo wizard
     # via interrupt() cuando faltan datos criticos.
     tree_protocol_id: str | None  # "NAC" | "ITU" | None (ningun protocolo aplica)
+    tree_mode: str  # "caso" (evalua datos del paciente) | "consulta" (reglas relacionadas)
     tree_initial_values: dict[str, Any]  # primera extraccion, antes de preguntar
     tree_result: dict[str, Any] | None  # ver tree_agent._render_tree_result
     tree_questions_asked: int

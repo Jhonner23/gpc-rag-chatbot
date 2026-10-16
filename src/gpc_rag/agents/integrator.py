@@ -31,6 +31,7 @@ from typing import Any
 from ollama import Client
 from omegaconf import DictConfig
 
+from gpc_rag.agents.schemas import FIDELITY_SCHEMA
 from gpc_rag.agents.state import AgentState
 from gpc_rag.agents.timeouts import llm_timeout
 from gpc_rag.common.models import Chunk, RetrievedChunk
@@ -62,6 +63,7 @@ _VERIFICATION_LABELS = {
     "sin_procedencia": "no publicada: sin procedencia verificable",
     "rechazada_por_evaluador": "no publicada: rechazada por el evaluador",
     "no_verificable": "no publicada: no fue posible verificarla",
+    "no_relacionada": "no publicada: no relacionada con la pregunta",
 }
 
 _SYNTHESIS_SYSTEM_PROMPT = """\
@@ -208,8 +210,8 @@ def _check_fidelity(
                 {"role": "system", "content": _FIDELITY_SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt},
             ],
-            format="json",
-            options={"temperature": 0.0, "num_predict": 200},
+            format=FIDELITY_SCHEMA,
+            options={"temperature": 0.0, "num_predict": 300},
             stream=False,
         )
         content = response["message"]["content"].strip()

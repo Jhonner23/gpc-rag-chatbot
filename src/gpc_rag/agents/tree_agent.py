@@ -46,9 +46,14 @@ from gpc_rag.agents.protocol_registry import (
     describe_available_protocols,
     get_package,
 )
+from gpc_rag.agents.schemas import protocol_schema
 from gpc_rag.agents.state import AgentState
 from gpc_rag.agents.timeouts import llm_timeout
-from gpc_rag.agents.tree_support import matched_validated_rules, rank_blocking_variables
+from gpc_rag.agents.tree_support import (
+    matched_validated_rules,
+    rank_blocking_variables,
+    rank_rules_for_query,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -95,22 +100,30 @@ def _build_protocol_select_prompt() -> str:
     )
     lines.append("")
     lines.append(
-        "Responde UNICAMENTE con un objeto JSON de esta forma exacta, sin "
-        "texto adicional:"
+        "Ademas, clasifica el MODO de la pregunta:\n"
+        "- caso: describe a un paciente concreto o pide decidir para un caso "
+        "(ej. 'paciente de 70 años con neumonia y derrame, ¿se hospitaliza?').\n"
+        "- consulta: pide informacion general del protocolo, sin datos de un "
+        "paciente (ej. '¿que recomienda la guia sobre...?', '¿cuando se trata...?').\n"
+        "Si tienes dudas, usa caso."
     )
-    example = " o ".join(f'{{"protocol": "{p.id}"}}' for p in protocols)
-    lines.append(f"{example} o {{\"protocol\": \"NINGUNO\"}}")
+    lines.append("")
+    lines.append(
+        "Responde UNICAMENTE con un objeto JSON con las claves protocol y modo, "
+        'por ejemplo {"protocol": "<id o NINGUNO>", "modo": "caso"}.'
+    )
     return "\n".join(lines)
 
 
-def select_protocol(question: str, cfg: DictConfig) -> str | None:
-    """Devuelve el id del protocolo institucional detectado, o None si
-    ninguno aplica. La lista de candidatos es dinamica (ver
-    protocol_registry.describe_available_protocols)."""
-    valid_ids = set(available_protocol_ids())
+def classify_question(question: str, cfg: DictConfig) -> tuple[str | None, str]:
+    """Devuelve (id del protocolo o None, modo "caso" | "consulta").
+
+    La lista de protocolos es dinamica (ver protocol_registry). Ante cualquier
+    duda o salida invalida, el modo es "caso" (el comportamiento original)."""
+    valid_ids = available_protocol_ids()
     if not valid_ids:
         logger.warning("Agente arbol: no hay protocolos vendorizados en agents/protocols/.")
-        return None
+        return None, "caso"
 
     client = Client(host=cfg.env.ollama_url, timeout=llm_timeout(cfg))
     response = client.chat(
@@ -119,7 +132,7 @@ def select_protocol(question: str, cfg: DictConfig) -> str | None:
             {"role": "system", "content": _build_protocol_select_prompt()},
             {"role": "user", "content": question},
         ],
-        format="json",
+        format=protocol_schema(valid_ids),
         options={"temperature": 0.0, "num_predict": 50},
         stream=False,
     )
@@ -127,12 +140,17 @@ def select_protocol(question: str, cfg: DictConfig) -> str | None:
     try:
         parsed = json.loads(content)
         protocol_id = str(parsed.get("protocol", "")).strip().upper()
+        mode = str(parsed.get("modo", "caso")).strip().lower()
     except (json.JSONDecodeError, AttributeError):
         logger.warning("Agente arbol: no se pudo parsear la seleccion de protocolo (%r)", content)
-        return None
-    if protocol_id in valid_ids:
-        return protocol_id
-    return None
+        return None, "caso"
+    mode = mode if mode in {"caso", "consulta"} else "caso"
+    return (protocol_id if protocol_id in valid_ids else None), mode
+
+
+def select_protocol(question: str, cfg: DictConfig) -> str | None:
+    """Compatibilidad: solo el id del protocolo detectado (o None)."""
+    return classify_question(question, cfg)[0]
 
 
 def _variable_catalog_text(variables: dict[str, Variable]) -> str:
@@ -305,17 +323,77 @@ def _render_tree_result(package: ProtocolVersion, rule_eval: Any) -> dict[str, A
     }
 
 
+def _action_text(action: Any) -> str:
+    if action.label:
+        return action.label
+    if action.payload:
+        return ", ".join(f"{k}: {v}" for k, v in action.payload.items())
+    return action.id.replace("_", " ")
+
+
+def _render_consult_result(package: ProtocolVersion, rule_ids: list[str]) -> dict[str, Any]:
+    """Aportacion del arbol en modo consulta: las reglas del protocolo mas
+    relacionadas con la pregunta, cada una con sus acciones y el texto
+    textual de la fuente que la respalda. No evalua datos de un paciente."""
+    answer_lines = [
+        f"Reglas del protocolo {package.protocol.id} ({package.protocol.name}) "
+        "relacionadas con la consulta:"
+    ]
+    citations: list[dict[str, Any]] = []
+    actions: list[str] = []
+    seen_fragments: set[str] = set()
+    for rule_id in rule_ids:
+        rule = package.rules[rule_id]
+        rule_actions = [
+            _action_text(package.actions[a]) for a in rule.action_refs if a in package.actions
+        ]
+        actions.extend(rule_actions)
+        fragments = [package.fragments[f] for f in rule.provenance.fragment_refs if f in package.fragments]
+        answer_lines.append("")
+        if rule_actions:
+            answer_lines.append(f"- {'; '.join(rule_actions)}")
+        for fragment in fragments:
+            answer_lines.append(f'  "{fragment.verbatim_text}"')
+            if fragment.id in seen_fragments:
+                continue
+            seen_fragments.add(fragment.id)
+            document = package.documents.get(fragment.document_id) if fragment.document_id else None
+            citations.append(
+                {
+                    "source_file": document.filename if document else (fragment.document_id or "?"),
+                    "section": fragment.section or rule_id,
+                    "page": fragment.page,
+                    "verbatim_text": fragment.verbatim_text,
+                }
+            )
+    return {
+        "protocol_id": package.protocol.id,
+        "protocol_version": str(getattr(package, "version", "") or ""),
+        "rule_id": rule_ids[0],
+        "rule_ids": list(rule_ids),
+        "mode": "consulta",
+        "actions": actions,
+        "citations": citations,
+        "answer_text": "\n".join(answer_lines),
+    }
+
+
 def tree_prepare_node(state: AgentState, cfg: DictConfig) -> dict:
-    """Nodo normal (sin interrupt): decide protocolo y hace la primera extraccion."""
-    protocol_id = select_protocol(state["question"], cfg)
+    """Nodo normal (sin interrupt): decide protocolo y modo, y en modo caso
+    hace la primera extraccion de variables."""
+    protocol_id, mode = classify_question(state["question"], cfg)
     if protocol_id is None:
         logger.info("Agente arbol: ningun protocolo institucional aplica a esta pregunta.")
-        return {"tree_protocol_id": None, "tree_initial_values": {}}
+        return {"tree_protocol_id": None, "tree_initial_values": {}, "tree_mode": mode}
+
+    if mode == "consulta":
+        logger.info("Agente arbol: protocolo=%s modo=consulta", protocol_id)
+        return {"tree_protocol_id": protocol_id, "tree_initial_values": {}, "tree_mode": mode}
 
     package = get_package(protocol_id)
     initial_values = extract_case_values(state["question"], package, cfg)
-    logger.info("Agente arbol: protocolo=%s valores_iniciales=%s", protocol_id, initial_values)
-    return {"tree_protocol_id": protocol_id, "tree_initial_values": initial_values}
+    logger.info("Agente arbol: protocolo=%s modo=caso valores_iniciales=%s", protocol_id, initial_values)
+    return {"tree_protocol_id": protocol_id, "tree_initial_values": initial_values, "tree_mode": mode}
 
 
 def tree_agent_node(state: AgentState, cfg: DictConfig) -> dict:  # noqa: ARG001
@@ -325,6 +403,20 @@ def tree_agent_node(state: AgentState, cfg: DictConfig) -> dict:  # noqa: ARG001
         return {"tree_result": None, "tree_questions_asked": 0, "tree_outcome": None}
 
     package = get_package(protocol_id)
+
+    if state.get("tree_mode") == "consulta":
+        rule_ids = rank_rules_for_query(package, state["question"])
+        if not rule_ids:
+            logger.info("Agente arbol: modo consulta sin reglas relacionadas (protocolo=%s)", protocol_id)
+            return {
+                "tree_result": None,
+                "tree_questions_asked": 0,
+                "tree_outcome": "ausencia_de_coincidencias",
+            }
+        result = _render_consult_result(package, rule_ids)
+        logger.info("Agente arbol: modo consulta reglas=%s protocolo=%s", rule_ids, protocol_id)
+        return {"tree_result": result, "tree_questions_asked": 0, "tree_outcome": None}
+
     case_values: dict[str, Any] = dict(state.get("tree_initial_values") or {})
     skipped: set[str] = set()
     questions_asked = 0

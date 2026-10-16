@@ -34,6 +34,7 @@ import logging
 from ollama import Client
 from omegaconf import DictConfig
 
+from gpc_rag.agents.schemas import EVALUATOR_SCHEMA
 from gpc_rag.agents.timeouts import llm_timeout
 from gpc_rag.common.models import RetrievedChunk
 from gpc_rag.common.refusal import is_refusal
@@ -105,7 +106,8 @@ def evaluate_answer_status(
     user_prompt = (
         f"CONTEXTO:\n{_format_context(sources)}\n\n"
         f"PREGUNTA:\n{question}\n\n"
-        f"RESPUESTA A AUDITAR:\n{answer}"
+        f"RESPUESTA A AUDITAR:\n{answer}\n\n"
+        "Recuerda: no respondas la pregunta. Devuelve solo el veredicto de la auditoria."
     )
     for attempt in range(1, _JUDGE_ATTEMPTS + 1):
         response = client.chat(
@@ -114,8 +116,8 @@ def evaluate_answer_status(
                 {"role": "system", "content": _EVALUATOR_SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt},
             ],
-            format="json",
-            options={"temperature": 0.0, "num_predict": 200},
+            format=EVALUATOR_SCHEMA,
+            options={"temperature": 0.0, "num_predict": 300},
             stream=False,
         )
         content = response["message"]["content"].strip()

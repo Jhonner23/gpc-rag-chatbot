@@ -33,6 +33,8 @@ Resultado de la verificacion (solo para respuesta_fundamentada):
 - rechazada_por_evaluador: el RAG no supero la auditoria tras el reintento.
 - no_verificable:          el evaluador no produjo un veredicto interpretable
                            (falla cerrada: no se publica).
+- no_relacionada:          la aportacion del arbol no responde a la pregunta
+                           (juzgado por un modelo local; falla cerrada).
 
 Discrepancias (se conservan con su procedencia, NO se resuelven):
 - de version: el arbol y el RAG citan el mismo protocolo institucional (p. ej.
@@ -52,6 +54,7 @@ from typing import Any
 from ollama import Client
 from omegaconf import DictConfig
 
+from gpc_rag.agents.schemas import CONTRADICTION_SCHEMA, RELEVANCE_SCHEMA
 from gpc_rag.agents.state import AgentState
 from gpc_rag.agents.timeouts import llm_timeout
 from gpc_rag.common.models import RetrievedChunk
@@ -241,6 +244,53 @@ def _version_discrepancies(tree: dict[str, Any], rag: dict[str, Any]) -> list[st
     return notes
 
 
+_RELEVANCE_SYSTEM_PROMPT = """\
+Eres un auditor. Decide si la APORTACION ARBOL (reglas de un protocolo \
+institucional) responde, total o parcialmente, a la PREGUNTA del usuario. \
+No respondas la pregunta ni uses conocimiento propio.
+
+Responde UNICAMENTE con un objeto JSON: {"relacionada": true} si la \
+aportacion responde a lo que se pregunta, o {"relacionada": false} si trata \
+otro tema o no aporta a la respuesta.
+"""
+
+
+def _tree_is_related(
+    question: str, tree: dict[str, Any], cfg: DictConfig
+) -> bool | None:
+    """True/False segun el juez, o None si no fue posible decidirlo."""
+    user_prompt = f"PREGUNTA:\n{question}\n\nAPORTACION ARBOL:\n{tree['content']}"
+    try:
+        client = Client(host=cfg.env.ollama_url, timeout=llm_timeout(cfg))
+        for attempt in range(1, _CONTRADICTION_ATTEMPTS + 1):
+            response = client.chat(
+                model=cfg.agents.evaluator_model,
+                messages=[
+                    {"role": "system", "content": _RELEVANCE_SYSTEM_PROMPT},
+                    {"role": "user", "content": user_prompt},
+                ],
+                format=RELEVANCE_SCHEMA,
+                options={"temperature": 0.0, "num_predict": 50},
+                stream=False,
+            )
+            content = response["message"]["content"].strip()
+            try:
+                flag = json.loads(content).get("relacionada")
+            except (json.JSONDecodeError, AttributeError):
+                flag = None
+            if isinstance(flag, bool):
+                return flag
+            logger.warning(
+                "Verificador: veredicto de relacion no interpretable (intento %d/%d): %r",
+                attempt,
+                _CONTRADICTION_ATTEMPTS,
+                content,
+            )
+    except Exception:  # un fallo del modelo no debe tumbar la verificacion
+        logger.exception("Verificador: fallo la comprobacion de relacion del arbol.")
+    return None
+
+
 def _content_discrepancy(
     question: str, tree: dict[str, Any], rag: dict[str, Any], cfg: DictConfig
 ) -> str | None:
@@ -259,7 +309,7 @@ def _content_discrepancy(
                     {"role": "system", "content": _CONTRADICTION_SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},
                 ],
-                format="json",
+                format=CONTRADICTION_SCHEMA,
                 options={"temperature": 0.0, "num_predict": 200},
                 stream=False,
             )
@@ -291,6 +341,22 @@ def _content_discrepancy(
 def verify_contributions(state: AgentState, cfg: DictConfig) -> dict:
     tree = _verify_tree(state)
     rag = _verify_rag(state)
+
+    # La aportacion del arbol solo se publica si responde a la pregunta
+    # (falla cerrada: si no se puede decidir, no se publica).
+    if tree["eligible"]:
+        related = _tree_is_related(state["question"], tree, cfg)
+        if related is not True:
+            tree = {
+                **tree,
+                "eligible": False,
+                "verification": "no_relacionada"
+                if related is False
+                else "no_verificable",
+                "detail": "La aportacion del arbol no responde a la pregunta."
+                if related is False
+                else "No fue posible comprobar si la aportacion del arbol responde a la pregunta.",
+            }
 
     discrepancies: list[str] = []
     if tree["eligible"] and rag["eligible"]:

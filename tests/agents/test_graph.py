@@ -178,7 +178,9 @@ _TREE_MATCH_RESPONSES = [
     _chat_response('{"protocol": "CT-PL-193"}'),
     _chat_response('{"sospecha_neumonia": true, "cuadro_clinico_compatible": true}'),
 ]
-_NO_CONTRADICTION = _chat_response('{"contradiccion": false}')
+# El verificador usa el mismo cliente para la relacion del arbol y para las
+# contradicciones: una sola respuesta simulada con ambas claves sirve para los dos.
+_NO_CONTRADICTION = _chat_response('{"contradiccion": false, "relacionada": true}')
 _TREE_QUESTION = "Paciente con sospecha de neumonia y cuadro clinico compatible, ¿que dice el protocolo?"
 
 
@@ -392,7 +394,7 @@ def test_contradiction_is_reported_to_synthesis_and_in_answer() -> None:
         mock_tree_client.return_value.chat.side_effect = list(_TREE_MATCH_RESPONSES)
         mock_eval_client.return_value.chat.return_value = _chat_response('{"verdict": "OK"}')
         mock_verif_client.return_value.chat.return_value = _chat_response(
-            '{"contradiccion": true, "detalle": "difieren en el sitio de manejo."}'
+            '{"contradiccion": true, "detalle": "difieren en el sitio de manejo.", "relacionada": true}'
         )
         mock_integ_client.return_value.chat.side_effect = [
             _chat_response("Respuesta consolidada que menciona la diferencia."),
@@ -419,9 +421,11 @@ def test_rag_technical_error_does_not_break_the_answer() -> None:
         patch("gpc_rag.agents.coordinator.Client") as mock_coord_client,
         patch("gpc_rag.agents.tree_agent.Client") as mock_tree_client,
         patch("gpc_rag.agents.evaluator.Client") as mock_eval_client,
+        patch("gpc_rag.agents.verifier.Client") as mock_verif_client,
     ):
         mock_coord_client.return_value.chat.return_value = _chat_response('{"verdict": "ADECUADA"}')
         mock_tree_client.return_value.chat.side_effect = list(_TREE_MATCH_RESPONSES)
+        mock_verif_client.return_value.chat.return_value = _NO_CONTRADICTION
 
         result = run_agentic(_TREE_QUESTION, _CFG, _BrokenPipeline())
 
@@ -477,3 +481,65 @@ def test_tree_technical_error_does_not_break_the_answer() -> None:
     assert result.answer.startswith("Respuesta bien fundamentada.")
     assert "árbol de decisión, error técnico" in result.answer
     assert len(result.sources) == 1
+
+
+def test_informative_question_uses_tree_consult_mode_without_wizard() -> None:
+    """En modo consulta el arbol no pregunta nada: aporta las reglas del
+    protocolo relacionadas con la pregunta (busqueda lexica sobre el paquete
+    real), y se integra con el RAG en una sola respuesta."""
+    pipeline = _FakePipeline(answers=["Respuesta del RAG sobre bacteriuria."])
+
+    with (
+        patch("gpc_rag.agents.coordinator.Client") as mock_coord_client,
+        patch("gpc_rag.agents.tree_agent.Client") as mock_tree_client,
+        patch("gpc_rag.agents.evaluator.Client") as mock_eval_client,
+        patch("gpc_rag.agents.integrator.Client") as mock_integ_client,
+        patch("gpc_rag.agents.verifier.Client") as mock_verif_client,
+    ):
+        mock_coord_client.return_value.chat.return_value = _chat_response('{"verdict": "ADECUADA"}')
+        mock_tree_client.return_value.chat.return_value = _chat_response(
+            '{"protocol": "CT-PL-197", "modo": "consulta"}'
+        )
+        mock_eval_client.return_value.chat.return_value = _chat_response('{"verdict": "OK"}')
+        mock_verif_client.return_value.chat.return_value = _NO_CONTRADICTION
+        mock_integ_client.return_value.chat.side_effect = [
+            _chat_response("Respuesta consolidada sobre bacteriuria."),
+            _chat_response('{"verdict": "OK"}'),
+        ]
+
+        result = run_agentic(
+            "¿Qué recomiendan las guías sobre el manejo de la bacteriuria asintomática?",
+            _CFG,
+            pipeline,
+        )
+
+    assert isinstance(result, RagAnswer)  # nunca hubo pregunta de seguimiento
+    assert mock_tree_client.return_value.chat.call_count == 1  # sin extraccion de variables
+    synthesis_prompt = mock_integ_client.return_value.chat.call_args_list[0].kwargs["messages"][1]["content"]
+    assert "Indicación de tratamiento de bacteriuria asintomática" in synthesis_prompt
+    assert result.answer.startswith("Respuesta consolidada sobre bacteriuria.")
+
+
+def test_unrelated_tree_contribution_is_not_published() -> None:
+    """Si el verificador juzga que la aportacion del arbol no responde a la
+    pregunta, no se publica y la respuesta sale del RAG."""
+    pipeline = _FakePipeline(answers=["Respuesta del RAG con su cita."])
+
+    with (
+        patch("gpc_rag.agents.coordinator.Client") as mock_coord_client,
+        patch("gpc_rag.agents.tree_agent.Client") as mock_tree_client,
+        patch("gpc_rag.agents.evaluator.Client") as mock_eval_client,
+        patch("gpc_rag.agents.integrator.Client") as mock_integ_client,
+        patch("gpc_rag.agents.verifier.Client") as mock_verif_client,
+    ):
+        mock_coord_client.return_value.chat.return_value = _chat_response('{"verdict": "ADECUADA"}')
+        mock_tree_client.return_value.chat.side_effect = list(_TREE_MATCH_RESPONSES)
+        mock_eval_client.return_value.chat.return_value = _chat_response('{"verdict": "OK"}')
+        mock_verif_client.return_value.chat.return_value = _chat_response('{"relacionada": false}')
+
+        result = run_agentic(_TREE_QUESTION, _CFG, pipeline)
+
+    mock_integ_client.return_value.chat.assert_not_called()
+    assert result.answer.startswith("Respuesta del RAG con su cita.")
+    assert "no publicada: no relacionada con la pregunta" in result.answer
+    assert all(s.retrieval_method == "rerank" for s in result.sources)
