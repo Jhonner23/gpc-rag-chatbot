@@ -121,7 +121,13 @@ class HybridRetriever:
         if self._reranker is None:
             from sentence_transformers import CrossEncoder  # noqa: PLC0415
 
-            self._reranker = CrossEncoder(self.cfg.retrieval.reranker_model, device="cpu")
+            # max_length acota el costo en CPU: el modelo admite hasta 8192
+            # tokens por par, y los fragmentos son de ~400 (ver chunking).
+            self._reranker = CrossEncoder(
+                self.cfg.retrieval.reranker_model,
+                device="cpu",
+                max_length=self.cfg.retrieval.get("reranker_max_length", 1024),
+            )
         return self._reranker
 
     def _rerank(

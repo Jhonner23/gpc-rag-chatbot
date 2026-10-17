@@ -32,7 +32,9 @@ import httpx
 from gpc_rag.common.refusal import is_refusal
 
 API_URL = os.environ.get("API_URL", "http://localhost:8000")
-REQUEST_TIMEOUT_SECONDS = 300
+# En CPU, una pregunta con reintento del RAG puede pasar de 5 minutos
+# (reranker + varios llamados al modelo local). Configurable por entorno.
+REQUEST_TIMEOUT_SECONDS = float(os.environ.get("CHAT_TIMEOUT_S", "900"))
 _ASSISTANT_AUTHOR = "Asistente GPC"
 _PENDING_THREAD_KEY = "tree_wizard_thread_id"
 
@@ -100,11 +102,21 @@ async def _call_chat_api(payload: dict) -> dict | None:
             response.raise_for_status()
             data: dict = response.json()
             return data
+    except httpx.TimeoutException:
+        await cl.Message(
+            content=(
+                f"La consulta supero el tiempo maximo de espera ({REQUEST_TIMEOUT_SECONDS:.0f} s). "
+                "La API puede seguir procesandola; intenta de nuevo en un momento."
+            ),
+            author=_ASSISTANT_AUTHOR,
+        ).send()
+        return None
     except httpx.HTTPError as exc:
         await cl.Message(
             content=(
                 "No pude comunicarme con el servicio de RAG. "
-                f"Verifica que la API este corriendo en {API_URL}. Detalle: {exc}"
+                f"Verifica que la API este corriendo en {API_URL}. "
+                f"Detalle: {type(exc).__name__} {exc}"
             ),
             author=_ASSISTANT_AUTHOR,
         ).send()
