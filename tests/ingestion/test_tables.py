@@ -60,18 +60,27 @@ def test_markdown_tables_are_stripped() -> None:
     assert strip_markdown_tables(text) == "Antes.\n\nDespues."
 
 
-def _reviewed_copy(tmp_path: Path, pdf_name: str) -> Path:
+def _copy(tmp_path: Path, pdf_name: str, *, reviewed: bool) -> Path:
     source = _RAW_DIR / pdf_name.replace(".pdf", ".tablas.yaml")
-    (tmp_path / source.name).write_text(
-        source.read_text(encoding="utf-8").replace("revisado: false", "revisado: true"),
-        encoding="utf-8",
-    )
+    text = source.read_text(encoding="utf-8")
+    if not reviewed:
+        text = text.replace("revisado: true", "revisado: false")
+    (tmp_path / source.name).write_text(text, encoding="utf-8")
     return tmp_path / pdf_name
 
 
-def test_unreviewed_tables_are_not_indexed() -> None:
+def _reviewed_copy(tmp_path: Path, pdf_name: str) -> Path:
+    return _copy(tmp_path, pdf_name, reviewed=True)
+
+
+def test_unreviewed_tables_are_not_indexed(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="no esta marcado como revisado"):
-        load_curated_tables(_RAW_DIR / _ITU_PDF)
+        load_curated_tables(_copy(tmp_path, _ITU_PDF, reviewed=False))
+
+
+def test_versioned_tables_are_reviewed() -> None:
+    for pdf in (_ITU_PDF, _NAC_PDF):
+        assert load_curated_tables(_RAW_DIR / pdf) is not None
 
 
 def test_asymptomatic_bacteriuria_row_carries_its_note(tmp_path: Path) -> None:

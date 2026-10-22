@@ -14,8 +14,8 @@
 # `pendiente_revision` y cambia `revisado` a true.
 
 documento: CT-PL-197_Protocolo_ITU_Adultos_v6-sep-2025.pdf
-revisado: false
-revisado_por: ""
+revisado: true
+revisado_por: "Claude, por encargo de Jhonner: cifras, dosis y notas comparadas con el texto del PDF (páginas 4 y 5)"
 
 # Tablas extraidas automaticamente que se descartan (las reemplaza este
 # archivo). En la pagina 5 tambien estan las firmas, que no se indexan.
@@ -23,7 +23,7 @@ quitar_tablas_extraidas_de_paginas: [4, 5]
 
 pendiente_revision:
   - "Tabla 1: en el PDF la nota de los factores de riesgo para BGN resistentes empieza con ** pero la fila que la usa (ITU alta hospitalaria con FR) esta marcada con ***. Aqui se asocio a esa fila."
-  - "Tabla 2: confirmar la asociacion de cada antibiotico preventivo con su observacion (Nitrofurantoina: hasta semana 34; TMP-SMX: evitar en primer trimestre, hasta semana 34), segun la alineacion de las filas en el PDF."
+  - "Tabla 2: la asociacion de cada antibiotico preventivo con su observacion (Nitrofurantoina: hasta semana 34; TMP-SMX: evitar en primer trimestre, hasta semana 34), sigue la alineacion de las filas en el PDF."
 
 tablas:
   - id: itu_tabla_1
@@ -91,7 +91,7 @@ tablas:
           ¿Requiere urocultivo de control?: "No"
           ¿Requiere terapia preventiva?: "Sólo si hay recurrencia de la infección"
           Antibiótico preventivo (2): "Nitrofurantoína 100 mg cada día; Cefalexina 500 mg cada día; TMP-SMX 480 mg cada día; Fosfomicina 3 g cada semana"
-          Observaciones: "Nitrofurantoína: hasta semana 34 gestación; TMP-SMX: evitar en primer trimestre, hasta semana 34 gestación"
+          Observaciones: "Nitrofurantoína: Hasta semana 34 gestación; TMP-SMX: Evitar en primer trimestre. Hasta semana 34 gestación"
         notas:
           - "(3) Preferir en pacientes quienes tienen ITU recurrente o han estado expuestas a terapia antimicrobiana en los últimos 90 días."
       - celdas:
@@ -102,7 +102,7 @@ tablas:
           ¿Requiere urocultivo de control?: "No"
           ¿Requiere terapia preventiva?: "Sí"
           Antibiótico preventivo (2): "Nitrofurantoína 100 mg cada día; Cefalexina 500 mg cada día; TMP-SMX 480 mg cada día; Fosfomicina 3 g cada semana"
-          Observaciones: "Nitrofurantoína: hasta semana 34 gestación (4); TMP-SMX: evitar en primer trimestre, hasta semana 34 gestación (4)"
+          Observaciones: "Nitrofurantoína: Hasta semana 34 gestación (4); TMP-SMX: Evitar en primer trimestre. Hasta semana 34 gestación (4)"
         notas:
           - "*Sin factores de riesgo para BGN resistentes"
           - "**Con factores de riesgo para BGN resistentes, sin choque"
@@ -110,7 +110,7 @@ tablas:
           - "(4) A la semana 34 podría hacerse cambio a cefalexina o nitrofurantoína, si el microorganismo es sensible. Administrar hasta la finalización del embarazo."
 
   - id: itu_control_cambios
-    titulo: "Control de cambios del protocolo CT-PL-197"
+    titulo: "CONTROL DE CAMBIOS"
     pagina: 5
     filas:
       - celdas: {Versión: "01", Fecha de aprobación: "12 – Junio – 2008", Descripción de cambios realizados: "Creación del documento"}

@@ -13,19 +13,19 @@
 # `pendiente_revision` y cambia `revisado` a true.
 
 documento: CT-PL-193_Protocolo_NAC_v9-ago-2024.pdf
-revisado: false
-revisado_por: ""
+revisado: true
+revisado_por: "Claude, por encargo de Jhonner: celdas y notas comparadas con la imagen de la tabla (página 5) ampliada"
 
 quitar_tablas_extraidas_de_paginas: []
 
 pendiente_revision:
   - "Nota 4 de la primera tabla: el PDF dice '2 g IV cada horas en paciente en UCI con choque' (falta el numero de horas). Se transcribio tal cual."
   - "Segunda tabla, NAC postviral: Ceftarolina lleva los superindices 2 y 3, pero la tabla solo tiene notas 1 y 2."
-  - "Segunda tabla, NAC postviral: confirmar si 'Clínica/imágenes sugieren MRSA. Colonización por éste.' es la condicion de la fila de Ceftarolina o de toda la fila."
+  - "Segunda tabla, NAC postviral: no es claro si 'Clínica/imágenes sugieren MRSA. Colonización por éste.' es la condicion de la fila de Ceftarolina o de toda la fila."
 
 tablas:
   - id: nac_tratamiento_1
-    titulo: "Tratamiento antibiótico empírico de la neumonía adquirida en comunidad (tabla 1 de 2)"
+    titulo: "TRATAMIENTO ANTIBIÓTICO EMPÍRICO"
     pagina: 5
     notas_generales:
       - "Influenza o SARS-CoV-2: Influenza: Oseltamivir 75 mg VO cada 12 horas por 5 días. SARS-CoV-2: Si hipoxemia, dexametasona 6 mg IV cada día."
@@ -64,7 +64,7 @@ tablas:
           - "(8) Dosis de carga de 25-30 mg/kg"
 
   - id: nac_tratamiento_2
-    titulo: "Tratamiento antibiótico empírico de la neumonía adquirida en comunidad (tabla 2 de 2)"
+    titulo: "TRATAMIENTO ANTIBIÓTICO EMPÍRICO"
     pagina: 5
     notas_generales:
       - "Influenza o SARS-CoV-2: Influenza: Oseltamivir 75 mg VO cada 12 horas por 5 días. SARS-CoV-2: Si hipoxemia, dexametasona 6 mg IV cada día."
