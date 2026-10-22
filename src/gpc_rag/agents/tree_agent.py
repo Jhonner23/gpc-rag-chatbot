@@ -317,35 +317,44 @@ def _render_walk(chart: Flowchart, result: WalkResult) -> dict[str, Any]:
     }
 
 
+def _when(conditions: list[tuple[FlowNode, str]]) -> str:
+    return " y ".join(f"«{_headline(d.text)}» = {label}" for d, label in conditions)
+
+
+def _consult_item(chart: Flowchart, node: FlowNode) -> str:
+    """Una rama del arbol como enunciado autocontenido: su condicion completa
+    y el texto del nodo. Antes las ramas hermanas iban anidadas bajo el
+    "Aplica si" de otro nodo y el integrador llego a mezclar sus condiciones
+    (p. ej. aplico a la gestante la condicion "sin procedimiento")."""
+    conditions = chart.conditions_to(node.id)
+    prefix = f"Cuando {_when(conditions)}: " if conditions else ""
+    return f"- {prefix}{_indent(node.text)}"
+
+
 def _render_consult(chart: Flowchart, node_ids: list[str]) -> dict[str, Any]:
+    """Nodos relacionados con la pregunta y, para cada uno, las otras ramas de
+    la ultima decision que lo condiciona; cada rama con su condicion completa."""
     lines = [
-        f"Nodos del árbol clínico {chart.protocol_id} {chart.version} relacionados con la consulta:"
+        f"Ramas del árbol clínico {chart.protocol_id} {chart.version} relacionadas con la consulta:"
     ]
     cited: list[FlowNode] = []
     shown: set[str] = set()
+
+    def add(node: FlowNode) -> None:
+        shown.add(node.id)
+        cited.append(node)
+        lines.extend(["", _consult_item(chart, node)])
+
     for node_id in node_ids:
         if node_id in shown:
             continue
-        node = chart.nodes[node_id]
-        shown.add(node_id)
-        cited.append(node)
-        lines += ["", f"- {_indent(node.text)}"]
+        add(chart.nodes[node_id])
         conditions = chart.conditions_to(node_id)
         if conditions:
-            lines.append(
-                "  Aplica si: "
-                + " · ".join(
-                    f"{_headline(d.text)} → {label}" for d, label in conditions
-                )
-            )
-            last_decision, taken = conditions[-1]
+            last_decision, _taken = conditions[-1]
             for edge in chart.out_edges(last_decision.id):
-                if edge.label == taken or edge.target in shown:
-                    continue
-                other = chart.nodes[edge.target]
-                shown.add(other.id)
-                cited.append(other)
-                lines.append(f"  Si «{edge.label}»: {_indent(_indent(other.text))}")
+                if edge.target not in shown:
+                    add(chart.nodes[edge.target])
     return {
         "protocol_id": chart.protocol_id,
         "protocol_version": chart.version,

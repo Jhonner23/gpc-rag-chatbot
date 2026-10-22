@@ -184,7 +184,11 @@ def test_consult_mode_shows_route_and_other_branches() -> None:
     chart = get_flowchart(_ITU)
     result = _render_consult(chart, ["BA_NO_TX"])
     assert "NO TRATAR bacteriuria asintomática con antibiótico" in result["answer_text"]
-    assert "Aplica si:" in result["answer_text"]
+    assert (
+        "- Cuando «¿Hay signos o síntomas atribuibles a ITU?» = No y «¿Gestante O procedimiento invasivo"
+        in result["answer_text"]
+    )
+    assert "= Sí — gestante: GESTANTE + bacteriuria asintomática" in result["answer_text"]
     assert (
         "GESTANTE + bacteriuria asintomática" in result["answer_text"]
     )  # otra rama de la misma decision

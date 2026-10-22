@@ -82,8 +82,9 @@ agregues farmacos, dosis, cifras, criterios ni recomendaciones nuevas.
 - Conserva el alcance de cada dato: a que poblacion (p. ej. gestantes), \
 situacion (p. ej. tratamiento o profilaxis) y farmaco aplica cada \
 recomendacion, dosis o restriccion. No generalices una nota que se refiere \
-a un farmaco o situacion concreta, y respeta las condiciones que el ARBOL \
-indica ("Aplica si", "Si ...").
+a un farmaco o situacion concreta. Cada rama del ARBOL empieza con \
+"Cuando <condiciones>:"; esas condiciones aplican solo a esa rama, no las \
+traslades a otra.
 - Presenta primero lo que indica el ARBOL y usa el RAG para complementar.
 - No afirmes que hay diferencias o contradicciones entre fuentes, salvo las \
 que aparezcan en NOTAS DEL VERIFICADOR; si las hay, mencionalas sin elegir \
