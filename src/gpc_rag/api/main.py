@@ -112,4 +112,5 @@ def chat(request: ChatRequest) -> ChatResponse:
         answer=result.answer,
         sources=[SourceOut(**s) for s in result.sources_as_dicts()],
         panels=[AgentPanelOut(**p.as_dict()) for p in result.panels],
+        notes=result.notes,
     )

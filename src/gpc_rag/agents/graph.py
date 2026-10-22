@@ -306,4 +306,5 @@ def run_agentic(  # noqa: PLR0913 -- parametros nombrados, entrada principal de 
         answer=result_state["final_answer"],
         sources=result_state.get("final_sources", []),
         panels=build_agent_panels(result_state),
+        notes=list(result_state.get("discrepancies") or []),
     )

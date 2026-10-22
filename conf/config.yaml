@@ -30,9 +30,6 @@ app:
 agents:
   coordinator_model: "qwen2.5:7b-instruct"
   evaluator_model: "qwen2.5:7b-instruct"
-  # Integrador maestro: redacta la respuesta consolidada (arbol + RAG) y
-  # verifica su fidelidad (ver src/gpc_rag/agents/integrator.py).
-  integrator_model: "qwen2.5:7b-instruct"
   # Tiempos maximos de espera (ver src/gpc_rag/agents/timeouts.py): por
   # llamada al modelo y por la rama completa del RAG. Con margen sobre lo
   # medido en el equipo de desarrollo (recuperacion: mediana ~55 s, max ~80 s).

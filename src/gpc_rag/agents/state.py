@@ -51,7 +51,7 @@ class AgentState(TypedDict, total=False):
     # Integrador maestro (ver agents/integrator.py): respuesta consolidada.
     # El coordinador sigue siendo el UNICO que arma lo que ve el usuario
     # (build_final_output), a partir de lo que el integrador deja aqui.
-    integration_mode: str  # "sintesis" | "composicion" | "unica" | "sin_aportaciones"
+    integration_mode: str  # "composicion" | "unica" | "sin_aportaciones"
     integrated_answer: str
     integrated_sources: list[RetrievedChunk]
 

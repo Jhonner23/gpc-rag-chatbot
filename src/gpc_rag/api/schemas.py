@@ -38,12 +38,15 @@ class ChatResponse(BaseModel):
     reenviar `thread_id` + la respuesta del usuario en el siguiente POST
     (como `answer` del ChatRequest) para continuar.
 
-    Con la capa de agentes, `answer` es la sugerencia consolidada y `panels`
-    trae la respuesta de cada agente por separado."""
+    Con la capa de agentes, `panels` trae la respuesta de cada agente por
+    separado, `notes` las notas del verificador (contradicciones o versiones
+    distintas entre fuentes) y `answer` la composicion literal de las
+    aportaciones verificadas."""
 
     question: str
     answer: str | None = None
     sources: list[SourceOut] = []
     panels: list[AgentPanelOut] = []
+    notes: list[str] = []
     pending_question: str | None = None
     thread_id: str | None = None

@@ -86,14 +86,16 @@ class AgentPanel:
 class RagAnswer:
     """Respuesta final del pipeline de RAG, lista para mostrar al usuario.
 
-    `answer` es la sugerencia consolidada (o la respuesta directa del RAG si
-    no se usa la capa de agentes); `panels` trae la aportacion de cada
-    agente por separado (vacio fuera de la capa de agentes)."""
+    `answer` es la composicion literal de las aportaciones verificadas (o la
+    respuesta directa del RAG si no se usa la capa de agentes); `panels` trae
+    la aportacion de cada agente por separado y `notes` las notas del
+    verificador (ambos vacios fuera de la capa de agentes)."""
 
     question: str
     answer: str
     sources: list[RetrievedChunk] = field(default_factory=list)
     panels: list[AgentPanel] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)
 
     def sources_as_dicts(self) -> list[dict]:
         return _sources_as_dicts(self.sources)

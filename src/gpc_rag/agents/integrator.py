@@ -1,23 +1,18 @@
-"""Integrador maestro: compone UNA sola respuesta a partir de las aportaciones
-que el verificador declaro elegibles (ver agents/verifier.py).
+"""Integrador: reune las aportaciones que el verificador declaro elegibles
+(ver agents/verifier.py) sin redactar texto nuevo.
 
-Reemplaza al antiguo comparador, que elegia una sola aportacion (el arbol si
-tenia match, si no el RAG). Ahora:
+El chat muestra la aportacion de cada agente en su propio panel
+(build_agent_panels) y, debajo, las notas del verificador (contradicciones o
+versiones distintas entre fuentes). No hay respuesta consolidada redactada
+por un modelo: en pruebas reales con modelos locales de 7B, la sintesis
+mezclaba condiciones entre ramas y la verificacion de fidelidad no lo
+detectaba, asi que se retiro.
 
-- Si ninguna aportacion es elegible: se informa la abstencion del RAG (si la
-  hubo) o el mensaje de respaldo, sin fuentes.
-- Si solo una es elegible: se publica tal cual, sin pasar por el LLM.
-- Si ambas son elegibles (arbol + RAG): un modelo de lenguaje local redacta
-  una respuesta consolidada usando EXCLUSIVAMENTE esas aportaciones, y una
-  segunda llamada verifica la fidelidad de la sintesis contra ellas. Si la
-  sintesis falla, no es interpretable o no supera la verificacion (falla
-  cerrada), se publica la composicion determinista: las aportaciones
-  verificadas en bloques, sin redaccion nueva.
-
-En todos los casos se informan las discrepancias detectadas por el
-verificador, y nunca se agregan hechos clinicos nuevos. El estado de cada
-agente se informa en su propio panel (build_agent_panels), que el chat
-muestra junto a la sugerencia consolidada.
+`integrated_answer` (el campo `answer` de la API) es la composicion literal
+de las aportaciones verificadas, en bloques:
+- Ninguna elegible: la abstencion del RAG (si la hubo) o el mensaje de
+  respaldo, sin fuentes.
+- Una o dos elegibles: su texto tal cual, cada una con su encabezado.
 
 El integrador NO le habla al usuario directamente: deja su resultado en
 state["integrated_*"] y el coordinador (coordinator.build_final_output)
@@ -26,19 +21,13 @@ sigue siendo el unico punto de salida.
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import Any
 
-from ollama import Client
 from omegaconf import DictConfig
 
-from gpc_rag.agents.schemas import FIDELITY_SCHEMA
 from gpc_rag.agents.state import AgentState
-from gpc_rag.agents.timeouts import llm_timeout
-from gpc_rag.common.grounding import grounding_problems
 from gpc_rag.common.models import AgentPanel, Chunk, RetrievedChunk
-from gpc_rag.common.refusal import is_refusal
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +36,6 @@ FALLBACK_NO_ELIGIBLE = (
     "las guias disponibles. Te recomiendo consultar directamente la guia "
     "original o a un profesional clinico."
 )
-
-_FIDELITY_ATTEMPTS = 2
 
 # Etiquetas del estado de cada agente y de la verificacion. No deben
 # contener los marcadores de common/refusal.py (p. ej. "no encontr",
@@ -68,60 +55,6 @@ _VERIFICATION_LABELS = {
     "no_verificable": "no publicada: no fue posible verificarla",
     "no_relacionada": "no publicada: no relacionada con la pregunta",
 }
-
-_SYNTHESIS_SYSTEM_PROMPT = """\
-Eres el integrador de un asistente clinico institucional. Recibes la \
-pregunta del usuario y dos APORTACIONES ya verificadas:
-1. ARBOL: recorrido o nodos del arbol clinico del protocolo institucional.
-2. RAG: respuesta basada en fragmentos recuperados de los protocolos.
-
-Redacta UNA sola respuesta en español, clara y breve, que integre ambas \
-aportaciones. Reglas obligatorias:
-- Usa EXCLUSIVAMENTE informacion que aparezca en las aportaciones. No \
-agregues farmacos, dosis, cifras, criterios ni recomendaciones nuevas.
-- Conserva el alcance de cada dato: a que poblacion (p. ej. gestantes), \
-situacion (p. ej. tratamiento o profilaxis) y farmaco aplica cada \
-recomendacion, dosis o restriccion. No generalices una nota que se refiere \
-a un farmaco o situacion concreta. Cada rama del ARBOL empieza con \
-"Cuando <condiciones>:"; esas condiciones aplican solo a esa rama, no las \
-traslades a otra.
-- Presenta primero lo que indica el ARBOL y usa el RAG para complementar.
-- No afirmes que hay diferencias o contradicciones entre fuentes, salvo las \
-que aparezcan en NOTAS DEL VERIFICADOR; si las hay, mencionalas sin elegir \
-una, indicando de donde viene cada una. Recomendaciones para situaciones \
-distintas (p. ej. tratamiento y profilaxis) no son diferencias.
-- Cita el ARBOL como "arbol clinico <protocolo> <version>" y conserva las \
-citas del RAG con el formato [Guia: archivo, Seccion, Pagina]. No te \
-refieras a fragmentos o guias por numero.
-- No uses encabezados ni etiquetas como "recomendacion institucional".
-- No uses conocimiento propio ni cites fuentes externas.
-
-Responde solo con el texto de la respuesta integrada.
-"""
-
-_FIDELITY_SYSTEM_PROMPT = """\
-Eres un auditor de fidelidad. Compara una RESPUESTA INTEGRADA con las \
-APORTACIONES de las que debia salir. No respondas la pregunta.
-
-Rechaza la respuesta integrada si:
-- Agrega un farmaco, dosis, cifra, criterio, recomendacion o fuente que NO \
-aparece en las APORTACIONES.
-- Atribuye una recomendacion, dosis o restriccion a una poblacion, \
-situacion o farmaco distinto del que indican las APORTACIONES (p. ej. \
-presenta una dosis de profilaxis como tratamiento, o extiende a todos los \
-farmacos una nota que aplica a uno solo).
-- Cambia las condiciones en que aplica una recomendacion del ARBOL.
-- Afirma diferencias o contradicciones entre fuentes que las APORTACIONES \
-no muestran.
-- Omite o contradice lo que indica el ARBOL.
-
-Apruebala si solo reorganiza o resume lo que dicen las APORTACIONES.
-
-Responde UNICAMENTE con un objeto JSON, sin texto adicional:
-- Si se aprueba: {"verdict": "OK"}
-- Si se rechaza: {"verdict": "RECHAZADA", "reason": "<motivo breve en español>"}
-"""
-
 
 def tree_result_as_sources(tree_result: dict) -> list[RetrievedChunk]:
     """Convierte las citas del arbol al formato RetrievedChunk que ya usa el
@@ -155,94 +88,16 @@ def _with_annotations(body: str, discrepancies: list[str]) -> str:
     return "\n\n".join(parts)
 
 
-def _deterministic_composition(tree: dict, rag: dict) -> str:
-    return (
-        "**Según el protocolo institucional (árbol de decisión):**\n"
-        f"{tree['content'].strip()}\n\n"
-        "**Según los documentos recuperados (RAG):**\n"
-        f"{rag['content'].strip()}"
-    )
+_BLOCK_TITLES = {
+    "arbol": "Según el árbol clínico del protocolo institucional:",
+    "rag": "Según los documentos recuperados (RAG):",
+}
 
 
-def _contributions_prompt(
-    question: str, tree: dict, rag: dict, discrepancies: list[str] | None = None
-) -> str:
-    prompt = (
-        f"PREGUNTA:\n{question}\n\n"
-        f"APORTACION ARBOL:\n{tree['content']}\n\n"
-        f"APORTACION RAG:\n{rag['content']}"
-    )
-    if discrepancies:
-        prompt += "\n\nNOTAS DEL VERIFICADOR:\n" + "\n".join(
-            f"- {d}" for d in discrepancies
-        )
-    return prompt
-
-
-def _model(cfg: DictConfig) -> str:
-    return cfg.agents.get("integrator_model") or cfg.agents.coordinator_model
-
-
-def _synthesize(
-    question: str, tree: dict, rag: dict, discrepancies: list[str], cfg: DictConfig
-) -> str | None:
-    client = Client(host=cfg.env.ollama_url, timeout=llm_timeout(cfg))
-    response = client.chat(
-        model=_model(cfg),
-        messages=[
-            {"role": "system", "content": _SYNTHESIS_SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": _contributions_prompt(question, tree, rag, discrepancies),
-            },
-        ],
-        options={"temperature": 0.1, "num_predict": 600},
-        stream=False,
-    )
-    text = (response["message"]["content"] or "").strip()
-    return text or None
-
-
-def _check_fidelity(
-    question: str, tree: dict, rag: dict, synthesis: str, cfg: DictConfig
-) -> bool:
-    """Falla cerrada: solo un veredicto OK explicito aprueba la sintesis."""
-    client = Client(host=cfg.env.ollama_url, timeout=llm_timeout(cfg))
-    user_prompt = (
-        f"{_contributions_prompt(question, tree, rag)}\n\n"
-        f"RESPUESTA INTEGRADA A AUDITAR:\n{synthesis}"
-    )
-    for attempt in range(1, _FIDELITY_ATTEMPTS + 1):
-        response = client.chat(
-            model=_model(cfg),
-            messages=[
-                {"role": "system", "content": _FIDELITY_SYSTEM_PROMPT},
-                {"role": "user", "content": user_prompt},
-            ],
-            format=FIDELITY_SCHEMA,
-            options={"temperature": 0.0, "num_predict": 300},
-            stream=False,
-        )
-        content = response["message"]["content"].strip()
-        try:
-            verdict = str(json.loads(content).get("verdict", "")).strip().upper()
-        except (json.JSONDecodeError, AttributeError):
-            logger.warning(
-                "Integrador: veredicto de fidelidad no interpretable (intento %d/%d): %r",
-                attempt,
-                _FIDELITY_ATTEMPTS,
-                content,
-            )
-            continue
-        if verdict == "OK":
-            return True
-        if verdict == "RECHAZADA":
-            logger.info(
-                "Integrador: la sintesis no supero la verificacion de fidelidad: %r",
-                content,
-            )
-            return False
-    return False
+def _composition(eligible: list[dict[str, Any]]) -> str:
+    if len(eligible) == 1:
+        return eligible[0]["content"].strip()
+    return "\n\n".join(f"**{_BLOCK_TITLES[c['agent']]}**\n{c['content'].strip()}" for c in eligible)
 
 
 def integrate(state: AgentState, cfg: DictConfig) -> dict:
@@ -251,44 +106,16 @@ def integrate(state: AgentState, cfg: DictConfig) -> dict:
     rag = next(c for c in contributions if c["agent"] == "rag")
     discrepancies = state.get("discrepancies") or []
 
-    tree_sources = (
-        tree_result_as_sources(state["tree_result"]) if tree["eligible"] else []
-    )
+    tree_sources = tree_result_as_sources(state["tree_result"]) if tree["eligible"] else []
     rag_sources = list(state.get("sources", []) or []) if rag["eligible"] else []
+    eligible = [c for c in (tree, rag) if c["eligible"]]
 
-    if tree["eligible"] and rag["eligible"]:
-        mode = "composicion"
-        body = _deterministic_composition(tree, rag)
-        try:
-            synthesis = _synthesize(state["question"], tree, rag, discrepancies, cfg)
-            allowed = [rc.chunk.source_file for rc in tree_sources + rag_sources]
-            problems = grounding_problems(synthesis or "", allowed)
-            if problems:
-                logger.info("Integrador: sintesis descartada: %s", " ".join(problems))
-                synthesis = None
-            if (
-                synthesis
-                and not is_refusal(synthesis)
-                and _check_fidelity(state["question"], tree, rag, synthesis, cfg)
-            ):
-                mode, body = "sintesis", synthesis
-        except Exception:  # un fallo del modelo no debe tumbar la respuesta
-            logger.exception(
-                "Integrador: fallo la sintesis; se usa la composicion determinista."
-            )
-        logger.info("Integrador: arbol + RAG, modalidad=%s", mode)
+    if eligible:
+        mode = "composicion" if len(eligible) > 1 else "unica"
+        logger.info("Integrador: aportaciones elegibles=%s", [c["agent"] for c in eligible])
         return {
             "integration_mode": mode,
-            "integrated_answer": _with_annotations(body, discrepancies),
-            "integrated_sources": tree_sources + rag_sources,
-        }
-
-    if tree["eligible"] or rag["eligible"]:
-        single = tree if tree["eligible"] else rag
-        logger.info("Integrador: una sola aportacion elegible (%s)", single["agent"])
-        return {
-            "integration_mode": "unica",
-            "integrated_answer": _with_annotations(single["content"], discrepancies),
+            "integrated_answer": _with_annotations(_composition(eligible), discrepancies),
             "integrated_sources": tree_sources + rag_sources,
         }
 

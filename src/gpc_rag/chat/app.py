@@ -4,10 +4,10 @@ Cliente HTTP delgado sobre la API FastAPI (pipeline RAG + agentes de la
 seccion 9 de la arquitectura: coordinador, agente arbol, RAG, evaluador,
 verificador, integrador).
 
-Con la capa de agentes, cada respuesta se muestra en dos niveles: arriba, la
-respuesta de cada agente en su propio panel, lado a lado (arbol de decision y
-RAG; a futuro, casos similares); debajo, la "Sugerencia", que es la respuesta
-consolidada del integrador. Los paneles se arman con HTML minimo y clases de
+Con la capa de agentes, la respuesta de cada agente se muestra en su propio
+panel, lado a lado (arbol de decision y RAG; a futuro, casos similares), y
+debajo las notas del verificador si las hay (contradicciones o versiones
+distintas entre fuentes). Los paneles se arman con HTML minimo y clases de
 public/custom.css (requiere unsafe_allow_html = true en .chainlit/config.toml);
 el texto de los agentes se escapa para que no inyecte HTML.
 
@@ -83,16 +83,18 @@ def _panel_html(panel: dict) -> str:
     )
 
 
-def _format_with_panels(answer: str, panels: list[dict]) -> str:
+def _format_with_panels(panels: list[dict], notes: list[str]) -> str:
     cards = "\n".join(_panel_html(p) for p in panels)
-    return (
-        f'<div class="gpc-paneles">\n{cards}\n</div>\n\n'
-        '<div class="gpc-sugerencia">\n'
-        '<div class="gpc-panel-titulo">Sugerencia</div>\n'
-        '<div class="gpc-panel-estado">respuesta consolidada a partir de los agentes</div>\n\n'
-        f"{_escape(answer).strip()}\n\n"
-        "</div>"
-    )
+    html = f'<div class="gpc-paneles">\n{cards}\n</div>'
+    if notes:
+        items = "\n".join(f"- {_escape(n)}" for n in notes)
+        html += (
+            '\n\n<div class="gpc-notas">\n'
+            '<div class="gpc-panel-titulo">Notas del verificador</div>\n\n'
+            f"{items}\n\n"
+            "</div>"
+        )
+    return html
 
 
 async def _call_chat_api(payload: dict) -> dict | None:
@@ -153,7 +155,7 @@ async def on_message(message: cl.Message) -> None:
     answer_text = data["answer"]
     panels = data.get("panels") or []
     if panels:
-        thinking.content = _format_with_panels(answer_text, panels)
+        thinking.content = _format_with_panels(panels, data.get("notes") or [])
     else:
         sources_block = "" if is_refusal(answer_text) else _format_sources(data.get("sources", []))
         thinking.content = _escape(answer_text) + sources_block

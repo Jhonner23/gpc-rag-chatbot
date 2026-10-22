@@ -27,7 +27,6 @@ def verdict_schema(*allowed: str) -> dict[str, Any]:
 
 FILTER_SCHEMA = verdict_schema("ADECUADA", "RECHAZADA")
 EVALUATOR_SCHEMA = verdict_schema("OK", "RECHAZADA")
-FIDELITY_SCHEMA = verdict_schema("OK", "RECHAZADA")
 
 CONTRADICTION_SCHEMA: dict[str, Any] = {
     "type": "object",
