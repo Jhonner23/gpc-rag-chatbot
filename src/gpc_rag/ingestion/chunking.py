@@ -61,6 +61,20 @@ def clean_page_text(text: str) -> str:
     return re.sub(r"\n{3,}", "\n\n", "\n".join(kept)).strip()
 
 
+def _with_section_header(title: str, text: str) -> str:
+    """Antepone el titulo de la seccion al texto del fragmento.
+
+    La busqueda (densa, BM25 y reranker) solo ve el texto: sin el titulo, un
+    fragmento como la lista "- Mujer embarazada - Procedimiento invasivo..."
+    de la seccion "Indicaciones de tratamiento de bacteriuria asintomatica"
+    no contiene las palabras de la pregunta y nunca se recupera.
+    """
+    clean = _strip_markdown_markers(title)
+    if not clean or clean == "Sin seccion" or _strip_markdown_markers(text).startswith(clean):
+        return text
+    return f"{clean}\n\n{text}"
+
+
 def _strip_markdown_markers(text: str) -> str:
     """Quita ** y _ de enfasis para dejar un titulo de seccion legible."""
     return re.sub(r"[*_]+", "", text).strip()
@@ -194,9 +208,9 @@ def chunk_document(
                     continue
                 chunks.append(
                     Chunk(
-                        text=piece,
+                        text=_with_section_header(section.title, piece),
                         source_file=source_file,
-                        section=section.title,
+                        section=_strip_markdown_markers(section.title),
                         page=page["page"],
                         chunk_index=chunk_idx,
                         chunk_id=str(uuid.uuid4()),

@@ -15,6 +15,7 @@ retrieval:
   top_k_final: 6           # despues de rerank, cuantos chunks van al prompt
   use_reranker: true
   reranker_model: "BAAI/bge-reranker-v2-m3"
+  section_boost: 0.0         # impulso a secciones "N. ..." (ver retrieval/hybrid.py); desactivado
   reranker_max_length: 1024  # tokens por par (pregunta + fragmento) en el reranker
 
 app:

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 import re
+import unicodedata
 
 from omegaconf import DictConfig
 from rank_bm25 import BM25Okapi
@@ -23,11 +24,40 @@ logger = logging.getLogger(__name__)
 
 
 def _tokenize(text: str) -> list[str]:
-    return text.lower().split()
+    """Palabras en minuscula, sin tildes ni puntuacion.
+
+    Antes se separaba solo por espacios, asi que "asintomática**", "ITU?" o
+    "días," no coincidian con "asintomática", "ITU" o "días" de la pregunta:
+    BM25 no encontraba, por ejemplo, la fila de bacteriuria asintomatica de la
+    Tabla 1 del protocolo de ITU.
+    """
+    text = unicodedata.normalize("NFKD", (text or "").lower())
+    text = "".join(c for c in text if not unicodedata.combining(c))
+    return [w for w in re.findall(r"[a-z0-9]+", text) if w not in _STOPWORDS]
+
+
+# Palabras vacias del español (sin tildes, como quedan tras _tokenize). Sin
+# filtrarlas, en una pregunta como "¿En qué situaciones ... debe ser tratada
+# y en cuáles no?" pesan "en", "que", "debe", "ser", "no", y BM25 favorece
+# fragmentos largos que las repiten. "no" se conserva: en clinica cambia el
+# sentido ("no tratar").
+_STOPWORDS = frozenset(
+    """a al algo algunas algunos ante antes como con contra cual cuales cuando de del
+    desde donde durante e el ella ellas ellos en entre era es esa esas ese eso esos
+    esta estan estas este esto estos fue fueron ha han hay la las le les lo los mas
+    me mi muy nos o otra otras otro otros para pero por porque puede pueden que se
+    segun ser si sin sobre son su sus tambien tiene tienen todo todos tu un una unas
+    uno unos y ya debe deben cuyo cuya""".split()  # noqa: SIM905 -- lista legible
+)
 
 
 _RECOMMENDATION_SECTION_RE = re.compile(r"^\d{1,3}\.\s")
-_RECOMMENDATION_BOOST = 0.3
+# Desactivado por defecto (retrieval.section_boost en conf/config.yaml): se
+# diseno para la GPC de NAC 2026, que numeraba sus preguntas clinicas
+# ("13. En pacientes con..."). Esa guia ya no esta en el corpus, y en los
+# protocolos institucionales lo numerado son secciones genericas ("1.
+# OBJETIVO"), que con el impulso desplazaban a fragmentos relevantes.
+_DEFAULT_SECTION_BOOST = 0.0
 # El boost solo se aplica si el reranker YA le dio a este chunk una senal
 # minima de relevancia real. Sin este piso, el boost termina inventando
 # relevancia de la nada: para una pregunta totalmente fuera de tema (ej.
@@ -40,7 +70,7 @@ _RECOMMENDATION_BOOST = 0.3
 _MIN_SCORE_FOR_BOOST = 0.02
 
 
-def _recommendation_boost(section: str, raw_score: float) -> float:
+def _recommendation_boost(section: str, raw_score: float, boost: float = _DEFAULT_SECTION_BOOST) -> float:
     """Impulso heuristico para chunks de secciones tipo "N. Pregunta clinica...".
 
     En una GPC, esas secciones contienen la Recomendacion formal (grado de
@@ -56,7 +86,7 @@ def _recommendation_boost(section: str, raw_score: float) -> float:
     """
     if raw_score < _MIN_SCORE_FOR_BOOST:
         return 0.0
-    return _RECOMMENDATION_BOOST if _RECOMMENDATION_SECTION_RE.match(section) else 0.0
+    return boost if _RECOMMENDATION_SECTION_RE.match(section) else 0.0
 
 
 def _reciprocal_rank_fusion(
@@ -140,7 +170,12 @@ class HybridRetriever:
         reranked = [
             RetrievedChunk(
                 chunk=rc.chunk,
-                score=raw_score + _recommendation_boost(rc.chunk.section, raw_score),
+                score=raw_score
+                + _recommendation_boost(
+                    rc.chunk.section,
+                    raw_score,
+                    self.cfg.retrieval.get("section_boost", _DEFAULT_SECTION_BOOST),
+                ),
                 retrieval_method="rerank",
             )
             for rc, raw_score in zip(candidates, raw_scores, strict=True)
