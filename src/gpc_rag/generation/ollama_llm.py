@@ -16,7 +16,14 @@ class OllamaGenerator:
         self.model = cfg.llm.model
         self.temperature = cfg.llm.temperature
         self.max_tokens = cfg.llm.max_tokens
+        self.seed = cfg.llm.get("seed")
         self.client = Client(host=cfg.env.ollama_url)
+
+    def _options(self) -> dict:
+        options = {"temperature": self.temperature, "num_predict": self.max_tokens}
+        if self.seed is not None:
+            options["seed"] = self.seed
+        return options
 
     def generate(
         self, question: str, chunks: list[RetrievedChunk], extra_instruction: str | None = None
@@ -25,7 +32,7 @@ class OllamaGenerator:
         response = self.client.chat(
             model=self.model,
             messages=messages,
-            options={"temperature": self.temperature, "num_predict": self.max_tokens},
+            options=self._options(),
             stream=False,
         )
         return response["message"]["content"]
@@ -36,7 +43,7 @@ class OllamaGenerator:
         for part in self.client.chat(
             model=self.model,
             messages=messages,
-            options={"temperature": self.temperature, "num_predict": self.max_tokens},
+            options=self._options(),
             stream=True,
         ):
             content = part.get("message", {}).get("content", "")

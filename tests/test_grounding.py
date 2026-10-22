@@ -48,3 +48,12 @@ def test_negated_or_multi_document_mentions_are_allowed() -> None:
         "Algunas guías difieren.", [_FILE, "CT-PL-193_Protocolo_NAC_v9.pdf"]
     )
     assert grounding_problems("Texto sin citas ni comparaciones.", [_FILE]) == []
+
+
+def test_agreement_between_guides_with_a_single_document_is_detected() -> None:
+    text = "Todas las fuentes coinciden en que no se requiere urocultivo de control."
+    assert mentions_other_guides(text, [_FILE])
+    assert mentions_other_guides("Ambas guías recomiendan nitrofurantoína.", [_FILE])
+    assert not mentions_other_guides(
+        "Todas las fuentes recuperadas provienen del mismo protocolo.", [_FILE]
+    )

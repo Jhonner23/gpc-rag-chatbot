@@ -23,6 +23,13 @@ _OTHER_GUIDES_RE = re.compile(
     r"\b(otras|algunas|diferentes|distintas|demas|varias)\s+(gu[ií]as|fuentes|protocolos)\b",
     re.IGNORECASE,
 )
+# "Todas las fuentes coinciden", "ambas guias", "las guias coinciden":
+# comparaciones entre varios documentos que no existen cuando solo hay uno.
+_SEVERAL_GUIDES_RE = re.compile(
+    r"\b(ambas|las dos)\s+(gu[ií]as|fuentes|protocolos)\b"
+    r"|\b(gu[ií]as|fuentes|protocolos)\s+(\w+\s+){0,2}(coinciden|concuerdan)\b",
+    re.IGNORECASE,
+)
 _CODE_RE = re.compile(r"CT-PL-\d+", re.IGNORECASE)
 
 
@@ -71,6 +78,8 @@ def mentions_other_guides(text: str, sources: Iterable[str]) -> bool:
     if len(documents) > 1:
         return False
     plain = _norm_keep_spaces(text)
+    if _SEVERAL_GUIDES_RE.search(plain):
+        return True
     for match in _OTHER_GUIDES_RE.finditer(plain):
         before = plain[max(0, match.start() - 30) : match.start()]
         if not _NEGATION_RE.search(before):

@@ -26,6 +26,29 @@ _HEADER_RE = re.compile(r"^(#{1,4})\s+(.*)$", re.MULTILINE)
 # pregunta y contexto, y dejar que el LLM reciba solo la mitad.
 _BOLD_NUMBERED_HEADER_RE = re.compile(r"^\*\*(\d{1,3}\.\s.*)$", re.MULTILINE)
 
+# Los protocolos de la CUB marcan sus subsecciones con una etiqueta en
+# negrita al inicio del parrafo, en la misma linea que el texto:
+# "**DIAGNÓSTICO MICROBIOLÓGICO:** Los estudios...", "**Hemocultivos:**
+# Deben tomarse...", "- **Indicaciones de hospitalización en pacientes con
+# ITU:**". El extractor no las marca como encabezado, asi que quedaban en el
+# fragmento de la seccion anterior: los criterios de hemocultivos de NAC se
+# etiquetaban "ESTUDIOS IMAGINOLÓGICOS" y se mezclaban con los examenes para
+# definir hospitalizacion, y la lista de indicaciones de hospitalizacion de
+# ITU se leia como indicaciones de tratar la bacteriuria asintomatica.
+_INLINE_LABEL_RE = re.compile(
+    r"^(?:[-•]\s*)?\*\*(?P<label>[^*\n]{2,90}?)\s*(?P<inner>[:.])?\s*\*\*\s*(?P<outer>[:.])?",
+    re.MULTILINE,
+)
+# Leyendas de graficos: no son subsecciones. Las de tabla si se conservan,
+# porque las notas al pie de la tabla quedan debajo de su leyenda.
+_CAPTION_RE = re.compile(r"^(gr[aá]fico|figura)\s*\d", re.IGNORECASE)
+_TABLE_CAPTION_RE = re.compile(r"^\*\*(?P<label>Tabla\s*\d+\.[^*\n]*?)\s*\*\*\s*$", re.MULTILINE)
+
+# Una subseccion con titulo propio se indexa aunque sea corta (p. ej. "Los
+# estudios microbiologicos solo se haran en paciente con indicacion de
+# hospitalizacion"); el minimo general de tokens aplica al texto sin titulo.
+_MIN_TITLED_SECTION_TOKENS = 10
+
 
 # Pie de pagina institucional de los protocolos de la CUB. Se repite en cada
 # pagina y, al indexarlo, generaba fragmentos que solo contenian este texto
@@ -108,17 +131,36 @@ class _Section:
     text: str
 
 
-def split_into_sections(markdown_text: str, default_title: str = "Sin seccion") -> list[_Section]:
-    """Divide un texto markdown en secciones usando encabezados reales (#, ##...)
-    y, como respaldo (paginas OCR sin markdown), preguntas numeradas en negrita
+def split_into_sections(
+    markdown_text: str, default_title: str = "Sin seccion", keep_empty: bool = False
+) -> list[_Section]:
+    """Divide un texto markdown en secciones usando encabezados reales (#, ##...),
+    etiquetas en negrita al inicio de parrafo ("**Hemocultivos:** ...") y,
+    como respaldo (paginas OCR sin markdown), preguntas numeradas en negrita
     al inicio de linea (ej. "**13. En pacientes...**").
+
+    keep_empty conserva los encabezados sin texto (p. ej. un titulo al final
+    de la pagina), para saber de que seccion es el texto de la pagina
+    siguiente.
     """
     raw_matches: list[tuple[int, int, str]] = [
         (m.start(), m.end(), m.group(2).strip()) for m in _HEADER_RE.finditer(markdown_text)
     ]
+    inline = [
+        (m.start(), m.end(), _strip_markdown_markers(m.group("label")))
+        for m in _INLINE_LABEL_RE.finditer(markdown_text)
+        if (m.group("inner") or m.group("outer")) and not _CAPTION_RE.match(m.group("label"))
+    ]
+    inline += [
+        (m.start(), m.end(), m.group("label").strip())
+        for m in _TABLE_CAPTION_RE.finditer(markdown_text)
+    ]
+    inline_starts = {start for start, _end, _title in inline}
+    raw_matches += inline
     raw_matches += [
         (m.start(), m.end(), _strip_markdown_markers(m.group(1)))
         for m in _BOLD_NUMBERED_HEADER_RE.finditer(markdown_text)
+        if m.start() not in inline_starts
     ]
     matches = sorted(raw_matches, key=lambda t: t[0])
 
@@ -138,7 +180,7 @@ def split_into_sections(markdown_text: str, default_title: str = "Sin seccion") 
             head = title.split(":", 1)[0].strip()
             body = f"{title}\n\n{body}".strip()
             title = head if 0 < len(head) <= _MAX_SECTION_TITLE_CHARS // 2 else default_title
-        if body:
+        if body or keep_empty:
             sections.append(_Section(title=title, text=body))
 
     return sections
@@ -199,12 +241,11 @@ def chunk_document(
     chunks: list[Chunk] = []
     chunk_idx = 0
     drop_tables_on_pages = drop_tables_on_pages or set()
-    # Si una pagina termina en la bibliografia, el texto sin encabezado al
-    # inicio de la siguiente es su continuacion. No se hereda el titulo en
-    # general: los titulos en negrita dentro del texto ("PLAN DE EGRESO") no
-    # se detectan como encabezado, y heredar el anterior etiquetaba mal esos
-    # fragmentos.
-    previous_was_bibliography = False
+    # El texto sin encabezado al inicio de una pagina continua la ultima
+    # seccion de la pagina anterior (p. ej. la lista de paneles de Filmarray
+    # o los criterios de egreso que siguen en la pagina siguiente). Si esa
+    # seccion era la bibliografia, se descarta igual que ella.
+    last_title = "Sin seccion"
 
     for page in pages:
         text = clean_page_text(page["text"])
@@ -212,18 +253,12 @@ def chunk_document(
             text = strip_markdown_tables(text)
         if not text:
             continue
-        sections = split_into_sections(text, default_title=_CONTINUATION)
-        continues_bibliography = previous_was_bibliography
-        previous_was_bibliography = bool(sections) and (
-            _is_bibliography(sections[-1].title)
-            or (sections[-1].title == _CONTINUATION and continues_bibliography)
-        )
+        sections = split_into_sections(text, default_title=_CONTINUATION, keep_empty=True)
         for section in sections:
             if section.title == _CONTINUATION:
-                if continues_bibliography:
-                    continue
-                section.title = "Sin seccion"
-            if _is_bibliography(section.title):
+                section.title = last_title
+            last_title = section.title
+            if not section.text or _is_bibliography(section.title):
                 continue
             if approx_token_count(section.text) <= chunk_size_tokens:
                 pieces = [section.text]
@@ -231,8 +266,13 @@ def chunk_document(
                 pieces = _split_long_section(
                     section.text, chunk_size_tokens, chunk_overlap_ratio, min_chunk_tokens
                 )
+            min_tokens = (
+                min(min_chunk_tokens, _MIN_TITLED_SECTION_TOKENS)
+                if section.title != "Sin seccion"
+                else min_chunk_tokens
+            )
             for piece in pieces:
-                if approx_token_count(piece) < min_chunk_tokens:
+                if approx_token_count(piece) < min_tokens:
                     continue
                 chunks.append(
                     Chunk(

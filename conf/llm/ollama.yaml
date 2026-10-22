@@ -4,5 +4,8 @@
 # selecciona con `llm=ollama-prod` al arrancar).
 provider: ollama
 model: "qwen2.5:3b-instruct"
-temperature: 0.1
+# Temperatura 0 y semilla fija: la misma pregunta con el mismo contexto da
+# la misma respuesta, para que las pruebas y la evaluacion sean reproducibles.
+temperature: 0.0
+seed: 42
 max_tokens: 1200

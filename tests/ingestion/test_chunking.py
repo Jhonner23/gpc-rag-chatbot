@@ -67,3 +67,53 @@ def test_chunk_document_filters_chunks_below_min_tokens():
 def test_approx_token_count_is_positive_for_nonempty_text():
     assert approx_token_count("hola mundo") > 0
     assert approx_token_count("") >= 1
+
+
+def test_inline_bold_labels_split_subsections():
+    """Etiquetas en negrita al inicio de parrafo (formato de los protocolos de
+    la CUB) separan subsecciones: los criterios de hemocultivos no deben
+    quedar en el fragmento de los examenes para definir hospitalizacion."""
+    text = (
+        "## **ESTUDIOS IMAGINOLÓGICOS**\n\n"
+        "**Exámenes de laboratorio clínico (IIB):** Para definir la necesidad de "
+        "hospitalización, se hará hemoleucograma y nitrógeno ureico en todo paciente.\n\n"
+        "**DIAGNÓSTICO MICROBIOLÓGICO:** Los estudios microbiológicos sólo se harán en "
+        "paciente con indicación de hospitalización\n\n"
+        "**Hemocultivos:** Deben tomarse en los pacientes hospitalizados por neumonía "
+        "con BUN mayor a 30 mg/dL.\n\n"
+        "- **Indicaciones de hospitalización en pacientes con ITU:**\n\n- Choque séptico\n\n"
+        "**Gráfico 1.** Etiología de la neumonía"
+    )
+    sections = split_into_sections(text)
+    titles = [s.title for s in sections]
+    assert titles == [
+        "Exámenes de laboratorio clínico (IIB)",
+        "DIAGNÓSTICO MICROBIOLÓGICO",
+        "Hemocultivos",
+        "Indicaciones de hospitalización en pacientes con ITU",
+    ]
+    assert "Gráfico 1" in sections[-1].text  # la leyenda no abre seccion
+    assert "BUN" not in sections[0].text
+
+
+def test_short_titled_section_is_kept_and_page_continuation_keeps_its_title():
+    pages = [
+        {
+            "text": "**DIAGNÓSTICO MICROBIOLÓGICO:** Los estudios microbiológicos sólo se "
+            "harán en paciente con indicación de hospitalización\n\n"
+            "**Filmarray:** Prueba de ácidos nucleicos que se debe solicitar en todo "
+            "paciente adulto con neumonía e indicación de hospitalización.",
+            "page": 3,
+        },
+        {
+            "text": "- Panel de neumonía: muestra de esputo, aspirado traqueal o lavado "
+            "broncoalveolar en pacientes sin sospecha de SARS-CoV-2.",
+            "page": 4,
+        },
+    ]
+    chunks = chunk_document(pages, source_file="x.pdf", min_chunk_tokens=40)
+    assert [(c.page, c.section) for c in chunks] == [
+        (3, "DIAGNÓSTICO MICROBIOLÓGICO"),
+        (3, "Filmarray"),
+        (4, "Filmarray"),
+    ]

@@ -50,3 +50,12 @@ def test_system_prompt_prohibe_completar_criterios_de_escalas_de_memoria():
     )
     assert "conocimiento general del instrumento" in system_prompt
     assert "lista completa" in system_prompt
+
+
+def test_format_context_does_not_number_fragments():
+    """Con fragmentos numerados el modelo citaba "(Fragmento 3)"."""
+    context = format_context([_sample_retrieved_chunk()])
+    assert "fragmento" not in context.lower()
+    assert context.startswith(
+        "[Guia: guia_diabetes.pdf, Seccion: Tratamiento farmacologico, Pagina: 12]"
+    )

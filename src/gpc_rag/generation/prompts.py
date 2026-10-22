@@ -93,19 +93,20 @@ que no esten en el CONTEXTO.
 - Copia las combinaciones de farmacos exactamente como las da el CONTEXTO, \
 con sus "o" y "+" (p. ej. "cefuroxime o ampicilina sulbactam + linezolid o \
 vancomicina"): no las reagrupes de forma que cambien su sentido.
-- Se claro y conciso (idealmente menos de 250 palabras), sin repetir la \
-misma informacion, y usa terminologia clinica precisa.
+- Se claro, sin repetir la misma informacion, y usa terminologia clinica \
+precisa.
 - Esta respuesta apoya, pero NO reemplaza, el juicio clinico profesional.
 """
 
 
 def format_context(chunks: list[RetrievedChunk]) -> str:
     blocks = []
-    for i, rc in enumerate(chunks, start=1):
+    # Sin numerar los fragmentos: con "[Fragmento 3 | ...]" el modelo citaba
+    # "(Fragmento 3)" pese a la regla, y llego a inventar una lista de
+    # "Referencias: Fragmento 1..5" con titulos y paginas que no existen.
+    for rc in chunks:
         c = rc.chunk
-        header = (
-            f"[Fragmento {i} | Guia: {c.source_file} | Seccion: {c.section} | Pagina: {c.page}]"
-        )
+        header = f"[Guia: {c.source_file}, Seccion: {c.section}, Pagina: {c.page}]"
         blocks.append(f"{header}\n{c.text}")
     return "\n\n".join(blocks) if blocks else "(sin contexto relevante encontrado)"
 
