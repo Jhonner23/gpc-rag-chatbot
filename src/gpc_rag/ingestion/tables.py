@@ -99,9 +99,25 @@ def load_curated_tables(pdf_path: Path) -> CuratedTables | None:
     )
 
 
+def row_heading(table: CuratedTable, row: TableRow) -> str:
+    """Titulo de la tabla seguido de la condicion de la fila (su primera
+    columna), sin las marcas de nota (*, **).
+
+    Las filas de una misma tabla comparten el titulo y casi todo el
+    vocabulario; sin la condicion en el encabezado, la fila de bacteriuria
+    asintomatica de la Tabla 1 (74 palabras, una sola mencion de la
+    condicion) quedaba fuera de los 12 primeros en BM25 y en la busqueda
+    densa para "manejo de la bacteriuria asintomatica". En la fila de la
+    Tabla 2 el encabezado ademas deja explicito que es de la gestante.
+    """
+    first = next((v for v in row.cells.values() if v.strip()), "")
+    condition = re.sub(r"[*\s]+$", "", first).strip()
+    return f"{table.title} — {condition}" if condition else table.title
+
+
 def row_text(table: CuratedTable, row: TableRow) -> str:
-    """Texto autocontenido de una fila: titulo, columnas y notas."""
-    lines = [f"{table.title}."]
+    """Texto autocontenido de una fila: encabezado, columnas y notas."""
+    lines = [f"{row_heading(table, row)}."]
     lines += [
         f"{column}: {value}" for column, value in row.cells.items() if value.strip()
     ]
@@ -121,7 +137,7 @@ def table_chunks(curated: CuratedTables, start_index: int = 0) -> list[Chunk]:
                 Chunk(
                     text=row_text(table, row),
                     source_file=curated.document,
-                    section=table.title,
+                    section=row_heading(table, row),
                     page=table.page,
                     chunk_index=index,
                     chunk_id=str(uuid.uuid4()),

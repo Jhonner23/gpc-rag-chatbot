@@ -51,6 +51,51 @@ _STOPWORDS = frozenset(
 )
 
 
+# Palabras que hablan del corpus y no del tema clinico ("¿que recomendaciones
+# presentan las guias disponibles...?", "¿que fuentes del corpus
+# contienen...?"). En BM25 empujaban secciones administrativas
+# ("RECOPILACION DE LA EVIDENCIA", "CRITERIO DE CLASIFICACION DE LAS
+# RECOMENDACIONES") por encima del contenido clinico.
+_META_WORDS = frozenset(
+    """recomendacion recomendaciones recomendada recomendado recomendados presentan
+    presenta guia guias disponibles disponible diferencia diferencias existen existe
+    encontradas encontrados encontrada fuente fuentes corpus contienen contiene
+    informacion relacionada relacionadas relacionado relacionados documento
+    documentos protocolo protocolos condicion""".split()  # noqa: SIM905 -- lista legible
+)
+# Ademas de las anteriores, palabras tan generales que una subpregunta que
+# solo tiene estas ("¿que diferencias existen ... para el manejo de esta
+# condicion?") no aporta un tema propio: se refiere al de la anterior.
+_GENERIC_WORDS = frozenset({"manejo", "tratamiento", "enfoque"})
+
+
+def retrieval_query(question: str) -> str:
+    """Texto con el que se busca: la pregunta sin las subpreguntas que solo
+    hablan del corpus o remiten al tema de otra.
+
+    En "¿Que recomendaciones ... sobre el manejo de la bacteriuria
+    asintomatica? ¿Que diferencias existen ...? ¿Que fuentes del corpus
+    contienen ...?" solo la primera trae el tema. Con las tres, la busqueda
+    densa y el reranker subian "ALCANCE", "OBJETIVO" o "INTRODUCCION" y la
+    fila de tratamiento de la Tabla 1 quedaba fuera de los 18 candidatos. El
+    modelo sigue recibiendo la pregunta completa.
+    """
+    parts = [p.strip() for p in re.split(r"(?<=\?)", question or "") if p.strip()]
+    if len(parts) < 2:
+        return question
+    kept = [
+        p
+        for p in parts
+        if any(w not in _META_WORDS and w not in _GENERIC_WORDS for w in _tokenize(p))
+    ]
+    return " ".join(kept) if kept else question
+
+
+def _bm25_query_tokens(query: str) -> list[str]:
+    tokens = [w for w in _tokenize(query) if w not in _META_WORDS]
+    return tokens or _tokenize(query)
+
+
 _RECOMMENDATION_SECTION_RE = re.compile(r"^\d{1,3}\.\s")
 # Desactivado por defecto (retrieval.section_boost en conf/config.yaml): se
 # diseno para la GPC de NAC 2026, que numeraba sus preguntas clinicas
@@ -135,7 +180,7 @@ class HybridRetriever:
     def _bm25_search(self, query: str, top_k: int) -> list[RetrievedChunk]:
         if self._bm25 is None or not self._bm25_chunks:
             return []
-        scores = self._bm25.get_scores(_tokenize(query))
+        scores = self._bm25.get_scores(_bm25_query_tokens(query))
         ranked = sorted(
             zip(self._bm25_chunks, scores, strict=True), key=lambda x: x[1], reverse=True
         )[:top_k]
@@ -184,6 +229,7 @@ class HybridRetriever:
         return reranked[:top_k]
 
     def retrieve(self, query: str) -> list[RetrievedChunk]:
+        query = retrieval_query(query)
         query_vector = self.embedder.embed_query(query)
         dense_results = self.store.search(query_vector, top_k=self.cfg.retrieval.top_k_dense)
         bm25_results = self._bm25_search(query, top_k=self.cfg.retrieval.top_k_bm25)

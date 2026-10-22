@@ -87,7 +87,10 @@ def test_asymptomatic_bacteriuria_row_carries_its_note(tmp_path: Path) -> None:
     curated = load_curated_tables(_reviewed_copy(tmp_path, _ITU_PDF))
     table_1 = curated.tables[0]
     text = row_text(table_1, table_1.rows[1])
-    assert text.startswith("Tabla 1. Tratamiento de la infección del tracto urinario")
+    assert text.startswith(
+        "Tabla 1. Tratamiento de la infección del tracto urinario (ITU) en adultos "
+        "en la CUB — Bacteriuria asintomática."
+    )
     assert "CONDICIÓN: Bacteriuria asintomática**" in text
     assert "Recordar su tratamiento sólo en gestantes" in text
     assert curated.drop_extracted_tables_on_pages == {4, 5}
@@ -103,3 +106,12 @@ def test_nac_treatment_table_is_indexed(tmp_path: Path) -> None:
         "Piperacilina tazobactam 4.5 g IV cada 8 horas" in c.text for c in chunks
     )
     assert all("Oseltamivir 75 mg VO" in c.text for c in chunks)
+
+
+def test_row_section_names_the_table_and_the_condition(tmp_path: Path) -> None:
+    curated = load_curated_tables(_reviewed_copy(tmp_path, _ITU_PDF))
+    sections = {c.section for c in table_chunks(curated)}
+    assert (
+        "Tabla 2. Consideraciones manejo de la ITU en la paciente gestante — "
+        "Bacteriuria asintomática"
+    ) in sections

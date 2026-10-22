@@ -5,7 +5,12 @@ la pregunta de bacteriuria asintomatica."""
 from __future__ import annotations
 
 from gpc_rag.ingestion.chunking import chunk_document
-from gpc_rag.retrieval.hybrid import _recommendation_boost, _tokenize
+from gpc_rag.retrieval.hybrid import (
+    _bm25_query_tokens,
+    _recommendation_boost,
+    _tokenize,
+    retrieval_query,
+)
 
 
 def test_tokenizer_ignores_punctuation_accents_and_stopwords() -> None:
@@ -44,3 +49,27 @@ def test_bibliography_and_its_continuation_are_not_indexed() -> None:
     chunks = chunk_document(pages, source_file="x.pdf", min_chunk_tokens=5)
     assert all("BTS guidelines" not in c.text for c in chunks)
     assert {c.section for c in chunks} == {"Plan de egreso", "Control"}
+
+
+def test_retrieval_query_drops_subquestions_about_the_corpus() -> None:
+    question = (
+        "¿Qué recomendaciones presentan las guías disponibles sobre el manejo de la "
+        "bacteriuria asintomática? ¿Qué diferencias existen entre las recomendaciones "
+        "encontradas para el manejo de esta condición? ¿Qué fuentes del corpus contienen "
+        "información relacionada con esta recomendación?"
+    )
+    assert retrieval_query(question) == (
+        "¿Qué recomendaciones presentan las guías disponibles sobre el manejo de la "
+        "bacteriuria asintomática?"
+    )
+    assert _bm25_query_tokens(retrieval_query(question)) == [
+        "manejo",
+        "bacteriuria",
+        "asintomatica",
+    ]
+    # Preguntas simples o con subpreguntas clinicas no cambian.
+    simple = "¿En qué situaciones una bacteriuria asintomática debe ser tratada?"
+    assert retrieval_query(simple) == simple
+    assert retrieval_query("¿Cuál es la dosis? ¿Y en gestantes?") == (
+        "¿Cuál es la dosis? ¿Y en gestantes?"
+    )
