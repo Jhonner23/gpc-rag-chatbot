@@ -12,6 +12,7 @@ import uuid
 from dataclasses import dataclass
 
 from gpc_rag.common.models import Chunk
+from gpc_rag.ingestion.tables import strip_markdown_tables
 
 _HEADER_RE = re.compile(r"^(#{1,4})\s+(.*)$", re.MULTILINE)
 
@@ -24,6 +25,40 @@ _HEADER_RE = re.compile(r"^(#{1,4})\s+(.*)$", re.MULTILINE)
 # separar una recomendacion clinica (con el farmaco/dosis exacta) de su propia
 # pregunta y contexto, y dejar que el LLM reciba solo la mitad.
 _BOLD_NUMBERED_HEADER_RE = re.compile(r"^\*\*(\d{1,3}\.\s.*)$", re.MULTILINE)
+
+
+# Pie de pagina institucional de los protocolos de la CUB. Se repite en cada
+# pagina y, al indexarlo, generaba fragmentos que solo contenian este texto
+# (y que el modelo llego a copiar en sus respuestas).
+_BOILERPLATE_RES = [
+    re.compile(
+        r"_?El contenido de este documento es de propiedad y de uso exclusivo de la "
+        r"Cl[ií]nica Universitaria Bolivariana\.?_?\.?",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\**_?Cualquier impresi[oó]n o copia tomada de este documento se considera como "
+        r"COPIA NO CONTROLADA_?\**",
+        re.IGNORECASE,
+    ),
+    re.compile(r"\**\s*P[aá]gina\s+\d+\s+de\s+\d+\s*\**", re.IGNORECASE),
+]
+_EMPTY_MARKUP_LINE_RE = re.compile(r"^[\s*_\-]*$")
+
+# Un "encabezado" de mas de esta longitud es en realidad un parrafo que el
+# extractor marco como titulo (paso con el diagnostico del protocolo de ITU:
+# todo el parrafo quedo como seccion y el fragmento solo tenia el pie de
+# pagina). Se devuelve al texto.
+_MAX_SECTION_TITLE_CHARS = 120
+
+
+def clean_page_text(text: str) -> str:
+    """Quita el pie de pagina institucional y las lineas que quedan vacias."""
+    for pattern in _BOILERPLATE_RES:
+        text = pattern.sub("", text)
+    lines = [line.rstrip() for line in text.splitlines()]
+    kept = [line if not _EMPTY_MARKUP_LINE_RE.match(line) else "" for line in lines]
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(kept)).strip()
 
 
 def _strip_markdown_markers(text: str) -> str:
@@ -74,6 +109,10 @@ def split_into_sections(markdown_text: str, default_title: str = "Sin seccion") 
     for i, (_start, end, title) in enumerate(matches):
         body_end = matches[i + 1][0] if i + 1 < len(matches) else len(markdown_text)
         body = markdown_text[end:body_end].strip()
+        if len(title) > _MAX_SECTION_TITLE_CHARS:
+            head = title.split(":", 1)[0].strip()
+            body = f"{title}\n\n{body}".strip()
+            title = head if 0 < len(head) <= _MAX_SECTION_TITLE_CHARS // 2 else default_title
         if body:
             sections.append(_Section(title=title, text=body))
 
@@ -122,18 +161,27 @@ def chunk_document(
     chunk_size_tokens: int = 400,
     chunk_overlap_ratio: float = 0.15,
     min_chunk_tokens: int = 40,
+    drop_tables_on_pages: set[int] | None = None,
 ) -> list[Chunk]:
     """Convierte las paginas extraidas de un PDF en una lista de Chunk listos para indexar.
 
     Args:
         pages: salida de `extract.extract_pages_markdown` -- lista de {"text", "page"}.
         source_file: nombre/identificador de la guia de origen (para citar la fuente).
+        drop_tables_on_pages: paginas cuyas tablas extraidas se descartan porque
+            se indexan desde el archivo de tablas revisadas (ingestion/tables.py).
     """
     chunks: list[Chunk] = []
     chunk_idx = 0
+    drop_tables_on_pages = drop_tables_on_pages or set()
 
     for page in pages:
-        sections = split_into_sections(page["text"])
+        text = clean_page_text(page["text"])
+        if page["page"] in drop_tables_on_pages:
+            text = strip_markdown_tables(text)
+        if not text:
+            continue
+        sections = split_into_sections(text)
         for section in sections:
             if approx_token_count(section.text) <= chunk_size_tokens:
                 pieces = [section.text]

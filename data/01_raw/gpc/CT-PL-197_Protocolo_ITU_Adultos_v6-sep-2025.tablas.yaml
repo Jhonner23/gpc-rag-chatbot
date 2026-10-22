@@ -1,0 +1,121 @@
+# Tablas transcritas del protocolo CT-PL-197 v06 (ITU adultos).
+#
+# La indexacion (gpc_rag.pipelines.build_index) usa este archivo en lugar de
+# las tablas que extrae automaticamente del PDF, porque esa extraccion las
+# desordena (filas partidas, tablas cortadas entre paginas). Cada fila se
+# indexa como un fragmento autocontenido: titulo de la tabla, cada columna
+# con su valor y las notas al pie que le aplican.
+#
+# Transcripcion literal del PDF. Lo unico agregado es el nombre del farmaco
+# antes de cada dosis, duracion u observacion, siguiendo la alineacion de
+# las filas en el PDF (p. ej. "Cefalexina 500 mg VO cada 6 horas").
+#
+# Antes de indexar: compara cada fila con el PDF, revisa los puntos de
+# `pendiente_revision` y cambia `revisado` a true.
+
+documento: CT-PL-197_Protocolo_ITU_Adultos_v6-sep-2025.pdf
+revisado: false
+revisado_por: ""
+
+# Tablas extraidas automaticamente que se descartan (las reemplaza este
+# archivo). En la pagina 5 tambien estan las firmas, que no se indexan.
+quitar_tablas_extraidas_de_paginas: [4, 5]
+
+pendiente_revision:
+  - "Tabla 1: en el PDF la nota de los factores de riesgo para BGN resistentes empieza con ** pero la fila que la usa (ITU alta hospitalaria con FR) esta marcada con ***. Aqui se asocio a esa fila."
+  - "Tabla 2: confirmar la asociacion de cada antibiotico preventivo con su observacion (Nitrofurantoina: hasta semana 34; TMP-SMX: evitar en primer trimestre, hasta semana 34), segun la alineacion de las filas en el PDF."
+
+tablas:
+  - id: itu_tabla_1
+    titulo: "Tabla 1. Tratamiento de la infección del tracto urinario (ITU) en adultos en la CUB"
+    pagina: 4
+    filas:
+      - celdas:
+          CONDICIÓN: "ITU baja (complicada o no complicada)"
+          ANTIBIÓTICO EMPÍRICO: "Nitrofurantoína o Cefalexina o Fosfomicina*"
+          DOSIS: "Nitrofurantoína 100 mg VO cada 6 horas; Cefalexina 500 mg VO cada 6 horas; Fosfomicina 3 g VO"
+          DURACIÓN: "Nitrofurantoína 5 días; Cefalexina 5 días; Fosfomicina dosis única"
+        notas:
+          - "*Preferir en pacientes quienes tienen ITU recurrente o han estado expuestas a terapia antimicrobiana en los últimos 90 días."
+      - celdas:
+          CONDICIÓN: "Bacteriuria asintomática**"
+          ANTIBIÓTICO EMPÍRICO: "Nitrofurantoína o Cefalexina o Fosfomicina*"
+          DOSIS: "Nitrofurantoína 100 mg VO cada 6 horas; Cefalexina 500 mg VO cada 6 horas; Fosfomicina 3 g VO"
+          DURACIÓN: "Nitrofurantoína 5 días; Cefalexina 5 días; Fosfomicina dosis única"
+        notas:
+          - "**Recordar su tratamiento sólo en gestantes o pacientes quienes serán sometidos a procedimientos urológicos donde se prevé la disrupción del uroepitelio"
+          - "*Preferir en pacientes quienes tienen ITU recurrente o han estado expuestas a terapia antimicrobiana en los últimos 90 días."
+      - celdas:
+          CONDICIÓN: "ITU alta ambulatoria"
+          ANTIBIÓTICO EMPÍRICO: "Cefalexina (1)"
+          DOSIS: "500 mg VO cada 6 horas"
+          DURACIÓN: "5-7 días"
+        notas:
+          - "(1) Reevaluar con urocultivo a las 48 horas para ajuste"
+      - celdas:
+          CONDICIÓN: "ITU alta hospitalaria sin FR para BGN resistentes"
+          ANTIBIÓTICO EMPÍRICO: "Cefazolina o Amikacina"
+          DOSIS: "Cefazolina 1 g IV cada 8 horas; Amikacina 15 mg/kg IV cada día"
+          DURACIÓN: "Cefazolina 7 días; Amikacina 7 días"
+      - celdas:
+          CONDICIÓN: "ITU alta hospitalaria con FR para BGN resistentes***"
+          ANTIBIÓTICO EMPÍRICO: "Piperacilina tazobactam o Amikacina (2) o Meropenem (3)"
+          DOSIS: "Piperacilina tazobactam 4.5 g IV cada 8 horas; Amikacina 15 mg/kg IV cada día; Meropenem 1 g IV cada 8 horas"
+          DURACIÓN: "7 días"
+        notas:
+          - "(2) Evitar en choque"
+          - "(3) Administrar empíricamente si hay choque"
+          - "FR BGN resistentes: hospitalización > 48 horas en los últimos 3 meses, uso de antibióticos en últimos 90 días, colonización por germen BLEE."
+
+  - id: itu_tabla_2
+    titulo: "Tabla 2. Consideraciones manejo de la ITU en la paciente gestante"
+    pagina: 4
+    notas_generales:
+      - "(1) Esta es la terapia empírica. Siempre debe ajustarse según resultados de urocultivo y antibiograma"
+      - "(2) La decisión se toma con base en los cultivos y pruebas de sensibilidad"
+    filas:
+      - celdas:
+          Condición: "Bacteriuria asintomática"
+          Tratamiento (1): "Nitrofurantoína, Cefalexina, Fosfomicina (3)"
+          Dosis: "Nitrofurantoína 100 mg cada 6 h; Cefalexina 500 mg cada 6 h; Fosfomicina 3 g"
+          Duración: "Nitrofurantoína 5 días; Cefalexina 5 días; Fosfomicina dosis única"
+          ¿Requiere urocultivo de control?: "No"
+          ¿Requiere terapia preventiva?: "No"
+        notas:
+          - "(3) Preferir en pacientes quienes tienen ITU recurrente o han estado expuestas a terapia antimicrobiana en los últimos 90 días."
+      - celdas:
+          Condición: "ITU baja"
+          Tratamiento (1): "Nitrofurantoína o Cefalexina o Fosfomicina (3)"
+          Dosis: "Nitrofurantoína 100 mg cada 6 h; Cefalexina 500 mg cada 6 h; Fosfomicina 3 g"
+          Duración: "Nitrofurantoína 5 días; Cefalexina 5 días; Fosfomicina dosis única"
+          ¿Requiere urocultivo de control?: "No"
+          ¿Requiere terapia preventiva?: "Sólo si hay recurrencia de la infección"
+          Antibiótico preventivo (2): "Nitrofurantoína 100 mg cada día; Cefalexina 500 mg cada día; TMP-SMX 480 mg cada día; Fosfomicina 3 g cada semana"
+          Observaciones: "Nitrofurantoína: hasta semana 34 gestación; TMP-SMX: evitar en primer trimestre, hasta semana 34 gestación"
+        notas:
+          - "(3) Preferir en pacientes quienes tienen ITU recurrente o han estado expuestas a terapia antimicrobiana en los últimos 90 días."
+      - celdas:
+          Condición: "ITU alta"
+          Tratamiento (1): "Cefazolina* o Piperacilina tazobactam** o Meropenem***"
+          Dosis: "Cefazolina 1 g IV cada 8 horas; Piperacilina tazobactam 4.5 g IV cada 8 horas; Meropenem 1 g IV cada 8 horas"
+          Duración: "7 días"
+          ¿Requiere urocultivo de control?: "No"
+          ¿Requiere terapia preventiva?: "Sí"
+          Antibiótico preventivo (2): "Nitrofurantoína 100 mg cada día; Cefalexina 500 mg cada día; TMP-SMX 480 mg cada día; Fosfomicina 3 g cada semana"
+          Observaciones: "Nitrofurantoína: hasta semana 34 gestación (4); TMP-SMX: evitar en primer trimestre, hasta semana 34 gestación (4)"
+        notas:
+          - "*Sin factores de riesgo para BGN resistentes"
+          - "**Con factores de riesgo para BGN resistentes, sin choque"
+          - "***Con factores de riesgo para BGN resistentes, con choque"
+          - "(4) A la semana 34 podría hacerse cambio a cefalexina o nitrofurantoína, si el microorganismo es sensible. Administrar hasta la finalización del embarazo."
+
+  - id: itu_control_cambios
+    titulo: "Control de cambios del protocolo CT-PL-197"
+    pagina: 5
+    filas:
+      - celdas: {Versión: "01", Fecha de aprobación: "12 – Junio – 2008", Descripción de cambios realizados: "Creación del documento"}
+      - celdas: {Versión: "02", Fecha de aprobación: "31 – Marzo – 2015", Descripción de cambios realizados: "Se actualiza y ajusta la guía de acuerdo al formato institucional vigente"}
+      - celdas: {Versión: "03", Fecha de aprobación: "8 – Julio – 2016", Descripción de cambios realizados: "Se incluye población pediátrica"}
+      - celdas: {Versión: "04", Fecha de aprobación: "27 – Junio – 2017", Descripción de cambios realizados: "Duración de tratamiento para ITU alta y para ITU complicada en mujeres. Ecografía al ingreso en ITU complicada."}
+      - celdas: {Versión: "05", Fecha de aprobación: "16 – Febrero - 2018", Descripción de cambios realizados: "Se ajusta dosis de Aztreonam en pacientes adultos hospitalizados. Definición de ITU complicada, indicaciones de tratamiento de bacteriuria asintomática, tiempos de tratamiento."}
+      - celdas: {Versión: "06", Fecha de aprobación: "30 – Septiembre- 2025", Descripción de cambios realizados: "Se cambia nombre a protocolo Infección del Tracto Urinario Adultos. Se cambia definición de ITU complicada. Se actualizan recomendaciones de manejo según clasificación de ITU y factores de riesgo. Se dan consideraciones del manejo de la ITU en la gestante."}

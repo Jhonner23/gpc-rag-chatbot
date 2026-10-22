@@ -16,6 +16,7 @@ from gpc_rag.common.settings import load_config
 from gpc_rag.embeddings.ollama_embeddings import OllamaEmbedder
 from gpc_rag.ingestion.chunking import chunk_document
 from gpc_rag.ingestion.extract import extract_pages_markdown
+from gpc_rag.ingestion.tables import load_curated_tables, table_chunks
 from gpc_rag.vectorstore.qdrant_store import QdrantStore
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -36,6 +37,7 @@ def run(input_dir: Path, recreate_collection: bool = False) -> None:
     all_chunks = []
     for pdf_path in pdf_files:
         logger.info("Procesando %s ...", pdf_path.name)
+        curated = load_curated_tables(pdf_path)
         pages = extract_pages_markdown(pdf_path)
         chunks = chunk_document(
             pages,
@@ -43,7 +45,12 @@ def run(input_dir: Path, recreate_collection: bool = False) -> None:
             chunk_size_tokens=cfg.chunking.chunk_size_tokens,
             chunk_overlap_ratio=cfg.chunking.chunk_overlap_ratio,
             min_chunk_tokens=cfg.chunking.min_chunk_tokens,
+            drop_tables_on_pages=curated.drop_extracted_tables_on_pages if curated else None,
         )
+        if curated:
+            rows = table_chunks(curated, start_index=len(chunks))
+            logger.info("  -> %d filas de tablas revisadas", len(rows))
+            chunks += rows
         logger.info("  -> %d chunks", len(chunks))
         all_chunks.extend(chunks)
 

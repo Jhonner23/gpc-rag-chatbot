@@ -10,6 +10,9 @@ data/**
 # aparte. Van en data/01_raw/gpc/ (convencion Kedro de este proyecto),
 # que es exactamente lo que lee gpc_rag.pipelines.build_index.
 !data/01_raw/gpc/*.pdf
+# Tablas transcritas y revisadas de cada PDF (ver ingestion/tables.py): van
+# junto al PDF y se versionan igual que el.
+!data/01_raw/gpc/*.tablas.yaml
 
 # clonar el repo alcance, sin depender de que cada quien tenga su copia.
 

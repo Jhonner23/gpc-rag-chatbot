@@ -1,0 +1,88 @@
+# Tablas transcritas del protocolo CT-PL-193 v09 (NAC).
+#
+# La tabla de tratamiento antibiotico empirico (pagina 5) es una imagen en el
+# PDF: la extraccion automatica no la lee, por eso hasta ahora no estaba en el
+# indice. Este archivo la agrega, transcrita literalmente del PDF. Lo unico
+# agregado es el nombre del farmaco junto a su dosis e intervalo, siguiendo
+# la alineacion de las filas en el PDF.
+#
+# Las demas tablas del PDF (clasificacion de recomendaciones, firmas y
+# control de cambios) se siguen extrayendo automaticamente.
+#
+# Antes de indexar: compara cada fila con el PDF, revisa los puntos de
+# `pendiente_revision` y cambia `revisado` a true.
+
+documento: CT-PL-193_Protocolo_NAC_v9-ago-2024.pdf
+revisado: false
+revisado_por: ""
+
+quitar_tablas_extraidas_de_paginas: []
+
+pendiente_revision:
+  - "Nota 4 de la primera tabla: el PDF dice '2 g IV cada horas en paciente en UCI con choque' (falta el numero de horas). Se transcribio tal cual."
+  - "Segunda tabla, NAC postviral: Ceftarolina lleva los superindices 2 y 3, pero la tabla solo tiene notas 1 y 2."
+  - "Segunda tabla, NAC postviral: confirmar si 'Clínica/imágenes sugieren MRSA. Colonización por éste.' es la condicion de la fila de Ceftarolina o de toda la fila."
+
+tablas:
+  - id: nac_tratamiento_1
+    titulo: "Tratamiento antibiótico empírico de la neumonía adquirida en comunidad (tabla 1 de 2)"
+    pagina: 5
+    notas_generales:
+      - "Influenza o SARS-CoV-2: Influenza: Oseltamivir 75 mg VO cada 12 horas por 5 días. SARS-CoV-2: Si hipoxemia, dexametasona 6 mg IV cada día."
+      - "Ojo: Macrólidos sólo en caso de hallar microorganismos atípicos en pruebas moleculares."
+      - "Ojo: Ajustar siempre según prueba molecular o cultivo."
+      - "Ojo: Si en la prueba sólo hay hallazgo de virus, suspender antimicrobianos, excepto en pacientes en UCI."
+    filas:
+      - celdas:
+          Condición: "NAC sin factores de riesgo"
+          Antibiótico: "Cefuroxime, Ampicilina sulbactam, Moxifloxacina (1)"
+          Dosis, vía e intervalo: "Cefuroxime 1500 mg IV cada 8 horas; Ampicilina sulbactam 3 g IV cada 6 horas; Moxifloxacina 400 mg IV cada día"
+          Duración: "5 a 7 días"
+        notas:
+          - "(1) Moxifloxacina o levofloxacina (750 mg IV) en pacientes alérgicos a penicilina"
+      - celdas:
+          Condición: "NAC con factores de riesgo para P. aeruginosa o enterobacterias resistentes"
+          Antibiótico: "Piperacilina tazobactam, Cefepime, Meropenem (4,5), Ceftazidima avibactam (6)"
+          Dosis, vía e intervalo: "Piperacilina tazobactam 4.5 g IV cada 8 horas (2); Cefepime 1 g IV cada 8 horas (3); Meropenem 1 g IV cada 8 horas; Ceftazidima avibactam 2.5 g IV cada 8 horas"
+          Duración: "5 a 7 días"
+        notas:
+          - "(2) 4.5 g IV cada 6 horas en UCI"
+          - "(3) 2 g IV cada 8 horas en UCI"
+          - "(4) 2 g IV cada horas en paciente en UCI con choque"
+          - "(5) Sólo en pacientes colonizados o infección previa por microorganismos BLEE +"
+          - "(6) Sólo en pacientes colonizados o con infección previa por microorganismos productores de carbapenemasas. En caso de metalobactamasas, agregar aztreonam"
+      - celdas:
+          Condición: "NAC con factores de riesgo para MRSA y P. aeruginosa o enterobacterias resistentes"
+          Antibiótico: "Piperacilina tazobactam, Cefepime, Meropenem (4,5), Ceftazidima (6) avibactam + Linezolid (7) o Vancomicina (7,8)"
+          Dosis, vía e intervalo: "Piperacilina tazobactam 4.5 g IV cada 8 horas; Cefepime 1 g IV cada 8 horas; Meropenem 1 g IV cada 8 horas; Ceftazidima avibactam 2.5 g IV cada 8 horas; + Linezolid 600 mg IV cada 12 horas o Vancomicina 15-20 mg/Kg IV cada 12 horas"
+          Duración: "5 a 7 días"
+        notas:
+          - "(4) 2 g IV cada horas en paciente en UCI con choque"
+          - "(5) Sólo en pacientes colonizados o infección previa por microorganismos BLEE +"
+          - "(6) Sólo en pacientes colonizados o con infección previa por microorganismos productores de carbapenemasas. En caso de metalobactamasas, agregar aztreonam"
+          - "(7) Iniciar preferiblemente con prueba microbiológica positiva"
+          - "(8) Dosis de carga de 25-30 mg/kg"
+
+  - id: nac_tratamiento_2
+    titulo: "Tratamiento antibiótico empírico de la neumonía adquirida en comunidad (tabla 2 de 2)"
+    pagina: 5
+    notas_generales:
+      - "Influenza o SARS-CoV-2: Influenza: Oseltamivir 75 mg VO cada 12 horas por 5 días. SARS-CoV-2: Si hipoxemia, dexametasona 6 mg IV cada día."
+      - "Ojo: Macrólidos sólo en caso de hallar microorganismos atípicos en pruebas moleculares."
+      - "Ojo: Ajustar siempre según prueba molecular o cultivo."
+    filas:
+      - celdas:
+          Condición: "NAC con factores de riesgo para MRSA y no para P. aeruginosa o enterobacterias resistentes"
+          Antibiótico: "Cefuroxime ó Ampicilina sulbactam + Linezolid (1,2) ó Vancomicina (1,2)"
+          Dosis, vía e intervalo: "Cefuroxime 1500 mg IV cada 8 horas; Ampicilina sulbactam 3 g IV cada 6 horas; + Linezolid 600 mg IV cada 12 horas; Vancomicina 15 mg/kg cada 12 horas"
+          Duración: "5 a 7 días"
+        notas:
+          - "(1) Iniciar preferiblemente con prueba microbiológica positiva. Empíricamente, sólo si tiene neumonía postviral y está colonizado por MRSA, tiene infección concomitante en piel y tejidos blandos (abscesos o celulitis purulenta), neumonía necrosante o absceso pulmonar."
+          - "(2) Ceftarolina sólo en casos de indicar monoterapia por presencia de enterobacterias sensibles y MRSA. Previa autorización por infectología"
+      - celdas:
+          Condición: "NAC postviral. Clínica/imágenes sugieren MRSA. Colonización por éste."
+          Antibiótico: "Cefuroxime ó Ceftriaxona; Ceftarolina (2,3)"
+          Dosis, vía e intervalo: "Cefuroxime 1500 mg IV cada 8 horas (2); Ceftriaxona 2 g IV cada día; Ceftarolina 600 mg IV cada 8 horas"
+          Duración: "5 a 7 días"
+        notas:
+          - "(2) Ceftarolina sólo en casos de indicar monoterapia por presencia de enterobacterias sensibles y MRSA. Previa autorización por infectología"
