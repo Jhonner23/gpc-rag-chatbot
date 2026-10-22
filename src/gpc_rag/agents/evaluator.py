@@ -36,6 +36,7 @@ from omegaconf import DictConfig
 
 from gpc_rag.agents.schemas import EVALUATOR_SCHEMA
 from gpc_rag.agents.timeouts import llm_timeout
+from gpc_rag.common.grounding import grounding_problems
 from gpc_rag.common.models import RetrievedChunk
 from gpc_rag.common.refusal import is_refusal
 
@@ -53,6 +54,12 @@ aparece textualmente en el CONTEXTO.
 [Guia: <archivo>, Seccion: <seccion>, Pagina: <pagina>], o que no \
 corresponde a un fragmento del CONTEXTO (ej. CDC, OMS, articulos, URLs).
 - Afirma tener informacion suficiente sobre un tema que el CONTEXTO no trata.
+- Presenta como recomendacion algo que el CONTEXTO dice con otro alcance \
+(p. ej. datos de frecuencia o de poblaciones de riesgo como si fueran una \
+indicacion, una dosis de profilaxis como tratamiento), o atribuye una dosis \
+o restriccion a un farmaco, poblacion o situacion distinta.
+- Establece un orden de preferencia, una comparacion o una diferencia entre \
+fuentes que el CONTEXTO no establece.
 
 Aprueba la respuesta si se ciñe al CONTEXTO, o si reconoce explicitamente \
 que no hay informacion suficiente / que el tema no esta cubierto por las \
@@ -101,6 +108,11 @@ def evaluate_answer_status(
             "Evaluador: respuesta ya tiene forma de rechazo bien formado; se aprueba sin llamar al LLM."
         )
         return APROBADA, None
+
+    problems = grounding_problems(answer, [rc.chunk.source_file for rc in sources])
+    if problems:
+        logger.info("Evaluador: rechazo determinista: %s", " ".join(problems))
+        return RECHAZADA, " ".join(problems)
 
     client = Client(host=cfg.env.ollama_url, timeout=llm_timeout(cfg))
     user_prompt = (

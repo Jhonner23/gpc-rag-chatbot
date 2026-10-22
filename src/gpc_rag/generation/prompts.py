@@ -83,6 +83,9 @@ recomendaciones para situaciones distintas no son diferencias. Si todos los \
 fragmentos vienen del mismo documento, dilo en vez de comparar.
 - No te refieras a los fragmentos por su numero ("Fragmento 3", "Guia 3"): \
 usa siempre el formato de cita.
+- No establezcas un orden de preferencia entre opciones (primera, segunda \
+opcion) si el CONTEXTO no lo establece, y no menciones otras guias o fuentes \
+que no esten en el CONTEXTO.
 - Se claro, conciso y usa terminologia clinica precisa.
 - Esta respuesta apoya, pero NO reemplaza, el juicio clinico profesional.
 """

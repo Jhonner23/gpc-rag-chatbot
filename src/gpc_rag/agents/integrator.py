@@ -36,6 +36,7 @@ from omegaconf import DictConfig
 from gpc_rag.agents.schemas import FIDELITY_SCHEMA
 from gpc_rag.agents.state import AgentState
 from gpc_rag.agents.timeouts import llm_timeout
+from gpc_rag.common.grounding import grounding_problems
 from gpc_rag.common.models import AgentPanel, Chunk, RetrievedChunk
 from gpc_rag.common.refusal import is_refusal
 
@@ -130,7 +131,9 @@ def tree_result_as_sources(tree_result: dict) -> list[RetrievedChunk]:
             text=citation.get("verbatim_text") or "",
             source_file=citation["source_file"],
             section=citation.get("section") or tree_result["rule_id"],
-            page=citation.get("page"),
+            # El diagrama es de una sola pagina: la referencia util para el
+            # usuario es la pagina del protocolo, que ya va en la seccion.
+            page=None,
         )
         sources.append(RetrievedChunk(chunk=chunk, score=1.0, retrieval_method="arbol"))
     return sources
@@ -257,6 +260,11 @@ def integrate(state: AgentState, cfg: DictConfig) -> dict:
         body = _deterministic_composition(tree, rag)
         try:
             synthesis = _synthesize(state["question"], tree, rag, discrepancies, cfg)
+            allowed = [rc.chunk.source_file for rc in tree_sources + rag_sources]
+            problems = grounding_problems(synthesis or "", allowed)
+            if problems:
+                logger.info("Integrador: sintesis descartada: %s", " ".join(problems))
+                synthesis = None
             if (
                 synthesis
                 and not is_refusal(synthesis)

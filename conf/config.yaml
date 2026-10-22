@@ -2,7 +2,7 @@
 # Cambiar de ambiente: RAG_ENV=docker (ver src/gpc_rag/common/settings.py)
 defaults:
   - env: dev
-  - llm: ollama
+  - llm: ollama-prod  # qwen2.5:7b, el mismo modelo de los agentes (ver conf/llm/)
   - embeddings_cfg: ollama
   - vectorstore_cfg: qdrant
   - chunking: default
