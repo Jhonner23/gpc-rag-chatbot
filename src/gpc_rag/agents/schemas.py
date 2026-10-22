@@ -66,3 +66,18 @@ def decisions_schema(options_by_decision: dict[str, list[str]], unknown: str) ->
         },
         "required": list(options_by_decision),
     }
+
+
+def node_selection_schema(node_ids: list[str], max_nodes: int) -> dict[str, Any]:
+    """Lista de hasta `max_nodes` ids de nodos del arbol (puede ser vacia)."""
+    return {
+        "type": "object",
+        "properties": {
+            "nodos": {
+                "type": "array",
+                "items": {"type": "string", "enum": node_ids},
+                "maxItems": max_nodes,
+            }
+        },
+        "required": ["nodos"],
+    }

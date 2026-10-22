@@ -90,7 +90,11 @@ si el CONTEXTO no trae la recomendacion que se pide, dilo.
 - No establezcas un orden de preferencia entre opciones (primera, segunda \
 opcion) si el CONTEXTO no lo establece, y no menciones otras guias o fuentes \
 que no esten en el CONTEXTO.
-- Se claro, conciso y usa terminologia clinica precisa.
+- Copia las combinaciones de farmacos exactamente como las da el CONTEXTO, \
+con sus "o" y "+" (p. ej. "cefuroxime o ampicilina sulbactam + linezolid o \
+vancomicina"): no las reagrupes de forma que cambien su sentido.
+- Se claro y conciso (idealmente menos de 250 palabras), sin repetir la \
+misma informacion, y usa terminologia clinica precisa.
 - Esta respuesta apoya, pero NO reemplaza, el juicio clinico profesional.
 """
 

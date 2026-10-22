@@ -29,11 +29,9 @@ Semantica del recorrido:
 from __future__ import annotations
 
 import logging
-import math
 import re
 import unicodedata
 from collections import deque
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -461,72 +459,32 @@ def _tokens(text: str) -> list[str]:
     return [_SYNONYMS.get(w, w) for w in words if len(w) > 2 and w not in _STOPWORDS]
 
 
-Embedder = Callable[[list[str]], list[list[float]]]
-
-# Vectores de los nodos por (protocolo, version): se calculan una vez por
-# proceso (unos segundos con bge-m3) y se reutilizan en cada consulta.
-_NODE_VECTORS: dict[tuple[str, str], dict[str, list[float]]] = {}
-
-
-def _cosine(a: list[float], b: list[float]) -> float:
-    norm = math.sqrt(sum(x * x for x in a)) * math.sqrt(sum(y * y for y in b))
-    return sum(x * y for x, y in zip(a, b, strict=True)) / norm if norm else 0.0
-
-
 def _searchable_nodes(chart: Flowchart) -> list[FlowNode]:
     return [n for n in chart.nodes.values() if n.kind != "start"]
 
 
-def _lexical_ranking(chart: Flowchart, question: str) -> list[tuple[str, float]]:
+def rank_nodes_for_query(
+    chart: Flowchart, question: str, *, top_k: int = 4, min_ratio: float = 0.4
+) -> list[str]:
+    """Nodos del arbol mas relacionados con una pregunta informativa por
+    coincidencia de palabras (BM25 sobre el texto de cada nodo). Es el
+    respaldo de la seleccion con el modelo local (tree_agent.select_nodes):
+    sirve cuando la pregunta comparte palabras con los nodos, no con
+    preguntas conceptuales."""
     candidates = _searchable_nodes(chart)
     query = _tokens(question)
     if not candidates or not query:
         return []
     bm25 = BM25Okapi([_tokens(n.text) for n in candidates])
-    scored = [(n.id, s) for n, s in zip(candidates, bm25.get_scores(query), strict=True) if s > 0]
-    return sorted(scored, key=lambda x: x[1], reverse=True)
-
-
-def _dense_ranking(chart: Flowchart, question: str, embed: Embedder) -> list[str]:
-    key = (chart.protocol_id, chart.version)
-    if key not in _NODE_VECTORS:
-        nodes = _searchable_nodes(chart)
-        _NODE_VECTORS[key] = dict(zip([n.id for n in nodes], embed([n.text for n in nodes]), strict=True))
-    vectors = _NODE_VECTORS[key]
-    query = embed([question])[0]
-    return sorted(vectors, key=lambda node_id: _cosine(query, vectors[node_id]), reverse=True)
-
-
-def rank_nodes_for_query(
-    chart: Flowchart,
-    question: str,
-    *,
-    top_k: int = 4,
-    min_ratio: float = 0.4,
-    embed: Embedder | None = None,
-) -> list[str]:
-    """Nodos del arbol mas relacionados con una pregunta informativa.
-
-    Sin `embed`, solo coincidencia lexica (BM25 sobre el texto de cada nodo).
-    Con `embed` (el mismo modelo de embeddings del RAG), se fusiona con la
-    similitud semantica (Reciprocal Rank Fusion): las preguntas conceptuales
-    ("¿que factores considerar al decidir el manejo?") casi no comparten
-    palabras con los nodos que las responden. La pertinencia del resultado la
-    juzga despues el verificador.
-    """
-    lexical = _lexical_ranking(chart, question)
-    if embed is None:
-        if not lexical:
-            return []
-        best = lexical[0][1]
-        return [node_id for node_id, score in lexical[:top_k] if score >= best * min_ratio]
-
-    dense = _dense_ranking(chart, question, embed)
-    fused: dict[str, float] = {}
-    for ranking in ([node_id for node_id, _ in lexical], dense):
-        for rank, node_id in enumerate(ranking):
-            fused[node_id] = fused.get(node_id, 0.0) + 1.0 / (60 + rank + 1)
-    return sorted(fused, key=fused.get, reverse=True)[:top_k]
+    scored = sorted(
+        zip(candidates, bm25.get_scores(query), strict=True),
+        key=lambda x: x[1],
+        reverse=True,
+    )
+    best = scored[0][1]
+    if best <= 0:
+        return []
+    return [n.id for n, score in scored[:top_k] if score > 0 and score >= best * min_ratio]
 
 
 def initial_section(chart: Flowchart, max_nodes: int = 10) -> tuple[str, list[FlowNode]]:

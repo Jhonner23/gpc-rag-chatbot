@@ -457,9 +457,10 @@ def test_informative_question_uses_tree_consult_mode_without_wizard() -> None:
         patch("gpc_rag.agents.verifier.Client") as mock_verif_client,
     ):
         mock_coord_client.return_value.chat.return_value = _chat_response('{"verdict": "ADECUADA"}')
-        mock_tree_client.return_value.chat.return_value = _chat_response(
-            '{"protocol": "CT-PL-197", "modo": "consulta"}'
-        )
+        mock_tree_client.return_value.chat.side_effect = [
+            _chat_response('{"protocol": "CT-PL-197", "modo": "consulta"}'),
+            _chat_response('{"nodos": ["BA_NO_TX"]}'),  # seleccion de nodos
+        ]
         mock_eval_client.return_value.chat.return_value = _chat_response('{"verdict": "OK"}')
         mock_verif_client.return_value.chat.return_value = _NO_CONTRADICTION
 
@@ -470,7 +471,7 @@ def test_informative_question_uses_tree_consult_mode_without_wizard() -> None:
         )
 
     assert isinstance(result, RagAnswer)  # nunca hubo pregunta de seguimiento
-    assert mock_tree_client.return_value.chat.call_count == 1  # sin extraccion de variables
+    assert mock_tree_client.return_value.chat.call_count == 2  # clasificacion + seleccion, sin wizard
     assert "NO TRATAR bacteriuria asintomática con antibiótico" in result.panels[0].content
     assert result.panels[1].content == "Respuesta del RAG sobre bacteriuria."
 

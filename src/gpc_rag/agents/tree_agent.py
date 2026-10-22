@@ -51,10 +51,13 @@ from gpc_rag.agents.protocol_registry import (
     describe_available_protocols,
     get_flowchart,
 )
-from gpc_rag.agents.schemas import decisions_schema, protocol_schema
+from gpc_rag.agents.schemas import (
+    decisions_schema,
+    node_selection_schema,
+    protocol_schema,
+)
 from gpc_rag.agents.state import AgentState
 from gpc_rag.agents.timeouts import llm_timeout
-from gpc_rag.embeddings.ollama_embeddings import OllamaEmbedder
 
 logger = logging.getLogger(__name__)
 
@@ -393,14 +396,66 @@ def _render_overview(chart: Flowchart) -> dict[str, Any]:
     }
 
 
+_SELECT_NODES_PROMPT_TEMPLATE = """\
+Eres un asistente que ubica, en el arbol de decision de un protocolo clinico, \
+los nodos que responden una pregunta. Recibes la lista de nodos (id, seccion \
+del arbol y primera linea de su texto).
+
+Elige hasta {max_nodes} nodos que respondan DIRECTAMENTE la pregunta, del mas \
+al menos pertinente. Prefiere criterios, decisiones y tratamientos sobre \
+pasos intermedios. Si ninguno la responde, devuelve una lista vacia. No \
+respondas la pregunta.
+
+Nodos:
+{catalog}
+
+Responde UNICAMENTE con un objeto JSON {{"nodos": ["<id>", ...]}}.
+"""
+
+_MAX_SELECTED_NODES = 4
+
+
+def select_nodes(chart: Flowchart, question: str, cfg: DictConfig) -> list[str]:
+    """Nodos que responden una pregunta informativa, elegidos por el modelo
+    local entre los nodos del arbol (salida restringida a ids existentes).
+
+    La coincidencia de palabras o de embeddings fallaba con preguntas
+    conceptuales: para "¿que factores considerar al decidir el manejo?"
+    devolvia "¿Tomografia compatible con neumonia?" en vez de las
+    indicaciones de hospitalizacion.
+    """
+    nodes = [n for n in chart.nodes.values() if n.kind != "start"]
+    catalog = "\n".join(
+        f"- {n.id} [{n.section or n.source_ref or n.kind}]: {_headline(n.text)[:140]}" for n in nodes
+    )
+    client = Client(host=cfg.env.ollama_url, timeout=llm_timeout(cfg))
+    response = client.chat(
+        model=cfg.agents.coordinator_model,
+        messages=[
+            {
+                "role": "system",
+                "content": _SELECT_NODES_PROMPT_TEMPLATE.format(catalog=catalog, max_nodes=_MAX_SELECTED_NODES),
+            },
+            {"role": "user", "content": question},
+        ],
+        format=node_selection_schema([n.id for n in nodes], _MAX_SELECTED_NODES),
+        options={"temperature": 0.0, "num_predict": 120},
+        stream=False,
+    )
+    parsed = json.loads(response["message"]["content"])
+    selected = [i for i in parsed.get("nodos", []) if i in chart.nodes]
+    return list(dict.fromkeys(selected))[:_MAX_SELECTED_NODES]
+
+
 def _consult_ranking(chart: Flowchart, question: str, cfg: DictConfig) -> list[str]:
-    """Nodos relacionados: palabras + similitud semantica (embeddings del
-    RAG). Si los embeddings no estan disponibles, solo palabras."""
-    if "embeddings_cfg" in cfg:
-        try:
-            return rank_nodes_for_query(chart, question, embed=OllamaEmbedder(cfg).embed_texts)
-        except Exception:  # Ollama caido o sin el modelo: se sigue con BM25
-            logger.exception("Agente arbol: sin embeddings para el modo consulta; se usa solo BM25.")
+    """Nodos para el modo consulta: los que elige el modelo local; si la
+    llamada falla, coincidencia de palabras (BM25)."""
+    try:
+        selected = select_nodes(chart, question, cfg)
+        if selected:
+            return selected
+    except Exception:  # un fallo del modelo no debe dejar al arbol sin respuesta
+        logger.exception("Agente arbol: fallo la seleccion de nodos; se usa BM25.")
     return rank_nodes_for_query(chart, question)
 
 

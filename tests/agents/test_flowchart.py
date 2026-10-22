@@ -207,18 +207,19 @@ def test_general_question_shows_the_first_section_of_the_tree() -> None:
     assert "Piperacilina" not in text  # el tratamiento hospitalario es de otra seccion
 
 
-def test_semantic_ranking_finds_nodes_without_shared_words() -> None:
-    """Con embeddings, una pregunta conceptual llega a nodos con los que no
-    comparte palabras (aqui un embedder de juguete que marca el tema)."""
-    from gpc_rag.agents.flowchart import _NODE_VECTORS, rank_nodes_for_query
+def test_node_selection_is_restricted_to_existing_nodes() -> None:
+    """El modelo elige los nodos (simulado): ids inexistentes o repetidos se
+    descartan y se respeta el maximo."""
+    from unittest.mock import patch
 
-    _NODE_VECTORS.clear()  # los vectores se cachean por protocolo
-    chart = get_flowchart(_NAC)
+    from omegaconf import OmegaConf
 
-    def toy_embed(texts: list[str]) -> list[list[float]]:
-        return [[1.0, 0.0] if ("HOSPITALIZACIÓN" in t or "decidir" in t) else [0.0, 1.0] for t in texts]
+    from gpc_rag.agents.tree_agent import select_nodes
 
-    question = "¿Qué hay que decidir primero?"
-    assert rank_nodes_for_query(chart, question) == []  # sin palabras en comun
-    assert "hosp_criterios" in rank_nodes_for_query(chart, question, embed=toy_embed)
-    _NODE_VECTORS.clear()
+    cfg = OmegaConf.create({"env": {"ollama_url": "x"}, "agents": {"coordinator_model": "m"}})
+    reply = {"message": {"content": '{"nodos": ["hosp_criterios", "inventado", "hosp_criterios", "uci_criterios"]}'}}
+    with patch("gpc_rag.agents.tree_agent.Client") as client:
+        client.return_value.chat.return_value = reply
+        assert select_nodes(get_flowchart(_NAC), "¿Qué factores considerar?", cfg) == ["hosp_criterios", "uci_criterios"]
+        schema = client.return_value.chat.call_args.kwargs["format"]
+    assert "hosp_criterios" in schema["properties"]["nodos"]["items"]["enum"]
