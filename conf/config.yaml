@@ -12,7 +12,7 @@ defaults:
 retrieval:
   top_k_dense: 12          # candidatos recuperados por busqueda densa
   top_k_bm25: 12             # candidatos recuperados por BM25
-  top_k_final: 6           # despues de rerank, cuantos chunks van al prompt
+  top_k_final: 8           # despues de rerank, cuantos chunks van al prompt (con 6, la fila de tratamiento de bacteriuria asintomatica de la Tabla 1 quedaba 7a)
   use_reranker: true
   reranker_model: "BAAI/bge-reranker-v2-m3"
   section_boost: 0.0         # impulso a secciones "N. ..." (ver retrieval/hybrid.py); desactivado
