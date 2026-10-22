@@ -62,7 +62,7 @@ from gpc_rag.common.refusal import is_refusal
 
 logger = logging.getLogger(__name__)
 
-_LOG_SNIPPET_CHARS = 800
+_LOG_SNIPPET_CHARS = 2000
 
 _PROTOCOL_CODE_RE = re.compile(r"CT-PL-\d+", re.IGNORECASE)
 _VERSION_RE = re.compile(r"v(\d+)", re.IGNORECASE)
@@ -378,11 +378,18 @@ def verify_contributions(state: AgentState, cfg: DictConfig) -> dict:
     )
     # Para diagnostico: el texto de las aportaciones que no se publican (el
     # chat no las muestra, por la falla cerrada).
+    unpublished = {
+        "arbol": tree["content"],
+        # Las respuestas rechazadas por el evaluador no traen contenido en la
+        # aportacion; se registra el texto que genero el RAG.
+        "rag": rag["content"] or state.get("answer") or "",
+    }
     for contribution in (tree, rag):
-        if contribution["content"] and not contribution["eligible"]:
+        text = unpublished[contribution["agent"]]
+        if text and not contribution["eligible"]:
             logger.info(
                 "Verificador: aportacion no publicada (%s): %r",
                 contribution["agent"],
-                contribution["content"][:_LOG_SNIPPET_CHARS],
+                text[:_LOG_SNIPPET_CHARS],
             )
     return {"contributions": [tree, rag], "discrepancies": discrepancies}

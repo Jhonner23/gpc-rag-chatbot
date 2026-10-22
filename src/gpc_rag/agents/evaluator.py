@@ -49,7 +49,9 @@ pregunta tu mismo -- solo audita la respuesta dada.
 
 Rechaza la respuesta si:
 - Menciona un farmaco, dosis, esquema posologico o cifra especifica que NO \
-aparece textualmente en el CONTEXTO.
+aparece en el CONTEXTO. Unir en una frase datos de un mismo fragmento (p. ej. \
+la dosis y la duracion de un farmaco en la misma fila de una tabla) o \
+abreviar unidades ("h" por "horas") NO es un error.
 - Cita una fuente que no tiene el formato \
 [Guia: <archivo>, Seccion: <seccion>, Pagina: <pagina>], o que no \
 corresponde a un fragmento del CONTEXTO (ej. CDC, OMS, articulos, URLs).
