@@ -33,3 +33,14 @@ def test_section_title_is_part_of_the_chunk_text() -> None:
     chunks = chunk_document([{"text": page, "page": 3}], source_file="x.pdf", min_chunk_tokens=5)
     assert chunks[0].section == "Indicaciones de tratamiento de bacteriuria asintomática"
     assert chunks[0].text.startswith("Indicaciones de tratamiento de bacteriuria asintomática\n\n- Mujer embarazada")
+
+
+def test_bibliography_and_its_continuation_are_not_indexed() -> None:
+    refs = "- Lim WS, et al. BTS guidelines for community acquired pneumonia. Thorax. 2009. " * 3
+    pages = [
+        {"text": "## Plan de egreso\n\nTexto clinico del egreso. " * 5 + "\n\n## REFERENCIAS BIBLIOGRÁFICAS:\n\n" + refs, "page": 6},
+        {"text": refs + "\n\n## Control\n\nTexto que si se indexa. " * 3, "page": 7},
+    ]
+    chunks = chunk_document(pages, source_file="x.pdf", min_chunk_tokens=5)
+    assert all("BTS guidelines" not in c.text for c in chunks)
+    assert {c.section for c in chunks} == {"Plan de egreso", "Control"}

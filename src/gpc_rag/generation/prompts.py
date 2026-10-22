@@ -83,6 +83,10 @@ recomendaciones para situaciones distintas no son diferencias. Si todos los \
 fragmentos vienen del mismo documento, dilo en vez de comparar.
 - No te refieras a los fragmentos por su numero ("Fragmento 3", "Guia 3"): \
 usa siempre el formato de cita.
+- CRITICO: no presentes como recomendacion una deduccion tuya (p. ej. \
+"lo que implica que se deben considerar...", o elegir antibioticos a partir \
+de la etiologia). Solo cuenta lo que el CONTEXTO recomienda explicitamente; \
+si el CONTEXTO no trae la recomendacion que se pide, dilo.
 - No establezcas un orden de preferencia entre opciones (primera, segunda \
 opcion) si el CONTEXTO no lo establece, y no menciones otras guias o fuentes \
 que no esten en el CONTEXTO.

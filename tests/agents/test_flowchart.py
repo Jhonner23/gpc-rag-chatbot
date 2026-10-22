@@ -196,3 +196,29 @@ def test_consult_mode_shows_route_and_other_branches() -> None:
     assert result["citations"][0]["source_file"].startswith(
         "Árbol clínico CT-PL-197 v06"
     )
+
+
+def test_general_question_shows_the_first_section_of_the_tree() -> None:
+    from gpc_rag.agents.tree_agent import _render_overview
+
+    text = _render_overview(get_flowchart(_NAC))["answer_text"]
+    assert "«Confirmación y decisión de ingreso»" in text
+    assert "¿Existe al menos una indicación de hospitalización? → No / Sí" in text
+    assert "Piperacilina" not in text  # el tratamiento hospitalario es de otra seccion
+
+
+def test_semantic_ranking_finds_nodes_without_shared_words() -> None:
+    """Con embeddings, una pregunta conceptual llega a nodos con los que no
+    comparte palabras (aqui un embedder de juguete que marca el tema)."""
+    from gpc_rag.agents.flowchart import _NODE_VECTORS, rank_nodes_for_query
+
+    _NODE_VECTORS.clear()  # los vectores se cachean por protocolo
+    chart = get_flowchart(_NAC)
+
+    def toy_embed(texts: list[str]) -> list[list[float]]:
+        return [[1.0, 0.0] if ("HOSPITALIZACIÓN" in t or "decidir" in t) else [0.0, 1.0] for t in texts]
+
+    question = "¿Qué hay que decidir primero?"
+    assert rank_nodes_for_query(chart, question) == []  # sin palabras en comun
+    assert "hosp_criterios" in rank_nodes_for_query(chart, question, embed=toy_embed)
+    _NODE_VECTORS.clear()

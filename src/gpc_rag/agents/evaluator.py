@@ -60,6 +60,9 @@ corresponde a un fragmento del CONTEXTO (ej. CDC, OMS, articulos, URLs).
 (p. ej. datos de frecuencia o de poblaciones de riesgo como si fueran una \
 indicacion, una dosis de profilaxis como tratamiento), o atribuye una dosis \
 o restriccion a un farmaco, poblacion o situacion distinta.
+- Presenta como recomendacion una deduccion que el CONTEXTO no establece \
+(p. ej. deduce que antibioticos usar a partir de la etiologia o la \
+epidemiologia).
 - Establece un orden de preferencia, una comparacion o una diferencia entre \
 fuentes que el CONTEXTO no establece.
 

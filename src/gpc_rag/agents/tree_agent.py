@@ -41,6 +41,7 @@ from gpc_rag.agents.flowchart import (
     Step,
     WalkResult,
     decision_overview,
+    initial_section,
     normalize,
     rank_nodes_for_query,
     walk,
@@ -53,6 +54,7 @@ from gpc_rag.agents.protocol_registry import (
 from gpc_rag.agents.schemas import decisions_schema, protocol_schema
 from gpc_rag.agents.state import AgentState
 from gpc_rag.agents.timeouts import llm_timeout
+from gpc_rag.embeddings.ollama_embeddings import OllamaEmbedder
 
 logger = logging.getLogger(__name__)
 
@@ -367,23 +369,39 @@ def _render_consult(chart: Flowchart, node_ids: list[str]) -> dict[str, Any]:
 
 
 def _render_overview(chart: Flowchart) -> dict[str, Any]:
-    decisions = decision_overview(chart)
+    """Para preguntas generales: la primera parte del arbol, en el orden del
+    recorrido (antes se listaban todas las decisiones sin contexto, y el
+    verificador lo juzgaba no relacionado)."""
+    section, nodes = initial_section(chart)
+    where = f" («{section}»)" if section else ""
     lines = [
-        f"Puntos de decisión del árbol clínico {chart.protocol_id} {chart.version}, en orden:",
+        f"Inicio del árbol clínico {chart.protocol_id} {chart.version}{where}, en el orden del recorrido:",
         "",
     ]
-    lines += [
-        f"- {_headline(d.text)} ({' / '.join(_decision_labels(chart, d))})"
-        for d in decisions
-    ]
+    for node in nodes:
+        if node.is_decision:
+            lines.append(f"- {_headline(node.text)} → {' / '.join(_decision_labels(chart, node))}")
+        else:
+            lines.append(f"- {_indent(node.text)}")
     return {
         "protocol_id": chart.protocol_id,
         "protocol_version": chart.version,
-        "rule_id": "resumen_decisiones",
+        "rule_id": "inicio_del_arbol",
         "mode": "consulta",
-        "citations": _citations(chart, decisions),
+        "citations": _citations(chart, nodes),
         "answer_text": "\n".join(lines),
     }
+
+
+def _consult_ranking(chart: Flowchart, question: str, cfg: DictConfig) -> list[str]:
+    """Nodos relacionados: palabras + similitud semantica (embeddings del
+    RAG). Si los embeddings no estan disponibles, solo palabras."""
+    if "embeddings_cfg" in cfg:
+        try:
+            return rank_nodes_for_query(chart, question, embed=OllamaEmbedder(cfg).embed_texts)
+        except Exception:  # Ollama caido o sin el modelo: se sigue con BM25
+            logger.exception("Agente arbol: sin embeddings para el modo consulta; se usa solo BM25.")
+    return rank_nodes_for_query(chart, question)
 
 
 # Nodos del grafo ------------------------------------------------------------
@@ -434,7 +452,7 @@ def tree_agent_node(state: AgentState, cfg: DictConfig) -> dict:
     chart = get_flowchart(protocol_id)
 
     if state.get("tree_mode") == "consulta":
-        node_ids = rank_nodes_for_query(chart, state["question"])
+        node_ids = _consult_ranking(chart, state["question"], cfg)
         result = (
             _render_consult(chart, node_ids) if node_ids else _render_overview(chart)
         )

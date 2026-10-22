@@ -61,6 +61,17 @@ def clean_page_text(text: str) -> str:
     return re.sub(r"\n{3,}", "\n\n", "\n".join(kept)).strip()
 
 
+_CONTINUATION = "\x00continuacion"
+_BIBLIOGRAPHY_RE = re.compile(r"referencias|bibliograf", re.IGNORECASE)
+
+
+def _is_bibliography(title: str) -> bool:
+    """La bibliografia no es contenido clinico, y sus titulos ("community-
+    acquired pneumonia...") se colaban en la recuperacion por coincidencia
+    de palabras."""
+    return bool(_BIBLIOGRAPHY_RE.search(_strip_markdown_markers(title)))
+
+
 def _with_section_header(title: str, text: str) -> str:
     """Antepone el titulo de la seccion al texto del fragmento.
 
@@ -188,6 +199,12 @@ def chunk_document(
     chunks: list[Chunk] = []
     chunk_idx = 0
     drop_tables_on_pages = drop_tables_on_pages or set()
+    # Si una pagina termina en la bibliografia, el texto sin encabezado al
+    # inicio de la siguiente es su continuacion. No se hereda el titulo en
+    # general: los titulos en negrita dentro del texto ("PLAN DE EGRESO") no
+    # se detectan como encabezado, y heredar el anterior etiquetaba mal esos
+    # fragmentos.
+    previous_was_bibliography = False
 
     for page in pages:
         text = clean_page_text(page["text"])
@@ -195,8 +212,19 @@ def chunk_document(
             text = strip_markdown_tables(text)
         if not text:
             continue
-        sections = split_into_sections(text)
+        sections = split_into_sections(text, default_title=_CONTINUATION)
+        continues_bibliography = previous_was_bibliography
+        previous_was_bibliography = bool(sections) and (
+            _is_bibliography(sections[-1].title)
+            or (sections[-1].title == _CONTINUATION and continues_bibliography)
+        )
         for section in sections:
+            if section.title == _CONTINUATION:
+                if continues_bibliography:
+                    continue
+                section.title = "Sin seccion"
+            if _is_bibliography(section.title):
+                continue
             if approx_token_count(section.text) <= chunk_size_tokens:
                 pieces = [section.text]
             else:
