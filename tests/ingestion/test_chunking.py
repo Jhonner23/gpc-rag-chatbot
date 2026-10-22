@@ -114,6 +114,38 @@ def test_short_titled_section_is_kept_and_page_continuation_keeps_its_title():
     chunks = chunk_document(pages, source_file="x.pdf", min_chunk_tokens=40)
     assert [(c.page, c.section) for c in chunks] == [
         (3, "DIAGNÓSTICO MICROBIOLÓGICO"),
-        (3, "Filmarray"),
-        (4, "Filmarray"),
+        (3, "DIAGNÓSTICO MICROBIOLÓGICO — Filmarray"),
+        (4, "DIAGNÓSTICO MICROBIOLÓGICO — Filmarray"),
     ]
+
+
+def test_subsections_carry_their_parent_headings_and_picture_text_is_dropped():
+    pages = [
+        {
+            "text": "## **2. RECOMENDACIONES PARA EL MANEJO**\n\n"
+            "**INDICACIONES DE HOSPITALIZACIÓN:** Son indicaciones de hospitalización "
+            "relacionadas con el diagnóstico de neumonía: CURB-65 mayor o igual a 2.\n\n"
+            "**Hemocultivos:** Deben tomarse en los pacientes hospitalizados por neumonía "
+            "con BUN mayor a 30 mg/dL.\n\n"
+            "## **ALGORITMOS DE DIAGNÓSTICO Y MANEJO:**\n\n"
+            "<!-- Start of picture text -->\nNeumonia<br>—a. stoc eopecers<br>\n"
+            "<!-- End of picture text -->",
+            "page": 4,
+        },
+        {
+            "text": "**5. Diagnóstico: Análisis de orina:** Se debe realizar citoquímico de "
+            "orina a todo paciente con sospecha de ITU en el servicio de urgencias.\n\n"
+            "**Urocultivo:** Se realiza para confirmar la presencia de bacteriuria y la "
+            "susceptibilidad antimicrobiana del patógeno.",
+            "page": 5,
+        },
+    ]
+    chunks = chunk_document(pages, source_file="x.pdf", min_chunk_tokens=40)
+    assert [c.section for c in chunks] == [
+        "2. RECOMENDACIONES PARA EL MANEJO — INDICACIONES DE HOSPITALIZACIÓN",
+        "2. RECOMENDACIONES PARA EL MANEJO — INDICACIONES DE HOSPITALIZACIÓN — Hemocultivos",
+        "5. Diagnóstico — Análisis de orina",
+        "5. Diagnóstico — Urocultivo",
+    ]
+    assert chunks[0].text.startswith("2. RECOMENDACIONES PARA EL MANEJO — INDICACIONES")
+    assert all("eopecers" not in c.text for c in chunks)

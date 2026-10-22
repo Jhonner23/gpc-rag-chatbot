@@ -54,6 +54,22 @@ def test_agreement_between_guides_with_a_single_document_is_detected() -> None:
     text = "Todas las fuentes coinciden en que no se requiere urocultivo de control."
     assert mentions_other_guides(text, [_FILE])
     assert mentions_other_guides("Ambas guías recomiendan nitrofurantoína.", [_FILE])
+    assert mentions_other_guides(
+        "Todas las guías mencionadas se refieren a la misma condición y presentan las "
+        "mismas recomendaciones.",
+        [_FILE],
+    )
     assert not mentions_other_guides(
         "Todas las fuentes recuperadas provienen del mismo protocolo.", [_FILE]
     )
+
+
+def test_deductions_presented_as_answers_are_detected() -> None:
+    text = (
+        "No obstante, se puede inferir que se recomienda un abordaje empírico. El "
+        "enfoque probablemente incluiría un antibiótico que cubra S. pneumoniae."
+    )
+    problems = grounding_problems(text, [_FILE])
+    assert len(problems) == 1
+    assert '"probablemente"' in problems[0] and '"se puede inferir"' in problems[0]
+    assert grounding_problems("A la semana 34 podría hacerse cambio a cefalexina.", [_FILE]) == []

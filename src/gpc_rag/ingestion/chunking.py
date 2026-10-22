@@ -66,6 +66,17 @@ _BOILERPLATE_RES = [
     ),
     re.compile(r"\**\s*P[aá]gina\s+\d+\s+de\s+\d+\s*\**", re.IGNORECASE),
 ]
+# Texto que el extractor saca por OCR de las imagenes (leyendas de graficos,
+# cajas del flujograma). Llega desordenado ("—a. stoc eopecers: reese de
+# riesgo para P. aeruginosa; MRSA ote") y el modelo llego a deducir
+# recomendaciones a partir de el. El flujograma lo cubre el agente del arbol.
+_PICTURE_TEXT_RE = re.compile(
+    r"<!--\s*Start of picture text\s*-->.*?<!--\s*End of picture text\s*-->", re.DOTALL
+)
+# Leyenda del grafico cuyo texto OCR se quito: sola no tiene contenido
+# ("Gráfico 1. Etiología de la neumonía... en la CUB") y quedaba primera en
+# BM25 para cualquier pregunta sobre la neumonia adquirida en comunidad.
+_PICTURE_CAPTION_RE = re.compile(r"^\*\*(gr[aá]fico|figura)\s*\d+\.?\*\*.*$", re.IGNORECASE | re.MULTILINE)
 _EMPTY_MARKUP_LINE_RE = re.compile(r"^[\s*_\-]*$")
 
 # Un "encabezado" de mas de esta longitud es en realidad un parrafo que el
@@ -76,7 +87,10 @@ _MAX_SECTION_TITLE_CHARS = 120
 
 
 def clean_page_text(text: str) -> str:
-    """Quita el pie de pagina institucional y las lineas que quedan vacias."""
+    """Quita el pie de pagina institucional, el texto OCR de imagenes y las
+    lineas que quedan vacias."""
+    text = _PICTURE_TEXT_RE.sub("", text)
+    text = _PICTURE_CAPTION_RE.sub("", text)
     for pattern in _BOILERPLATE_RES:
         text = pattern.sub("", text)
     lines = [line.rstrip() for line in text.splitlines()]
@@ -112,6 +126,54 @@ def _with_section_header(title: str, text: str) -> str:
 def _strip_markdown_markers(text: str) -> str:
     """Quita ** y _ de enfasis para dejar un titulo de seccion legible."""
     return re.sub(r"[*_]+", "", text).strip()
+
+
+_NUMBERED_TITLE_RE = re.compile(r"^\d{1,3}\.\s")
+
+
+def _clean_title(title: str) -> str:
+    return _strip_markdown_markers(title).rstrip(" :.").strip()
+
+
+def _is_upper_title(title: str) -> bool:
+    letters = [c for c in title if c.isalpha()]
+    return bool(letters) and all(c.isupper() for c in letters)
+
+
+class _TitlePath:
+    """Ruta de titulos de una subseccion dentro del protocolo.
+
+    Las subsecciones en negrita ("Hemocultivos", "INDICACIONES DE
+    HOSPITALIZACIÓN") pierden el contexto del apartado al que pertenecen
+    ("1. RECOMENDACIONES PARA EL DIAGNÓSTICO", "2. RECOMENDACIONES PARA EL
+    MANEJO"): sin el, una pregunta por el "manejo inicial" no encontraba
+    ningun fragmento de manejo. Niveles, segun el formato de los protocolos:
+    - apartado numerado ("2. RECOMENDACIONES PARA EL MANEJO"): reinicia la ruta;
+    - titulo en mayusculas ("DIAGNÓSTICO MICROBIOLÓGICO"): cuelga del apartado;
+    - titulo en minusculas ("Hemocultivos"): cuelga del ultimo titulo en
+      mayusculas, si lo hay, y del apartado.
+    """
+
+    def __init__(self) -> None:
+        self.top: str | None = None
+        self.mid: str | None = None
+
+    def full(self, title: str) -> str:
+        clean = _clean_title(title)
+        if not clean or clean == "Sin seccion":
+            return title
+        if _NUMBERED_TITLE_RE.match(clean):
+            # "5. Diagnóstico: Análisis de orina": el apartado es "5.
+            # Diagnóstico"; "Análisis de orina" es su primera subseccion.
+            head, _, rest = clean.partition(":")
+            self.top, self.mid = head.strip(), None
+            return f"{self.top} — {rest.strip()}" if rest.strip() else self.top
+        if _is_upper_title(clean):
+            self.mid = clean
+            parts = [self.top, clean]
+        else:
+            parts = [self.top, self.mid, clean]
+        return " — ".join(p for p in parts if p)
 
 
 def approx_token_count(text: str) -> int:
@@ -246,6 +308,7 @@ def chunk_document(
     # o los criterios de egreso que siguen en la pagina siguiente). Si esa
     # seccion era la bibliografia, se descarta igual que ella.
     last_title = "Sin seccion"
+    path = _TitlePath()
 
     for page in pages:
         text = clean_page_text(page["text"])
@@ -257,6 +320,8 @@ def chunk_document(
         for section in sections:
             if section.title == _CONTINUATION:
                 section.title = last_title
+            elif not _is_bibliography(section.title):
+                section.title = path.full(section.title)
             last_title = section.title
             if not section.text or _is_bibliography(section.title):
                 continue

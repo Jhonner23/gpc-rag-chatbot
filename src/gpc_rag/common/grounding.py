@@ -27,7 +27,8 @@ _OTHER_GUIDES_RE = re.compile(
 # comparaciones entre varios documentos que no existen cuando solo hay uno.
 _SEVERAL_GUIDES_RE = re.compile(
     r"\b(ambas|las dos)\s+(gu[ií]as|fuentes|protocolos)\b"
-    r"|\b(gu[ií]as|fuentes|protocolos)\s+(\w+\s+){0,2}(coinciden|concuerdan)\b",
+    r"|\b(gu[ií]as|fuentes|protocolos)\s+(\w+\s+){0,2}(coinciden|concuerdan)\b"
+    r"|\b(gu[ií]as|fuentes|protocolos)\b(\s+\w+){0,8}\s+(presentan|dan|tienen|ofrecen|hacen)\s+las\s+mismas\b",
     re.IGNORECASE,
 )
 _CODE_RE = re.compile(r"CT-PL-\d+", re.IGNORECASE)
@@ -92,6 +93,23 @@ def _norm_keep_spaces(text: str) -> str:
     return "".join(c for c in text if not unicodedata.combining(c))
 
 
+# Deducciones del modelo presentadas como respuesta ("se puede inferir que se
+# recomienda...", "el enfoque probablemente incluiria..."). El prompt las
+# prohibe, pero el evaluador local las aprobo. Ninguna de estas expresiones
+# aparece en los protocolos indexados (comprobado sobre el texto de los PDF,
+# las tablas y los arboles).
+_INFERENCE_RE = re.compile(
+    r"\b(se puede inferir|puede inferirse|se infiere|se puede deducir|puede deducirse"
+    r"|se deduce|probablemente|posiblemente)\b",
+    re.IGNORECASE,
+)
+
+
+def inference_markers(text: str) -> list[str]:
+    plain = _norm_keep_spaces(text)
+    return sorted({m.group(0) for m in _INFERENCE_RE.finditer(plain)})
+
+
 def grounding_problems(text: str, sources: Iterable[str]) -> list[str]:
     """Problemas de fundamentacion detectables sin modelo (vacio si ninguno)."""
     sources = list(sources)
@@ -102,6 +120,13 @@ def grounding_problems(text: str, sources: Iterable[str]) -> list[str]:
             "Cita documentos que no estan entre las fuentes recuperadas: "
             + "; ".join(unknown)
             + "."
+        )
+    markers = inference_markers(text)
+    if markers:
+        problems.append(
+            "Presenta deducciones propias como respuesta ("
+            + ", ".join(f'"{m}"' for m in markers)
+            + "): solo puede decir lo que el contexto establece."
         )
     if mentions_other_guides(text, sources):
         problems.append(

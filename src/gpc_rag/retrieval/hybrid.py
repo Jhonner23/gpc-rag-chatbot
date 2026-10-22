@@ -96,6 +96,57 @@ def _bm25_query_tokens(query: str) -> list[str]:
     return tokens or _tokenize(query)
 
 
+# Secciones administrativas o de contexto de los protocolos. Ante preguntas
+# generales ("¿que factores considerar...?", "¿que recomiendan las
+# guias...?") el reranker las ponia por encima del contenido clinico: en
+# "factores para decidir el manejo de la neumonia" ocupaban 5 de los 8
+# fragmentos. Se les resta retrieval.admin_section_penalty, salvo que la
+# pregunta las nombre ("¿cual es el alcance del protocolo?").
+_ADMIN_SECTIONS = {
+    "objetivo": "objetivo",
+    "alcance": "alcance",
+    "introduccion": "introduccion",
+    "epidemiologia": "epidemiologia",
+    "epidemilogia": "epidemiologia",
+    "recopilacion de la evidencia": "evidencia",
+    "criterio de clasificacion": "clasificacion",
+    "control de cambios": "cambios",
+    "plan de delegacion": "delegacion",
+}
+# Encabezado del documento ("Proceso: Cuidado y tratamiento Código: CT-PL-193
+# Versión: 9 Fecha aprobación: ..."): solo sirve si preguntan por la version.
+_DOCUMENT_HEADER_RE = re.compile(r"proceso:.*codigo:\s*ct-pl", re.DOTALL)
+_DEFAULT_ADMIN_PENALTY = 0.0
+
+
+def _plain(text: str) -> str:
+    text = unicodedata.normalize("NFKD", (text or "").lower())
+    return "".join(c for c in text if not unicodedata.combining(c))
+
+
+def _admin_penalty(section: str, query: str, penalty: float, text: str = "") -> float:
+    """Penalizacion (negativa) si la seccion es administrativa y la pregunta
+    no la nombra. Se mira el ultimo nivel del titulo ("4. INTRODUCCIÓN —
+    Manifestaciones clínicas" no es administrativa; "4. INTRODUCCIÓN" si)."""
+    if not penalty:
+        return 0.0
+    levels = [
+        re.sub(r"^\d{1,3}\.\s*", "", level).strip(" :.")
+        for level in _plain(section).split(" — ")
+    ]
+    # Las filas de tabla llevan la condicion al final ("CONTROL DE CAMBIOS —
+    # 06"): ahi la tabla es el primer nivel.
+    candidates = [levels[-1], levels[0]] if levels[0].startswith("control de cambios") else [levels[-1]]
+    query_plain = _plain(query)
+    if _DOCUMENT_HEADER_RE.search(_plain(text)):
+        return 0.0 if re.search(r"version|codigo|fecha", query_plain) else -penalty
+    for level in candidates:
+        for prefix, keyword in _ADMIN_SECTIONS.items():
+            if level.startswith(prefix):
+                return 0.0 if keyword in query_plain else -penalty
+    return 0.0
+
+
 _RECOMMENDATION_SECTION_RE = re.compile(r"^\d{1,3}\.\s")
 # Desactivado por defecto (retrieval.section_boost en conf/config.yaml): se
 # diseno para la GPC de NAC 2026, que numeraba sus preguntas clinicas
@@ -220,6 +271,12 @@ class HybridRetriever:
                     rc.chunk.section,
                     raw_score,
                     self.cfg.retrieval.get("section_boost", _DEFAULT_SECTION_BOOST),
+                )
+                + _admin_penalty(
+                    rc.chunk.section,
+                    query,
+                    self.cfg.retrieval.get("admin_section_penalty", _DEFAULT_ADMIN_PENALTY),
+                    rc.chunk.text,
                 ),
                 retrieval_method="rerank",
             )
