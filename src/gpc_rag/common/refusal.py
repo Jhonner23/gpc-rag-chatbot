@@ -21,6 +21,18 @@ REFUSAL_MARKERS = [
 ]
 
 
+# Un rechazo bien formado es corto: la frase de rechazo y, a lo sumo, una
+# aclaracion de que temas cubren las guias. Antes bastaba con que el marcador
+# apareciera en cualquier parte, y una respuesta larga que deducia un
+# tratamiento ("se puede inferir... probablemente incluiria un antibiotico
+# que cubra S. pneumoniae") y terminaba con "No encuentro informacion
+# suficiente... para una dosis" se trataba como abstencion: el evaluador la
+# aprobaba sin revisarla y el chat la mostraba. Ahora pasa por el evaluador.
+MAX_REFUSAL_WORDS = 60
+
+
 def is_refusal(answer: str) -> bool:
-    lower = answer.lower()
+    lower = (answer or "").lower()
+    if len(lower.split()) > MAX_REFUSAL_WORDS:
+        return False
     return any(marker in lower for marker in REFUSAL_MARKERS)
