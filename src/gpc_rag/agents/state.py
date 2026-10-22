@@ -19,14 +19,15 @@ class AgentState(TypedDict, total=False):
     rejection_reason: str | None
 
     # Agente arbol (tree_prepare_node + tree_agent_node, ver tree_agent.py):
-    # evalua deterministicamente contra cpg_tree, con preguntas tipo wizard
+    # recorre el arbol clinico aprobado (agents/flowchart.py), con preguntas tipo wizard
     # via interrupt() cuando faltan datos criticos.
-    tree_protocol_id: str | None  # "NAC" | "ITU" | None (ningun protocolo aplica)
-    tree_mode: str  # "caso" (evalua datos del paciente) | "consulta" (reglas relacionadas)
-    tree_initial_values: dict[str, Any]  # primera extraccion, antes de preguntar
-    tree_result: dict[str, Any] | None  # ver tree_agent._render_tree_result
+    tree_protocol_id: str | None  # "CT-PL-193" | "CT-PL-197" | None (ningun protocolo aplica)
+    tree_mode: str  # "caso" (recorre el arbol con datos del paciente) | "consulta" (nodos relacionados)
+    tree_initial_values: dict[str, Any]  # respuestas a decisiones sacadas del texto, antes de preguntar
+    tree_result: dict[str, Any] | None  # ver tree_agent._render_walk / _render_consult
     tree_questions_asked: int
-    tree_outcome: str | None  # "informacion_faltante" | "ausencia_de_coincidencias" sin match
+    tree_outcome: str | None  # "informacion_faltante" | "ausencia_de_coincidencias" sin resultado
+    tree_stop_detail: str | None  # donde y por que se detuvo el recorrido
     tree_error: str | None  # error tecnico de la rama del arbol
 
     # Agente RAG (retrieval + generacion)

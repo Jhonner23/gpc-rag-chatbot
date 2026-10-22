@@ -145,7 +145,7 @@ async def on_message(message: cl.Message) -> None:
 
     if data.get("pending_question"):
         cl.user_session.set(_PENDING_THREAD_KEY, data["thread_id"])
-        thinking.content = data["pending_question"]
+        thinking.content = _escape(data["pending_question"])
         await thinking.update()
         return
 

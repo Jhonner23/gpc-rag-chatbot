@@ -1,48 +1,43 @@
-"""Registro de protocolos clinicos: descubre, carga y cachea los
-ProtocolVersion a partir de los `package.yaml` vendorizados en este repo
-(ver agents/protocols/<protocol_id>/<version>/package.yaml).
+"""Registro de protocolos clinicos: descubre, carga y cachea los arboles
+aprobados por el comite de la clinica (ver agents/flowchart.py).
 
-Por que vendorizar el YAML en vez de depender de las funciones
-`build_*_package()` del paquete `cpg_tree` del compañero: esas funciones son
-codigo Python especifico por protocolo -- cada protocolo nuevo exigiria que
-el, o nosotros, escribamos una funcion mas y la registremos a mano.
-`load_package()` es la capa generica de `cpg_tree` (no especifica a ningun
-protocolo): agregar un protocolo nuevo pasa a ser copiar un `package.yaml`
-mas a esta carpeta, sin tocar codigo.
+Estructura esperada: agents/protocols/<protocol_id>/<version>/arbol.yaml
 
-Por que cachear: `load_package()` parsea el YAML en cada llamada (~96ms
-medido empiricamente, ~150x mas lento que el `build_nac_package()` anterior
-que solo construye objetos Python ya en memoria). `tree_agent_node` llama a
-esto en cada pregunta del wizard dentro de una misma conversacion (LangGraph
-reproduce el nodo completo en cada reanudacion), asi que sin cache esa
-lentitud se pagaria una vez por pregunta. Con el cache, se paga una sola vez
-por protocolo por proceso.
+Agregar o actualizar un protocolo es copiar el YAML aprobado a esa carpeta,
+sin tocar codigo. Si hay mas de una carpeta de version para el mismo
+protocolo, se usa la que ordena ultimo alfabeticamente (p. ej. v10 > v09).
+
+Se cachea porque `tree_agent_node` se reproduce completo en cada reanudacion
+del wizard (interrupt()), y sin cache el YAML se volveria a leer en cada
+pregunta.
 """
 
 from __future__ import annotations
 
 import logging
 import threading
+from dataclasses import dataclass
 from pathlib import Path
 
-from cpg_tree.knowledge import load_package
-from cpg_tree.knowledge.protocol import Protocol, ProtocolVersion
+from gpc_rag.agents.flowchart import Flowchart, load_flowchart
 
 logger = logging.getLogger(__name__)
 
 PROTOCOLS_DIR = Path(__file__).parent / "protocols"
+TREE_FILENAME = "arbol.yaml"
 
-_cache: dict[str, ProtocolVersion] = {}
+_cache: dict[str, Flowchart] = {}
 _lock = threading.Lock()
 
 
-def _discover_package_files() -> dict[str, Path]:
-    """Mapea protocol_id -> ruta de su package.yaml.
+@dataclass(frozen=True)
+class ProtocolInfo:
+    id: str
+    name: str
+    description: str
 
-    Estructura esperada: protocols/<protocol_id>/<version>/package.yaml
-    Si hay mas de una carpeta de version para el mismo protocolo, se usa la
-    que ordena ultimo alfabeticamente (p.ej. v09 > v08).
-    """
+
+def _discover_tree_files() -> dict[str, Path]:
     found: dict[str, Path] = {}
     if not PROTOCOLS_DIR.is_dir():
         return found
@@ -51,43 +46,51 @@ def _discover_package_files() -> dict[str, Path]:
             continue
         version_dirs = sorted(p for p in protocol_dir.iterdir() if p.is_dir())
         for version_dir in reversed(version_dirs):
-            candidate = version_dir / "package.yaml"
+            candidate = version_dir / TREE_FILENAME
             if candidate.is_file():
                 found[protocol_dir.name] = candidate
                 break
     return found
 
 
-def _load_uncached(protocol_id: str) -> ProtocolVersion:
-    files = _discover_package_files()
-    path = files.get(protocol_id)
-    if path is None:
-        raise KeyError(
-            f"No existe package.yaml para el protocolo {protocol_id!r} en {PROTOCOLS_DIR}"
-        )
-    text = path.read_text(encoding="utf-8")
-    package = load_package(text)
-    logger.info("Registro de protocolos: cargado %s desde %s", protocol_id, path)
-    return package
-
-
-def get_package(protocol_id: str) -> ProtocolVersion:
-    """Devuelve el ProtocolVersion del protocolo, cacheado tras la 1ra carga."""
+def get_flowchart(protocol_id: str) -> Flowchart:
+    """Arbol del protocolo, cacheado tras la primera carga."""
     if protocol_id in _cache:
         return _cache[protocol_id]
     with _lock:
         if protocol_id not in _cache:
-            _cache[protocol_id] = _load_uncached(protocol_id)
+            path = _discover_tree_files().get(protocol_id)
+            if path is None:
+                raise KeyError(
+                    f"No existe {TREE_FILENAME} para el protocolo {protocol_id!r} en {PROTOCOLS_DIR}"
+                )
+            chart = load_flowchart(path)
+            if chart.protocol_id != protocol_id:
+                raise ValueError(
+                    f"{path} declara el protocolo {chart.protocol_id!r}, pero esta en la carpeta {protocol_id!r}."
+                )
+            _cache[protocol_id] = chart
+            logger.info(
+                "Registro de protocolos: cargado %s %s desde %s",
+                protocol_id,
+                chart.version,
+                path,
+            )
     return _cache[protocol_id]
 
 
 def available_protocol_ids() -> list[str]:
-    """IDs de todos los protocolos vendorizados (para el prompt del LLM)."""
-    return sorted(_discover_package_files().keys())
+    return sorted(_discover_tree_files().keys())
 
 
-def describe_available_protocols() -> list[Protocol]:
-    """Metadatos (id/nombre/descripcion) de cada protocolo disponible, usados
-    para construir dinamicamente el prompt del clasificador en
-    tree_agent.select_protocol()."""
-    return [get_package(pid).protocol for pid in available_protocol_ids()]
+def describe_available_protocols() -> list[ProtocolInfo]:
+    """Id, nombre y alcance de cada protocolo, para el prompt del clasificador."""
+    infos = []
+    for protocol_id in available_protocol_ids():
+        chart = get_flowchart(protocol_id)
+        infos.append(
+            ProtocolInfo(
+                id=chart.protocol_id, name=chart.name, description=chart.description
+            )
+        )
+    return infos

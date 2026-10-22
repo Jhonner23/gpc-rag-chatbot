@@ -1,28 +1,26 @@
-"""Agente arbol: evalua deterministicamente un Case contra el motor cpg_tree.
+"""Agente arbol: recorre el arbol clinico aprobado por el comite de la clinica
+(diagrama de flujo, ver agents/flowchart.py).
 
 Flujo (dentro del grafo, ver agents/graph.py):
 
 1. ``tree_prepare_node`` (nodo normal, corre una sola vez): decide que
-   protocolo institucional aplica (descubierto dinamicamente, ver
-   agents/protocol_registry.py) y hace una primera extraccion de variables
-   desde la pregunta original del usuario, con un LLM. Si se repite el nodo
-   `tree_agent` por un `interrupt()`, este nodo NO se vuelve a ejecutar
-   (LangGraph solo reproduce el nodo que quedo pausado).
+   protocolo aplica y el modo de la pregunta. En modo caso, un modelo local
+   responde las preguntas del arbol que el texto del usuario permita
+   responder explicitamente; las demas quedan como desconocidas.
+2. ``tree_agent_node`` (nodo con `interrupt()`):
+   - Modo consulta: devuelve los nodos del arbol relacionados con la
+     pregunta, con la ruta que lleva a cada uno y las otras ramas de su
+     decision. No pregunta nada.
+   - Modo caso: recorre el arbol desde el inicio. En cada decision sin
+     respuesta pregunta al usuario (una a la vez, estilo wizard) mostrando
+     las opciones del diagrama y los criterios de apoyo. El recorrido termina
+     en un nodo final del diagrama, o se detiene si falta un dato
+     (informacion_faltante) o si ninguna rama aplica al caso
+     (ausencia_de_coincidencias): el agente no infiere rutas que el diagrama
+     no describe.
 
-2. ``tree_agent_node`` (nodo con `interrupt()`): evalua el Case contra el
-   motor determinista de `cpg_tree`; si ninguna regla EXTRACTED da MATCHED,
-   pregunta -una variable a la vez, estilo wizard- por la que mas reglas
-   indeterminadas este bloqueando, hasta encontrar una conclusion o agotar
-   el limite de preguntas (MAX_QUESTIONS).
-
-Solo se acepta como respuesta del arbol una regla con
-`validation_status == EXTRACTED` (nunca UNRESOLVED): esa es la auditoria que
-el usuario pidio explicitamente ("un agente que recorra el arbol y revise su
-resultado").
-
-Los protocolos (que paquetes/package.yaml existen) se descubren en tiempo de
-ejecucion via `protocol_registry` -- agregar un protocolo nuevo es copiar un
-`package.yaml` a `agents/protocols/<id>/<version>/`, sin tocar este archivo.
+La aportacion cita el texto literal de los nodos recorridos, del arbol
+aprobado (archivo, seccion o pagina del protocolo indicada en el diagrama).
 """
 
 from __future__ import annotations
@@ -36,93 +34,93 @@ from langgraph.types import interrupt
 from ollama import Client
 from omegaconf import DictConfig
 
-from cpg_tree.engine import Case, evaluate_package
-from cpg_tree.knowledge.enums import VariableType
-from cpg_tree.knowledge.protocol import ProtocolVersion
-from cpg_tree.knowledge.variables import Variable
-
+from gpc_rag.agents.flowchart import (
+    UNKNOWN,
+    Flowchart,
+    FlowNode,
+    Step,
+    WalkResult,
+    decision_overview,
+    normalize,
+    rank_nodes_for_query,
+    walk,
+)
 from gpc_rag.agents.protocol_registry import (
     available_protocol_ids,
     describe_available_protocols,
-    get_package,
+    get_flowchart,
 )
-from gpc_rag.agents.schemas import protocol_schema
+from gpc_rag.agents.schemas import decisions_schema, protocol_schema
 from gpc_rag.agents.state import AgentState
 from gpc_rag.agents.timeouts import llm_timeout
-from gpc_rag.agents.tree_support import (
-    matched_validated_rules,
-    rank_blocking_variables,
-    rank_rules_for_query,
-)
 
 logger = logging.getLogger(__name__)
 
-MAX_QUESTIONS = 8
+# Tope de preguntas al usuario por conversacion. El recorrido completo de NAC
+# tiene hasta ~17 decisiones; las que el texto ya responde no se preguntan.
+MAX_QUESTIONS = 20
+
+_LLM_UNKNOWN = "DESCONOCIDO"
+
+_YES_WORDS = {"si", "s", "yes", "y", "afirmativo", "positivo", "verdadero", "cumple"}
+_NO_WORDS = {"no", "n", "negativo", "falso"}
+_UNKNOWN_RE = re.compile(r"^(no se|nose|no lo se|no sabe|ns|desconoc\w*|sin dato\w*)\b")
 
 _EXTRACT_SYSTEM_PROMPT_TEMPLATE = """\
-Eres un extractor de datos clinicos. A partir de la pregunta de un usuario, \
-identifica SOLO los valores de las siguientes variables que esten \
-explicitamente mencionados o se puedan inferir con certeza del texto. NO \
-inventes valores que no esten en la pregunta -- si no se menciona, no la \
-incluyas.
+Eres un asistente que lee la descripcion de un caso clinico y responde \
+preguntas de un arbol de decision institucional. Responde cada pregunta SOLO \
+si el texto del usuario lo dice explicitamente; si no lo menciona o hay \
+dudas, responde {unknown}. No uses conocimiento propio ni supongas datos.
 
-Variables disponibles:
+Preguntas (id: pregunta [opciones]):
 {catalog}
 
-Responde UNICAMENTE con un objeto JSON plano {{"variable_id": valor, ...}} \
-usando solo ids de la lista anterior. Usa true/false para variables \
-booleanas, numeros (sin unidades ni texto) para variables numericas, y el \
-texto exacto de uno de los valores permitidos para variables categoricas. \
-Si no hay ningun dato identificable, responde {{}}.
+Responde UNICAMENTE con un objeto JSON {{"<id>": "<opcion exacta o {unknown}>", ...}} \
+con todas las ids.
 """
 
-_SI_WORDS = {"si", "sí", "s", "yes", "y", "verdadero", "true", "positivo", "afirmativo"}
-_NO_WORDS = {"no", "n", "false", "falso", "negativo"}
+
+# Clasificacion del protocolo y del modo ------------------------------------
 
 
 def _build_protocol_select_prompt() -> str:
-    """Construye el prompt del clasificador a partir de los protocolos que
-    `protocol_registry` encuentre -- nunca hardcodea nombres de protocolo."""
-    protocols = describe_available_protocols()
+    """Prompt del clasificador a partir de los protocolos disponibles."""
     lines = [
-        "Eres un clasificador que decide a cual protocolo clinico "
-        "institucional pertenece una pregunta, entre los siguientes "
-        "(identificados por su id exacto):",
+        (
+            "Eres un clasificador que decide a cual protocolo clinico "
+            "institucional pertenece una pregunta, entre los siguientes "
+            "(identificados por su id exacto):"
+        ),
         "",
     ]
-    for protocol in protocols:
-        description = protocol.description or protocol.name
-        lines.append(f"- {protocol.id}: {protocol.name} ({description})")
-    lines.append("")
-    lines.append(
-        "Si la pregunta no corresponde claramente a ninguno de estos "
-        "protocolos, responde NINGUNO."
-    )
-    lines.append("")
-    lines.append(
-        "Ademas, clasifica el MODO de la pregunta:\n"
-        "- caso: describe a un paciente concreto o pide decidir para un caso "
-        "(ej. 'paciente de 70 años con neumonia y derrame, ¿se hospitaliza?').\n"
-        "- consulta: pide informacion general del protocolo, sin datos de un "
-        "paciente (ej. '¿que recomienda la guia sobre...?', '¿cuando se trata...?').\n"
-        "Si tienes dudas, usa caso."
-    )
-    lines.append("")
-    lines.append(
-        "Responde UNICAMENTE con un objeto JSON con las claves protocol y modo, "
-        'por ejemplo {"protocol": "<id o NINGUNO>", "modo": "caso"}.'
-    )
+    for protocol in describe_available_protocols():
+        lines.append(f"- {protocol.id}: {protocol.name} ({protocol.description})")
+    lines += [
+        "",
+        "Si la pregunta no corresponde claramente a ninguno de estos protocolos, responde NINGUNO.",
+        "",
+        (
+            "Ademas, clasifica el MODO de la pregunta:\n"
+            "- caso: describe a un paciente concreto o pide decidir para un caso "
+            "(ej. 'paciente de 70 años con neumonia y derrame, ¿se hospitaliza?').\n"
+            "- consulta: pide informacion general del protocolo, sin datos de un "
+            "paciente (ej. '¿que recomienda la guia sobre...?', '¿cuando se trata...?').\n"
+            "Si tienes dudas, usa caso."
+        ),
+        "",
+        (
+            "Responde UNICAMENTE con un objeto JSON con las claves protocol y modo, "
+            'por ejemplo {"protocol": "<id o NINGUNO>", "modo": "caso"}.'
+        ),
+    ]
     return "\n".join(lines)
 
 
 def classify_question(question: str, cfg: DictConfig) -> tuple[str | None, str]:
-    """Devuelve (id del protocolo o None, modo "caso" | "consulta").
-
-    La lista de protocolos es dinamica (ver protocol_registry). Ante cualquier
-    duda o salida invalida, el modo es "caso" (el comportamiento original)."""
+    """Devuelve (id del protocolo o None, modo "caso" | "consulta")."""
     valid_ids = available_protocol_ids()
     if not valid_ids:
-        logger.warning("Agente arbol: no hay protocolos vendorizados en agents/protocols/.")
+        logger.warning("Agente arbol: no hay arboles en agents/protocols/.")
         return None, "caso"
 
     client = Client(host=cfg.env.ollama_url, timeout=llm_timeout(cfg))
@@ -142,7 +140,9 @@ def classify_question(question: str, cfg: DictConfig) -> tuple[str | None, str]:
         protocol_id = str(parsed.get("protocol", "")).strip().upper()
         mode = str(parsed.get("modo", "caso")).strip().lower()
     except (json.JSONDecodeError, AttributeError):
-        logger.warning("Agente arbol: no se pudo parsear la seleccion de protocolo (%r)", content)
+        logger.warning(
+            "Agente arbol: no se pudo parsear la seleccion de protocolo (%r)", content
+        )
         return None, "caso"
     mode = mode if mode in {"caso", "consulta"} else "caso"
     return (protocol_id if protocol_id in valid_ids else None), mode
@@ -153,321 +153,347 @@ def select_protocol(question: str, cfg: DictConfig) -> str | None:
     return classify_question(question, cfg)[0]
 
 
-def _variable_catalog_text(variables: dict[str, Variable]) -> str:
-    lines = []
-    for var in sorted(variables.values(), key=lambda v: v.id):
-        type_info = var.type.value
-        if var.allowed_values:
-            type_info += f" (valores permitidos: {', '.join(var.allowed_values)})"
-        lines.append(f"- {var.id} [{type_info}]: {var.label}")
-    return "\n".join(lines)
+# Respuestas a las decisiones -----------------------------------------------
 
 
-def _coerce_llm_value(raw_value: Any, variable: Variable) -> Any | None:
-    """Convierte el valor crudo del LLM al tipo de la variable, o None si no cuadra."""
-    if raw_value is None:
-        return None
-    if variable.type is VariableType.BOOLEAN:
-        return raw_value if isinstance(raw_value, bool) else None
-    if variable.type in (VariableType.NUMERIC, VariableType.DURATION):
-        if isinstance(raw_value, bool):
-            return None
-        if isinstance(raw_value, (int, float)):
-            return float(raw_value)
-        return None
-    if variable.type is VariableType.CATEGORICAL:
-        if not isinstance(raw_value, str):
-            return None
-        if not variable.allowed_values:
-            return raw_value
-        for option in variable.allowed_values:
-            if option.lower() == raw_value.lower():
-                return option
-        return None
-    return None
+def _headline(text: str) -> str:
+    """Primeras lineas de un nodo, antes de su lista de viñetas."""
+    head = []
+    for line in text.splitlines():
+        if line.startswith("•"):
+            break
+        head.append(line)
+    return " ".join(head) or text
 
 
-def extract_case_values(
-    question: str, package: ProtocolVersion, cfg: DictConfig
-) -> dict[str, Any]:
-    """Primera pasada: extrae lo que se pueda inferir de la pregunta original.
+def _decision_labels(chart: Flowchart, node: FlowNode) -> list[str]:
+    return [e.label for e in chart.out_edges(node.id)]
 
-    Tolerante: una clave invalida o un valor con el tipo equivocado se
-    descarta individualmente en vez de invalidar toda la extraccion.
-    """
-    client = Client(host=cfg.env.ollama_url, timeout=llm_timeout(cfg))
-    system_prompt = _EXTRACT_SYSTEM_PROMPT_TEMPLATE.format(
-        catalog=_variable_catalog_text(package.variables)
+
+def extract_decision_answers(
+    question: str, chart: Flowchart, cfg: DictConfig
+) -> dict[str, str]:
+    """Respuestas a las decisiones del arbol que el texto del usuario permite
+    dar explicitamente. Las demas se omiten (se preguntaran si hacen falta)."""
+    decisions = decision_overview(chart)
+    catalog = "\n".join(
+        f"- {d.id}: {_headline(d.text)} [{' | '.join(_decision_labels(chart, d))}]"
+        for d in decisions
     )
+    client = Client(host=cfg.env.ollama_url, timeout=llm_timeout(cfg))
     response = client.chat(
         model=cfg.agents.coordinator_model,
         messages=[
-            {"role": "system", "content": system_prompt},
+            {
+                "role": "system",
+                "content": _EXTRACT_SYSTEM_PROMPT_TEMPLATE.format(
+                    catalog=catalog, unknown=_LLM_UNKNOWN
+                ),
+            },
             {"role": "user", "content": question},
         ],
-        format="json",
-        options={"temperature": 0.0, "num_predict": 500},
+        format=decisions_schema(
+            {d.id: _decision_labels(chart, d) for d in decisions}, _LLM_UNKNOWN
+        ),
+        options={"temperature": 0.0, "num_predict": 800},
         stream=False,
     )
     content = response["message"]["content"].strip()
     try:
         parsed = json.loads(content)
     except json.JSONDecodeError:
-        logger.warning("Agente arbol: extraccion inicial no es JSON valido (%r)", content)
+        logger.warning(
+            "Agente arbol: extraccion inicial no es JSON valido (%r)", content
+        )
         return {}
     if not isinstance(parsed, dict):
         return {}
-
-    values: dict[str, Any] = {}
-    for key, raw_value in parsed.items():
-        variable = package.variables.get(key)
-        if variable is None:
-            continue
-        coerced = _coerce_llm_value(raw_value, variable)
-        if coerced is not None:
-            values[key] = coerced
-    return values
+    answers = {}
+    for decision in decisions:
+        value = parsed.get(decision.id)
+        if isinstance(value, str) and value in _decision_labels(chart, decision):
+            answers[decision.id] = value
+    return answers
 
 
-def _phrase_question(variable: Variable) -> str:
-    if variable.type is VariableType.BOOLEAN:
-        return f"{variable.label}: ¿si o no?"
-    if variable.type is VariableType.CATEGORICAL and variable.allowed_values:
-        opciones = ", ".join(variable.allowed_values)
-        return f"{variable.label}: ¿cual de estas opciones? ({opciones})"
-    if variable.type in (VariableType.NUMERIC, VariableType.DURATION):
-        unidad = f" ({variable.unit})" if variable.unit else ""
-        return f"{variable.label}{unidad}: ¿cual es el valor?"
-    return f"{variable.label}:"
-
-
-def _parse_answer(raw_text: str, variable: Variable) -> Any | None:
-    """Interpreta la respuesta en texto libre del usuario para una variable.
-
-    Devuelve None si no se pudo interpretar (el llamador decide si reintenta
-    o descarta esa variable para no preguntar en bucle infinito).
-    """
-    text = (raw_text or "").strip().lower()
+def parse_choice(raw_text: str, options: list[str]) -> str | None:
+    """Interpreta la respuesta libre del usuario a una decision: una de las
+    `options`, UNKNOWN si dice que no sabe, o None si no se pudo interpretar."""
+    text = normalize(str(raw_text or "")).strip(" .,;:!¡?¿")
     if not text:
         return None
-    if variable.type is VariableType.BOOLEAN:
-        if text in _SI_WORDS:
-            return True
-        if text in _NO_WORDS:
-            return False
-        return None
-    if variable.type in (VariableType.NUMERIC, VariableType.DURATION):
-        match = re.search(r"-?\d+(?:[.,]\d+)?", text)
-        if not match:
-            return None
-        return float(match.group(0).replace(",", "."))
-    if variable.type is VariableType.CATEGORICAL:
-        if not variable.allowed_values:
-            return text
-        for option in variable.allowed_values:
-            if option.lower() == text or option.lower() in text:
-                return option
-        return None
-    return None
-
-
-def _render_tree_result(package: ProtocolVersion, rule_eval: Any) -> dict[str, Any]:
-    rule = package.rules[rule_eval.rule_id]
-    action_lines = []
-    for action_ref in rule.action_refs:
-        action = package.actions.get(action_ref)
-        if action is not None:
-            action_lines.append(action.label or action.id)
-
-    citations = []
-    for fragment_id in rule.provenance.fragment_refs:
-        fragment = package.fragments.get(fragment_id)
-        if fragment is None:
-            continue
-        document = package.documents.get(fragment.document_id) if fragment.document_id else None
-        citations.append(
-            {
-                "source_file": document.filename if document else (fragment.document_id or "?"),
-                "section": fragment.section or rule.id,
-                "page": fragment.page,
-                "verbatim_text": fragment.verbatim_text,
-            }
-        )
-
-    answer_lines = [
-        f"Segun el arbol de decision del protocolo {package.protocol.id} "
-        f"({package.protocol.name}):",
+    if _UNKNOWN_RE.match(text) and not text.startswith("no se ha"):
+        return UNKNOWN
+    if text.isdigit() and 1 <= int(text) <= len(options):
+        return options[int(text) - 1]
+    for option in options:
+        if normalize(option) == text:
+            return option
+    negative = [o for o in options if normalize(o).startswith("no")]
+    positive = [o for o in options if o not in negative]
+    if text in _YES_WORDS and len(positive) == 1:
+        return positive[0]
+    if text in _NO_WORDS and len(negative) == 1:
+        return negative[0]
+    words = set(re.findall(r"[a-z0-9]+", text))
+    matches = [
+        o for o in options if set(re.findall(r"[a-z0-9]+", normalize(o))) <= words
     ]
-    if action_lines:
-        answer_lines.append("")
-        answer_lines.extend(f"- {line}" for line in action_lines)
-    elif citations:
-        answer_lines.append("")
-        answer_lines.append("Se cumple el siguiente criterio segun la guia:")
-        answer_lines.extend(f"- \"{c['verbatim_text']}\"" for c in citations)
+    return matches[0] if len(matches) == 1 else None
+
+
+def _phrase_question(chart: Flowchart, node: FlowNode, options: list[str]) -> str:
+    parts = [f"**{node.text}**"]
+    for support in chart.support_nodes(node.id):
+        parts.append(support.text)
+    if len(options) == 2 and {normalize(o).split()[0] for o in options} == {"si", "no"}:
+        choices = " / ".join(options)
     else:
-        answer_lines.append("")
-        answer_lines.append(
-            "(La regla aplico, pero no tiene una recomendacion ni cita de texto "
-            "asociada en la base de conocimiento -- revisar con el equipo que "
-            "mantiene el protocolo.)"
-        )
-
-    return {
-        "protocol_id": package.protocol.id,
-        "protocol_version": str(getattr(package, "version", "") or ""),
-        "rule_id": rule.id,
-        "actions": action_lines,
-        "citations": citations,
-        "answer_text": "\n".join(answer_lines),
-    }
+        choices = "\n".join(f"{i}. {o}" for i, o in enumerate(options, 1))
+    parts.append(
+        f"Responde con una opción:\n{choices}\n\nSi no tienes el dato, responde «no sé»."
+    )
+    return "\n\n".join(parts)
 
 
-def _action_text(action: Any) -> str:
-    if action.label:
-        return action.label
-    if action.payload:
-        return ", ".join(f"{k}: {v}" for k, v in action.payload.items())
-    return action.id.replace("_", " ")
+# Presentacion del resultado ------------------------------------------------
 
 
-def _render_consult_result(package: ProtocolVersion, rule_ids: list[str]) -> dict[str, Any]:
-    """Aportacion del arbol en modo consulta: las reglas del protocolo mas
-    relacionadas con la pregunta, cada una con sus acciones y el texto
-    textual de la fuente que la respalda. No evalua datos de un paciente."""
-    answer_lines = [
-        f"Reglas del protocolo {package.protocol.id} ({package.protocol.name}) "
-        "relacionadas con la consulta:"
+def _citation_key(node: FlowNode) -> str:
+    if node.section:
+        return node.section
+    if node.source_ref.startswith("p."):
+        return f"protocolo {node.source_ref}"
+    return node.source_ref or node.id
+
+
+def _citations(chart: Flowchart, nodes: list[FlowNode]) -> list[dict[str, Any]]:
+    """Una cita por seccion del diagrama (o pagina del protocolo indicada en
+    el), con el texto literal de los nodos usados."""
+    grouped: dict[str, list[str]] = {}
+    for node in nodes:
+        texts = grouped.setdefault(_citation_key(node), [])
+        if node.text not in texts:
+            texts.append(node.text)
+    return [
+        {
+            "source_file": chart.source_file,
+            "section": key,
+            "page": 1,
+            "verbatim_text": "\n".join(texts),
+        }
+        for key, texts in grouped.items()
     ]
-    citations: list[dict[str, Any]] = []
-    actions: list[str] = []
-    seen_fragments: set[str] = set()
-    for rule_id in rule_ids:
-        rule = package.rules[rule_id]
-        rule_actions = [
-            _action_text(package.actions[a]) for a in rule.action_refs if a in package.actions
-        ]
-        actions.extend(rule_actions)
-        fragments = [package.fragments[f] for f in rule.provenance.fragment_refs if f in package.fragments]
-        answer_lines.append("")
-        if rule_actions:
-            answer_lines.append(f"- {'; '.join(rule_actions)}")
-        for fragment in fragments:
-            answer_lines.append(f'  "{fragment.verbatim_text}"')
-            if fragment.id in seen_fragments:
-                continue
-            seen_fragments.add(fragment.id)
-            document = package.documents.get(fragment.document_id) if fragment.document_id else None
-            citations.append(
-                {
-                    "source_file": document.filename if document else (fragment.document_id or "?"),
-                    "section": fragment.section or rule_id,
-                    "page": fragment.page,
-                    "verbatim_text": fragment.verbatim_text,
-                }
-            )
+
+
+def _indent(text: str) -> str:
+    return text.replace("\n", "\n  ")
+
+
+def _render_walk(chart: Flowchart, result: WalkResult) -> dict[str, Any]:
+    steps: list[Step] = [s for s in result.steps if s.node.kind != "start"]
+    lines = [
+        f"Recorrido del árbol clínico {chart.protocol_id} {chart.version}, aprobado por el comité de la clínica:",
+        "",
+    ]
+    for step in steps:
+        if step.choice is not None:
+            lines.append(f"- {_headline(step.node.text)} → **{step.choice}**")
+        else:
+            lines.append(f"- {_indent(step.node.text)}")
+    if result.notes:
+        lines += ["", "Además, según el diagrama:"]
+        lines += [f"- {label}: {_indent(node.text)}" for label, node in result.notes]
+    cited = [s.node for s in steps] + [node for _, node in result.notes]
+    terminal = steps[-1].node.id if steps else chart.start_id
     return {
-        "protocol_id": package.protocol.id,
-        "protocol_version": str(getattr(package, "version", "") or ""),
-        "rule_id": rule_ids[0],
-        "rule_ids": list(rule_ids),
-        "mode": "consulta",
-        "actions": actions,
-        "citations": citations,
-        "answer_text": "\n".join(answer_lines),
+        "protocol_id": chart.protocol_id,
+        "protocol_version": chart.version,
+        "rule_id": terminal,
+        "mode": "caso",
+        "path": [s.node.id for s in steps],
+        "citations": _citations(chart, cited),
+        "answer_text": "\n".join(lines),
     }
+
+
+def _render_consult(chart: Flowchart, node_ids: list[str]) -> dict[str, Any]:
+    lines = [
+        f"Nodos del árbol clínico {chart.protocol_id} {chart.version} (aprobado por el comité) relacionados con la consulta:"
+    ]
+    cited: list[FlowNode] = []
+    shown: set[str] = set()
+    for node_id in node_ids:
+        if node_id in shown:
+            continue
+        node = chart.nodes[node_id]
+        shown.add(node_id)
+        cited.append(node)
+        lines += ["", f"- {_indent(node.text)}"]
+        conditions = chart.conditions_to(node_id)
+        if conditions:
+            lines.append(
+                "  Aplica si: "
+                + " · ".join(
+                    f"{_headline(d.text)} → {label}" for d, label in conditions
+                )
+            )
+            last_decision, taken = conditions[-1]
+            for edge in chart.out_edges(last_decision.id):
+                if edge.label == taken or edge.target in shown:
+                    continue
+                other = chart.nodes[edge.target]
+                shown.add(other.id)
+                cited.append(other)
+                lines.append(f"  Si «{edge.label}»: {_indent(_indent(other.text))}")
+    return {
+        "protocol_id": chart.protocol_id,
+        "protocol_version": chart.version,
+        "rule_id": node_ids[0],
+        "rule_ids": list(node_ids),
+        "mode": "consulta",
+        "citations": _citations(chart, cited),
+        "answer_text": "\n".join(lines),
+    }
+
+
+def _render_overview(chart: Flowchart) -> dict[str, Any]:
+    decisions = decision_overview(chart)
+    lines = [
+        f"Puntos de decisión del árbol clínico {chart.protocol_id} {chart.version} (aprobado por el comité), en orden:",
+        "",
+    ]
+    lines += [
+        f"- {_headline(d.text)} ({' / '.join(_decision_labels(chart, d))})"
+        for d in decisions
+    ]
+    return {
+        "protocol_id": chart.protocol_id,
+        "protocol_version": chart.version,
+        "rule_id": "resumen_decisiones",
+        "mode": "consulta",
+        "citations": _citations(chart, decisions),
+        "answer_text": "\n".join(lines),
+    }
+
+
+# Nodos del grafo ------------------------------------------------------------
 
 
 def tree_prepare_node(state: AgentState, cfg: DictConfig) -> dict:
-    """Nodo normal (sin interrupt): decide protocolo y modo, y en modo caso
-    hace la primera extraccion de variables."""
+    """Decide protocolo y modo; en modo caso, responde lo que el texto permita."""
     protocol_id, mode = classify_question(state["question"], cfg)
     if protocol_id is None:
-        logger.info("Agente arbol: ningun protocolo institucional aplica a esta pregunta.")
+        logger.info(
+            "Agente arbol: ningun protocolo institucional aplica a esta pregunta."
+        )
         return {"tree_protocol_id": None, "tree_initial_values": {}, "tree_mode": mode}
 
     if mode == "consulta":
         logger.info("Agente arbol: protocolo=%s modo=consulta", protocol_id)
-        return {"tree_protocol_id": protocol_id, "tree_initial_values": {}, "tree_mode": mode}
+        return {
+            "tree_protocol_id": protocol_id,
+            "tree_initial_values": {},
+            "tree_mode": mode,
+        }
 
-    package = get_package(protocol_id)
-    initial_values = extract_case_values(state["question"], package, cfg)
-    logger.info("Agente arbol: protocolo=%s modo=caso valores_iniciales=%s", protocol_id, initial_values)
-    return {"tree_protocol_id": protocol_id, "tree_initial_values": initial_values, "tree_mode": mode}
+    chart = get_flowchart(protocol_id)
+    answers = extract_decision_answers(state["question"], chart, cfg)
+    logger.info(
+        "Agente arbol: protocolo=%s modo=caso respuestas_iniciales=%s",
+        protocol_id,
+        answers,
+    )
+    return {
+        "tree_protocol_id": protocol_id,
+        "tree_initial_values": answers,
+        "tree_mode": mode,
+    }
 
 
-def tree_agent_node(state: AgentState, cfg: DictConfig) -> dict:  # noqa: ARG001
-    """Nodo con interrupt(): evalua y, si hace falta, pregunta estilo wizard."""
+def tree_agent_node(state: AgentState, cfg: DictConfig) -> dict:
+    """Nodo con interrupt(): recorre el arbol y, si hace falta, pregunta."""
     protocol_id = state.get("tree_protocol_id")
     if not protocol_id:
-        return {"tree_result": None, "tree_questions_asked": 0, "tree_outcome": None}
+        return {
+            "tree_result": None,
+            "tree_questions_asked": 0,
+            "tree_outcome": None,
+            "tree_stop_detail": None,
+        }
 
-    package = get_package(protocol_id)
+    chart = get_flowchart(protocol_id)
 
     if state.get("tree_mode") == "consulta":
-        rule_ids = rank_rules_for_query(package, state["question"])
-        if not rule_ids:
-            logger.info("Agente arbol: modo consulta sin reglas relacionadas (protocolo=%s)", protocol_id)
-            return {
-                "tree_result": None,
-                "tree_questions_asked": 0,
-                "tree_outcome": "ausencia_de_coincidencias",
-            }
-        result = _render_consult_result(package, rule_ids)
-        logger.info("Agente arbol: modo consulta reglas=%s protocolo=%s", rule_ids, protocol_id)
-        return {"tree_result": result, "tree_questions_asked": 0, "tree_outcome": None}
+        node_ids = rank_nodes_for_query(chart, state["question"])
+        result = (
+            _render_consult(chart, node_ids) if node_ids else _render_overview(chart)
+        )
+        logger.info(
+            "Agente arbol: modo consulta nodos=%s protocolo=%s",
+            node_ids or "resumen",
+            protocol_id,
+        )
+        return {
+            "tree_result": result,
+            "tree_questions_asked": 0,
+            "tree_outcome": None,
+            "tree_stop_detail": None,
+        }
 
-    case_values: dict[str, Any] = dict(state.get("tree_initial_values") or {})
-    skipped: set[str] = set()
-    questions_asked = 0
-    matches: list[Any] = []
-    # Sin match: "ausencia_de_coincidencias" si ya no quedan variables por
-    # preguntar; "informacion_faltante" si se agoto el limite de preguntas.
-    outcome = "ausencia_de_coincidencias"
-
-    for _ in range(MAX_QUESTIONS):
-        case = Case.from_inputs(case_values)
-        evaluation = evaluate_package(package, case)
-        matches = matched_validated_rules(evaluation)
-        if matches:
+    answers: dict[str, str] = dict(state.get("tree_initial_values") or {})
+    asked = 0
+    while True:
+        result = walk(chart, answers)
+        if result.status != "pendiente" or asked >= MAX_QUESTIONS:
             break
-        ranking = rank_blocking_variables(evaluation, package, case)
-        candidate = next((var_id for var_id, _ in ranking if var_id not in skipped), None)
-        if candidate is None:
-            break
-        variable = package.variables[candidate]
+        node = result.stopped_at
+        assert node is not None
         raw_answer = interrupt(
             {
                 "type": "tree_question",
                 "protocol_id": protocol_id,
-                "variable_id": candidate,
-                "question": _phrase_question(variable),
+                "node_id": node.id,
+                "question": _phrase_question(chart, node, result.options),
             }
         )
-        questions_asked += 1
-        parsed = _parse_answer(str(raw_answer), variable)
-        if parsed is None:
-            skipped.add(candidate)
-        else:
-            case_values[candidate] = parsed
-    else:
-        case = Case.from_inputs(case_values)
-        evaluation = evaluate_package(package, case)
-        matches = matched_validated_rules(evaluation)
-        outcome = "informacion_faltante"
+        asked += 1
+        choice = parse_choice(str(raw_answer), result.options)
+        if choice is not None:
+            answers[node.id] = choice
 
-    if not matches:
+    if result.status == "completo":
+        rendered = _render_walk(chart, result)
         logger.info(
-            "Agente arbol: sin conclusion tras %d preguntas (protocolo=%s)",
-            questions_asked,
+            "Agente arbol: recorrido completo hasta %s (protocolo=%s)",
+            rendered["rule_id"],
             protocol_id,
         )
         return {
-            "tree_result": None,
-            "tree_questions_asked": questions_asked,
-            "tree_outcome": outcome,
+            "tree_result": rendered,
+            "tree_questions_asked": asked,
+            "tree_outcome": None,
+            "tree_stop_detail": None,
         }
 
-    result = _render_tree_result(package, matches[0])
-    logger.info("Agente arbol: MATCH regla=%s protocolo=%s", result["rule_id"], protocol_id)
-    return {"tree_result": result, "tree_questions_asked": questions_asked, "tree_outcome": None}
+    stopped = _headline(result.stopped_at.text) if result.stopped_at else ""
+    if result.status == "sin_ruta":
+        outcome = "ausencia_de_coincidencias"
+        detail = (
+            f"el caso no cumple ninguna de las opciones del diagrama en «{stopped}»."
+        )
+    else:
+        outcome = "informacion_faltante"
+        detail = f"falta el dato para responder «{stopped}»."
+    logger.info(
+        "Agente arbol: recorrido detenido (%s) en %s tras %d preguntas",
+        result.status,
+        result.stopped_at and result.stopped_at.id,
+        asked,
+    )
+    return {
+        "tree_result": None,
+        "tree_questions_asked": asked,
+        "tree_outcome": outcome,
+        "tree_stop_detail": detail,
+    }

@@ -1,0 +1,616 @@
+metadata:
+  title: Árbol de decisiones clínicas — ITU y bacteriuria asintomática en adultos
+  protocol: CT-PL-197
+  version: '06'
+  approval_date: '2025-09-30'
+  institution: Clínica Universitaria Bolivariana
+  status: Aprobado por el equipo clínico (según confirmación del solicitante)
+  scope: Población adulta; neonatos y niños excluidos por el alcance del protocolo.
+  artifact_name: arbol_itu_clinico_para_agente
+  review_state: approved
+  execution_status: ready_for_agent_integration
+  source_document: CT-PL-197 PROTOCOLO INFECCION TRACTO URINARIO - ITU ADULTOS, v06, 30-sep-2025
+  clinical_approval_source: Confirmación del solicitante de aprobación total por parte de la clínica
+nodes:
+- id: S0
+  label: ADULTO con sospecha de ITU o hallazgo de bacteriuria
+  type: start
+  src: p.1, alcance; p.1-2
+- id: D1
+  label: ¿Hay signos o síntomas atribuibles a ITU?
+  type: decision
+  src: p.1 definición; p.2 manifestaciones
+- id: BA1
+  label: 'POSIBLE BACTERIURIA ASINTOMÁTICA
+
+    Ausencia de signos/síntomas atribuibles a ITU'
+  type: state
+  src: p.1
+- id: BA2
+  label: 'Confirmación microbiológica de bacteriuria asintomática
+
+    • Mujer no gestante: 2 urocultivos con mismo patógeno y sensibilidad
+
+    • Hombre o gestante: 1 urocultivo'
+  type: info
+  src: p.1
+- id: D_BA_TX
+  label: ¿Gestante O procedimiento invasivo de vías urinarias con riesgo de sangrado/disrupción del uroepitelio?
+  type: decision
+  src: p.3-4
+- id: BA_NO_TX
+  label: NO TRATAR bacteriuria asintomática con antibiótico
+  type: endpoint
+  src: p.2-4
+- id: BA_TX_NP
+  label: 'Si NO gestante y sí procedimiento urológico indicado:
+
+    Tratamiento empírico
+
+    • Nitrofurantoína 100 mg VO c/6 h × 5 días, o
+
+    • Cefalexina 500 mg VO c/6 h × 5 días, o
+
+    • Fosfomicina 3 g VO dosis única*'
+  type: treatment
+  src: p.4
+- id: BA_TX_G
+  label: 'GESTANTE + bacteriuria asintomática
+
+    • Nitrofurantoína 100 mg c/6 h × 5 días, o
+
+    • Cefalexina 500 mg c/6 h × 5 días, o
+
+    • Fosfomicina 3 g dosis única*
+
+    Urocultivo de control: NO
+
+    Terapia preventiva: NO'
+  type: treatment
+  src: p.4
+- id: SYM
+  label: Clasificar la presentación clínica
+  type: state
+  src: p.2
+- id: D_HIGH
+  label: ¿Fiebre, otros síntomas sistémicos y/o dolor en ángulo costovertebral o flanco?
+  type: decision
+  src: p.2
+- id: HIGH
+  label: 'ITU ALTA / PIELONEFRITIS
+
+    Puede coexistir con síntomas urinarios bajos'
+  type: state
+  src: p.1-2
+- id: D_LOW
+  label: '¿Disuria, dolor suprapúbico, tenesmo, urgencia o polaquiuria
+
+    SIN leucorrea, irritación vaginal, fiebre, dolor lumbar ni compromiso sistémico?'
+  type: decision
+  src: p.1-2
+- id: LOW
+  label: ITU BAJA (cistitis/uretritis)
+  type: state
+  src: p.1-2
+- id: CTX_ATYP
+  label: 'CONTEXTO DE SÍNTOMAS ATÍPICOS
+
+    • Ancianos: delirium puede acompañar ITU alta, pero también otras causas
+
+    • Alteración de conciencia + fiebre: distinguir ITU de bacteriuria asintomática
+
+    • Trauma raquimedular: fiebre, diaforesis, ↑espasticidad, hiperreflexia, incontinencia, delirium, molestias renales/vesicales
+
+    • Orina turbia o mal olor NO se consideran síntomas compatibles por sí solos'
+  type: context
+  src: p.2
+- id: DX0
+  label: DIAGNÓSTICO EN URGENCIAS / ANTES DEL ANTIBIÓTICO
+  type: section
+  src: p.2-3
+- id: D_CITO
+  label: ¿Mujer con PRIMER episodio y síntomas típicos?
+  type: decision
+  src: p.2
+- id: CITO_NO
+  label: 'Citoquímico de orina: NO SE REQUIERE'
+  type: test
+  src: p.2
+- id: CITO_YES
+  label: 'Citoquímico de orina: REALIZAR'
+  type: test
+  src: p.2
+- id: D_UCX
+  label: ¿Primer episodio de ITU baja NO complicada en mujer premenopáusica?
+  type: decision
+  src: p.3
+- id: UCX_NO
+  label: 'Urocultivo: NO SE REQUIERE'
+  type: test
+  src: p.3
+- id: UCX_YES
+  label: 'Urocultivo:
+
+    SOLICITAR antes de la primera dosis de antibiótico'
+  type: test
+  src: p.3
+- id: UCX_CRIT
+  label: 'Interpretación de urocultivo
+
+    • ≥10⁵ UFC: muestra adecuada por micción espontánea
+
+    • ≥10³ UFC: paciente sintomático sin otra explicación
+
+    • ≥10² UFC: muestra por sonda recién insertada
+
+    Sonda permanente: recoger de sonda recién insertada'
+  type: info
+  src: p.3
+- id: D_GEST
+  label: ¿Paciente gestante?
+  type: decision
+  src: p.2, p.4-5
+- id: LOW_NG
+  label: ITU baja — NO gestante
+  type: state
+  src: p.4
+- id: LOW_G
+  label: ITU baja — GESTANTE
+  type: state
+  src: p.4
+- id: HIGH_NG
+  label: ITU alta — NO gestante
+  type: state
+  src: p.4
+- id: HIGH_G
+  label: ITU alta — GESTANTE
+  type: state
+  src: p.5
+- id: LOW_TX
+  label: 'ITU BAJA (complicada o no complicada)
+
+    • Nitrofurantoína 100 mg VO c/6 h × 5 días, o
+
+    • Cefalexina 500 mg VO c/6 h × 5 días, o
+
+    • Fosfomicina 3 g VO dosis única*
+
+    *Preferir fosfomicina si ITU recurrente o antibióticos en últimos 90 días'
+  type: treatment
+  src: p.4
+- id: LOW_G_TX
+  label: 'GESTANTE + ITU BAJA
+
+    • Nitrofurantoína 100 mg c/6 h × 5 días, o
+
+    • Cefalexina 500 mg c/6 h × 5 días, o
+
+    • Fosfomicina 3 g dosis única*
+
+    Urocultivo control: NO
+
+    Preventiva: SÓLO si recurrencia'
+  type: treatment
+  src: p.4
+- id: G_PREV
+  label: 'Si requiere profilaxis en gestante, decidir según cultivos y sensibilidad:
+
+    • Nitrofurantoína 100 mg/día (hasta la semana 34)
+
+    • Cefalexina 500 mg/día
+
+    • TMP-SMX 480 mg/día (evitar en el primer trimestre; hasta la semana 34)
+
+    • Fosfomicina 3 g/semana
+
+    En ITU alta: mantener profilaxis hasta el final del embarazo.
+
+    Desde la semana 34, cambiar a cefalexina si el germen es sensible.'
+  type: info
+  src: p.4-5
+- id: HIGH_AMB
+  label: 'ITU ALTA AMBULATORIA
+
+    Cefalexina 500 mg VO c/6 h × 5–7 días
+
+    Reevaluar urocultivo a las 48 h para ajuste'
+  type: treatment
+  src: p.4
+- id: D_FR
+  label: '¿Factores de riesgo para BGN resistentes? (uno o más)
+
+    • Hospitalización >48 h en los últimos 3 meses
+
+    • Uso de antibióticos en los últimos 90 días
+
+    • Colonización por germen BLEE'
+  type: decision
+  src: p.4
+- id: NOFR_TX
+  label: 'SIN FR BGN resistentes
+
+    • Cefazolina 1 g IV c/8 h × 7 días, o
+
+    • Amikacina 15 mg/kg IV cada día × 7 días'
+  type: treatment
+  src: p.4
+- id: FR_TX
+  label: 'CON FR BGN resistentes
+
+    • Piperacilina/tazobactam 4.5 g IV c/8 h × 7 días, o
+
+    • Amikacina 15 mg/kg IV cada día × 7 días, o
+
+    • Meropenem 1 g IV c/8 h × 7 días
+
+    Evitar amikacina en choque.
+
+    Administrar meropenem empíricamente si hay choque.'
+  type: treatment
+  src: p.4
+- id: D_G_FR
+  label: '¿Factores de riesgo para BGN resistentes? (uno o más)
+
+    • Hospitalización >48 h en los últimos 3 meses
+
+    • Uso de antibióticos en los últimos 90 días
+
+    • Colonización por germen BLEE'
+  type: decision
+  src: p.5
+- id: G_NOFR_TX
+  label: 'GESTANTE + ITU ALTA sin FR BGN resistentes
+
+    Cefazolina 1 g IV c/8 h × 7 días'
+  type: treatment
+  src: p.5
+- id: D_G_SHOCK
+  label: 'Con FR BGN resistentes: ¿hay choque?'
+  type: decision
+  src: p.5
+- id: G_FR_NO_SHOCK
+  label: 'GESTANTE + ITU ALTA
+
+    FR BGN resistentes, SIN choque
+
+    Piperacilina/tazobactam 4.5 g IV c/8 h × 7 días'
+  type: treatment
+  src: p.5
+- id: G_FR_SHOCK
+  label: 'GESTANTE + ITU ALTA
+
+    FR BGN resistentes, CON choque
+
+    Meropenem 1 g IV c/8 h × 7 días'
+  type: treatment
+  src: p.5
+- id: G_HIGH_META
+  label: 'En ITU alta gestante:
+
+    Urocultivo de control: NO
+
+    Terapia preventiva: SÍ
+
+    Tratamiento empírico SIEMPRE ajustar a urocultivo/antibiograma'
+  type: info
+  src: p.5
+- id: LABS
+  label: 'Hemoleucograma + ionograma + función renal + PCR
+
+    Otros exámenes según condición clínica'
+  type: test
+  src: p.3
+- id: D_BC
+  label: ¿Pielonefritis con fiebre, hipotermia o choque séptico?
+  type: decision
+  src: p.3
+- id: BC
+  label: Solicitar HEMOCULTIVOS
+  type: test
+  src: p.3
+- id: D_IMG
+  label: '¿Choque séptico, falla renal aguda, clínica de complicación local
+
+    o fiebre persistente tras 72 h de antibiótico correcto?'
+  type: decision
+  src: p.3
+- id: IMG
+  label: 'IMAGEN URGENTE
+
+    • TC con contraste si se buscan pequeños abscesos/nefritis local
+
+    • Urotomografía si sospecha estructural/litiasis
+
+    • Ecografía vías urinarias + residuo postmiccional si sospecha funcional/obstructiva'
+  type: test
+  src: p.3
+- id: G_IMG
+  label: 'GESTANTE: ecografía renal si
+
+    • Pielonefritis (todas)
+
+    • >1 episodio de ITU durante embarazo
+
+    • Sospecha de litiasis por hematuria y/o dolor'
+  type: test
+  src: p.3
+- id: STEP
+  label: 'Para paso a VO y/o egreso, reevaluar:
+
+    • 48 h afebril
+
+    • TAS >90 mmHg
+
+    • FC <100 lpm
+
+    • FR <24 rpm
+
+    • SatO₂ >90% o PaO₂ >60
+
+    • Tolera VO
+
+    • Comorbilidades compensadas
+
+    • Tratamiento ambulatorio asegurado
+
+    • Condiciones sociales lo permiten'
+  type: decision
+  src: p.3-4
+- id: STEP_Y
+  label: 'PASO A TERAPIA ORAL Y/O EGRESO
+
+    Mantener/ajustar tratamiento según urocultivo y antibiograma cuando aplique'
+  type: endpoint
+  src: p.3-5
+- id: STEP_N
+  label: Continuar manejo hospitalario y reevaluación
+  type: endpoint
+  src: p.3-4
+- id: D_HOSP_LOW
+  label: '¿Existe indicación de hospitalización?
+
+    • Choque séptico
+
+    • Intolerancia oral
+
+    • Descompensación de enfermedad de base por ITU
+
+    • Germen resistente sin opción ambulatoria
+
+    • Deterioro renal asociado
+
+    • Absceso renal o pararrenal
+
+    • Soporte social inadecuado'
+  type: decision
+  src: p.3
+- id: DX_GRAM
+  label: 'Gram de orina sin centrifugar: realizar a TODOS los pacientes en urgencias'
+  type: test
+  src: Actualización incorporada con validación del equipo clínico
+- id: D_G_BC
+  label: ¿Pielonefritis con fiebre, hipotermia o choque séptico?
+  type: decision
+  src: Actualización incorporada con validación del equipo clínico
+- id: G_BC
+  label: Solicitar HEMOCULTIVOS
+  type: test
+  src: Actualización incorporada con validación del equipo clínico
+- id: ADJ_CX
+  label: Ajustar tratamiento según hemocultivo o urocultivo
+  type: state
+  src: Actualización incorporada con validación del equipo clínico
+edges:
+- from: S0
+  to: D1
+  label: ''
+- from: D1
+  to: BA1
+  label: 'No'
+- from: BA1
+  to: BA2
+  label: ''
+- from: BA2
+  to: D_BA_TX
+  label: ''
+- from: D_BA_TX
+  to: BA_NO_TX
+  label: 'No'
+- from: D_BA_TX
+  to: BA_TX_G
+  label: Sí — gestante
+- from: D_BA_TX
+  to: BA_TX_NP
+  label: Sí — procedimiento
+- from: D1
+  to: SYM
+  label: Sí
+- from: SYM
+  to: D_HIGH
+  label: ''
+- from: D_HIGH
+  to: HIGH
+  label: Sí
+- from: D_HIGH
+  to: D_LOW
+  label: 'No'
+- from: D_LOW
+  to: LOW
+  label: Sí
+- from: D1
+  to: CTX_ATYP
+  label: contexto
+- from: HIGH
+  to: DX0
+  label: ''
+- from: LOW
+  to: DX0
+  label: ''
+- from: D_CITO
+  to: CITO_NO
+  label: Sí
+- from: D_CITO
+  to: CITO_YES
+  label: 'No'
+- from: CITO_NO
+  to: D_UCX
+  label: ''
+- from: CITO_YES
+  to: D_UCX
+  label: ''
+- from: D_UCX
+  to: UCX_NO
+  label: Sí
+- from: D_UCX
+  to: UCX_YES
+  label: 'No'
+- from: UCX_YES
+  to: UCX_CRIT
+  label: ''
+- from: UCX_NO
+  to: D_GEST
+  label: ''
+- from: UCX_CRIT
+  to: D_GEST
+  label: ''
+- from: D_GEST
+  to: LOW_G
+  label: Sí + ITU baja
+- from: D_GEST
+  to: HIGH_G
+  label: Sí + ITU alta
+- from: D_GEST
+  to: LOW_NG
+  label: No + ITU baja
+- from: D_GEST
+  to: HIGH_NG
+  label: No + ITU alta
+- from: LOW_G
+  to: LOW_G_TX
+  label: ''
+- from: LOW_G_TX
+  to: G_PREV
+  label: si recurrencia
+- from: D_FR
+  to: NOFR_TX
+  label: 'No'
+- from: D_FR
+  to: FR_TX
+  label: Sí
+- from: D_G_FR
+  to: G_NOFR_TX
+  label: 'No'
+- from: D_G_FR
+  to: D_G_SHOCK
+  label: Sí
+- from: D_G_SHOCK
+  to: G_FR_NO_SHOCK
+  label: 'No'
+- from: D_G_SHOCK
+  to: G_FR_SHOCK
+  label: Sí
+- from: G_NOFR_TX
+  to: G_HIGH_META
+  label: ''
+- from: G_FR_NO_SHOCK
+  to: G_HIGH_META
+  label: ''
+- from: G_FR_SHOCK
+  to: G_HIGH_META
+  label: ''
+- from: G_HIGH_META
+  to: G_PREV
+  label: prevención
+- from: D_BC
+  to: BC
+  label: Sí
+- from: D_IMG
+  to: IMG
+  label: Sí
+- from: D_IMG
+  to: STEP
+  label: 'No'
+- from: IMG
+  to: STEP
+  label: ''
+- from: LOW_G_TX
+  to: G_IMG
+  label: si criterio de imagen
+- from: G_HIGH_META
+  to: G_IMG
+  label: ''
+- from: STEP
+  to: STEP_Y
+  label: Cumple
+- from: STEP
+  to: STEP_N
+  label: No cumple
+- from: D_LOW
+  to: DX0
+  label: 'No'
+- from: LOW_NG
+  to: LOW_TX
+  label: ''
+- from: D_HOSP_LOW
+  to: HIGH_AMB
+  label: 'No'
+- from: D_HOSP_LOW
+  to: LABS
+  label: Sí
+- from: DX0
+  to: DX_GRAM
+  label: ''
+- from: DX_GRAM
+  to: D_CITO
+  label: ''
+- from: HIGH_NG
+  to: D_BC
+  label: ''
+- from: D_BC
+  to: D_HOSP_LOW
+  label: 'No'
+- from: BC
+  to: D_HOSP_LOW
+  label: ''
+- from: LABS
+  to: D_FR
+  label: ''
+- from: HIGH_G
+  to: D_G_BC
+  label: ''
+- from: D_G_BC
+  to: G_BC
+  label: Sí
+- from: D_G_BC
+  to: D_G_FR
+  label: 'No'
+- from: G_BC
+  to: D_G_FR
+  label: ''
+- from: NOFR_TX
+  to: ADJ_CX
+  label: ''
+- from: FR_TX
+  to: ADJ_CX
+  label: ''
+- from: G_IMG
+  to: ADJ_CX
+  label: Si está hospitalizada
+- from: ADJ_CX
+  to: D_IMG
+  label: ''
+agent_policy:
+  purpose: Consulta estructurada del árbol clínico, no constituye orden médica ni prescripción automática.
+  default_behavior: abstain_on_unresolved_or_unmatched_case
+  must_not_infer:
+  - rutas no descritas en el diagrama
+  - pautas de ajuste por alergia, función renal o interacciones farmacológicas
+  - indicaciones clínicas no aprobadas expresamente por personal médico
+  - clasificación como ITU alta o baja cuando el paciente no cumple criterios de clasificación
+  - criterios de hospitalización o manejo ambulatorio distintos de las rutas clínicas descritas en el árbol
+  - opciones farmacológicas en embarazo sin revisión de sensibilidad, edad gestacional y contraindicaciones
+  - prescribir sin haber clasificado clínicamente los síntomas urinarios
+  safety:
+    require_citations_to_protocol: true
+    require_human_review_for_unresolved_nodes: true
+    allow_rule_execution_before_approval: false

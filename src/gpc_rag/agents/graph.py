@@ -131,7 +131,7 @@ def _tree_prepare_node(state: AgentState, cfg: DictConfig) -> dict:
 
 def _tree_agent_node(state: AgentState, cfg: DictConfig) -> dict:
     if state.get("tree_error"):
-        return {"tree_result": None, "tree_questions_asked": 0}
+        return {"tree_result": None, "tree_questions_asked": 0, "tree_stop_detail": None}
     try:
         return tree_agent_node(state, cfg)
     except GraphBubbleUp:

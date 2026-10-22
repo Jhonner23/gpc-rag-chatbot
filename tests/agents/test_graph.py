@@ -14,6 +14,7 @@ de la sesion.
 
 from __future__ import annotations
 
+import json
 from unittest.mock import patch
 
 from langgraph.checkpoint.memory import MemorySaver
@@ -42,7 +43,7 @@ def _chat_response(text: str) -> dict:
 # se comporten exactamente igual que antes de agregar el agente arbol (el
 # integrador publica solo la aportacion del RAG).
 _NO_PROTOCOL = _chat_response('{"protocol": "NINGUNO"}')
-_MAX_WIZARD_TURNS_IN_TEST = 10
+_MAX_WIZARD_TURNS_IN_TEST = 25
 
 
 class _FakePipeline:
@@ -176,13 +177,21 @@ def test_evaluator_short_circuits_on_well_formed_refusal_without_calling_llm() -
     assert "No encontré información suficiente" in result.answer
 
 
-# El extractor del agente arbol devuelve, de una vez, datos suficientes para
-# que una regla real del protocolo NAC quede MATCHED sin tener que preguntar
-# nada (misma combinacion que ya se probo manualmente contra el motor real:
-# sospecha_neumonia + cuadro_clinico_compatible).
+# Respuestas simuladas del agente arbol: el clasificador elige NAC en modo
+# caso y la extraccion inicial responde todas las decisiones de una ruta
+# completa del arbol aprobado (NAC confirmada, hospitalizada en sala, sin
+# factores de riesgo, influenza positiva, cumple criterios de alta), de modo
+# que el recorrido llega al final sin preguntar nada.
+_NAC_FULL_ROUTE = {
+    "neutropenia": "No", "infiltrado": "Sí", "hosp_dec": "Sí", "choque": "No",
+    "desatura": "No", "sospecha_covid": "No", "muestra": "Sí", "hemo_dec": "No",
+    "derrame": "No", "uci_dec": "No", "postviral": "No", "mrsa": "No",
+    "psa_no_mrsa": "No", "virus_solo": "No", "influenza": "Sí", "covid": "No",
+    "alta_dec": "Sí",
+}
 _TREE_MATCH_RESPONSES = [
-    _chat_response('{"protocol": "CT-PL-193"}'),
-    _chat_response('{"sospecha_neumonia": true, "cuadro_clinico_compatible": true}'),
+    _chat_response('{"protocol": "CT-PL-193", "modo": "caso"}'),
+    _chat_response(json.dumps(_NAC_FULL_ROUTE)),
 ]
 # El verificador usa el mismo cliente para la relacion del arbol y para las
 # contradicciones: una sola respuesta simulada con ambas claves sirve para los dos.
@@ -220,7 +229,7 @@ def test_tree_and_rag_are_integrated_into_single_answer() -> None:
         "respuesta fundamentada (verificada)",
         "respuesta fundamentada (verificada)",
     ]
-    assert "arbol de decision del protocolo CT-PL-193" in result.panels[0].content
+    assert "árbol clínico CT-PL-193 v09" in result.panels[0].content
     assert result.panels[0].sources and result.panels[1].sources
     methods = {s.retrieval_method for s in result.sources}
     assert methods == {"arbol", "rerank"}
@@ -252,7 +261,7 @@ def test_integrator_falls_back_to_blocks_when_fidelity_check_fails() -> None:
 
     assert "dosis inventada" not in result.answer
     assert "Según el protocolo institucional (árbol de decisión)" in result.answer
-    assert "arbol de decision del protocolo CT-PL-193" in result.answer
+    assert "árbol clínico CT-PL-193 v09" in result.answer
     assert "Según los documentos recuperados (RAG)" in result.answer
     assert "Respuesta del RAG con su cita." in result.answer
 
@@ -304,7 +313,7 @@ def test_tree_answer_is_published_alone_when_rag_is_rejected() -> None:
         result = run_agentic(_TREE_QUESTION, _CFG, pipeline)
 
     mock_integ_client.return_value.chat.assert_not_called()
-    assert "arbol de decision del protocolo CT-PL-193" in result.answer
+    assert "árbol clínico CT-PL-193 v09" in result.answer
     assert "RAG mal fundamentado" not in result.answer
     rag_panel = result.panels[1]
     assert rag_panel.status == "respuesta fundamentada (no publicada: rechazada por el evaluador)"
@@ -391,6 +400,9 @@ def test_tree_wizard_pauses_and_resumes_with_interrupt() -> None:
 
     assert isinstance(result, RagAnswer)
     assert answers_sent > 0
+    # Respondiendo "si" a todo, el recorrido de NAC llega al final del arbol.
+    assert result.panels[0].status == "respuesta fundamentada (verificada)"
+    assert "árbol clínico CT-PL-193 v09" in result.panels[0].content
 
 
 def test_contradiction_is_reported_to_synthesis_and_in_answer() -> None:
@@ -445,7 +457,7 @@ def test_rag_technical_error_does_not_break_the_answer() -> None:
         result = run_agentic(_TREE_QUESTION, _CFG, _BrokenPipeline())
 
     mock_eval_client.return_value.chat.assert_not_called()
-    assert "arbol de decision del protocolo CT-PL-193" in result.answer
+    assert "árbol clínico CT-PL-193 v09" in result.answer
     assert result.panels[1].status == "error técnico"
     assert "error técnico" in result.panels[1].content
 
@@ -534,7 +546,7 @@ def test_informative_question_uses_tree_consult_mode_without_wizard() -> None:
     assert isinstance(result, RagAnswer)  # nunca hubo pregunta de seguimiento
     assert mock_tree_client.return_value.chat.call_count == 1  # sin extraccion de variables
     synthesis_prompt = mock_integ_client.return_value.chat.call_args_list[0].kwargs["messages"][1]["content"]
-    assert "Indicación de tratamiento de bacteriuria asintomática" in synthesis_prompt
+    assert "NO TRATAR bacteriuria asintomática con antibiótico" in synthesis_prompt
     assert result.answer.startswith("Respuesta consolidada sobre bacteriuria.")
 
 

@@ -126,7 +126,8 @@ def _verify_tree(state: AgentState) -> dict[str, Any]:
         return _contribution(
             "arbol",
             outcome,
-            detail=f"Ninguna regla auditada del protocolo {state.get('tree_protocol_id')} se cumplio.",
+            detail=state.get("tree_stop_detail")
+            or f"El recorrido del arbol del protocolo {state.get('tree_protocol_id')} no llego a un resultado.",
         )
 
     citations = result.get("citations") or []
@@ -155,7 +156,7 @@ def _verify_tree(state: AgentState) -> dict[str, Any]:
             verification="sin_procedencia",
             content=result.get("answer_text", ""),
             references=references,
-            detail=f"La regla {result.get('rule_id')} no tiene citas completas al documento fuente.",
+            detail=f"El nodo {result.get('rule_id')} no tiene citas completas al documento fuente.",
         )
     return _contribution(
         "arbol",

@@ -54,3 +54,16 @@ def protocol_schema(protocol_ids: list[str]) -> dict[str, Any]:
         },
         "required": ["protocol", "modo"],
     }
+
+
+def decisions_schema(options_by_decision: dict[str, list[str]], unknown: str) -> dict[str, Any]:
+    """Una propiedad por decision del arbol, restringida a sus opciones o a
+    `unknown`."""
+    return {
+        "type": "object",
+        "properties": {
+            decision_id: {"type": "string", "enum": [*options, unknown]}
+            for decision_id, options in options_by_decision.items()
+        },
+        "required": list(options_by_decision),
+    }

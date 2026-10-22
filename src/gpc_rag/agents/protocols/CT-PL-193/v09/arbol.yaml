@@ -1,0 +1,995 @@
+document:
+  title: Protocolo de práctica clínica de neumonía adquirida en comunidad
+  code: CT-PL-193
+  version: 9
+  approval_date: '2024-08-12'
+  scope: Adultos con diagnóstico/sospecha de NAC
+  status: Aprobado por la clínica
+source_policy: CT-PL-193, versión 9, y correcciones clínicas aprobadas por la institución.
+decision_nodes:
+- id: DX0
+  question: ¿Neutropenia febril o inmunosupresión con síntomas respiratorios bajos?
+  'yes': TC simple y confirmar NAC
+  'no': Ver infiltrado radiológico
+- id: DX1
+  question: ¿Infiltrado en radiografía?
+  'yes': NAC confirmada
+  'no': Sospecha clínica alta -> TC o Rx 48h
+- id: H1
+  question: ¿≥1 indicación de hospitalización?
+  'yes': Estudios hospitalarios
+  'no': Manejo ambulatorio
+- id: LAB1
+  question: ¿Choque séptico, sepsis grave o falla orgánica múltiple?
+  'yes': Coagulación AST ALT bilirrubinas y gases arteriales
+  'no': Valorar desaturación
+- id: LAB2
+  question: ¿Desaturación sin choque?
+  'yes': Gases arteriales
+  'no': Continuar diagnóstico microbiológico
+- id: MIC1
+  question: ¿Sospecha de SARS-CoV-2?
+  'yes': PCR específica SARS-CoV-2
+  'no': Elegir panel por disponibilidad de muestra profunda
+- id: MIC2
+  question: ¿Hay muestra profunda?
+  'yes': Panel de neumonía FilmArray
+  'no': Panel de patógenos respiratorios nasofaríngeo
+- id: UCI
+  question: ¿Indicación UCI/UCE?
+  'yes': UCI/UCE
+  'no': Sala general
+- id: TR0
+  question: ¿NAC postviral?
+  'yes': ¿sospecha o colonización MRSA?
+  'no': Clasificación anti-MRSA
+- id: TR1
+  question: ¿NAC postviral con sospecha o colonización MRSA?
+  'yes': Postviral + MRSA
+  'no': Postviral sin MRSA
+- id: TR2
+  question: ¿Indicación de cobertura empírica anti-MRSA?
+  'yes': Evaluar riesgo de P. aeruginosa
+  'no': Evaluar riesgo de P. aeruginosa
+- id: TR3
+  question: ¿Riesgo de P. aeruginosa o enterobacterias resistentes?
+  'yes': Antipseudomónico, más anti-MRSA según TR2
+  'no': No antipseudomónico, más anti-MRSA según TR2
+- id: ALT1
+  question: ¿Cumple todos los criterios de alta?
+  'yes': Alta
+  'no': Continuar manejo y reevaluación
+hospitalization_indications:
+- Descompensación de enfermedad de base
+- Inmunosupresión
+- Sospecha de gérmenes resistentes
+- Intolerancia a la vía oral
+- Sepsis o choque de origen pulmonar
+- Compromiso multilobar o derrame pleural en radiografía
+- CURB-65 >= 2
+- Factores sociales que afecten cumplimiento y seguimiento
+- Requerimiento de oxígeno suplementario
+icu_criteria_text_section:
+  major_or_direct:
+  - Insuficiencia respiratoria
+  - Necesidad de soporte ventilatorio
+  - Choque séptico
+  - Necesidad de soporte vasopresor
+  - Lactato >2 mmol/L
+  - Falla renal aguda que requiere reemplazo renal
+  - Falla orgánica multisistémica
+  minor_threshold: 3 o más
+  minor:
+  - BUN >30 mg/dL
+  - FR >30 rpm
+  - Hipotensión que requiere líquidos IV agresivos
+  - Infiltrados multilobares
+  - PaO2/FiO2 <250
+  - Confusión
+  - Hipotermia T<36 °C
+  - Plaquetas <100000
+  - Leucocitos <4000
+microbiology:
+  scope: Sólo pacientes hospitalizados
+  sputum: Gram y cultivo en todos; inducir con SS hipertónica 3% 15-20 min si no espontáneo; buena calidad 
+    <10 células epiteliales y >25 leucocitos/campo
+  filmarray: En todo adulto con NAC confirmada + hospitalización; preferir muestra profunda; si no, hisopado
+    nasofaríngeo
+  pneumonia_panel: 'Panel de neumonía FilmArray: primera opción con esputo/aspirado traqueal/BAL en pacientes
+    sin sospecha de SARS-CoV-2.'
+  respiratory_panel: 'Panel de patógenos respiratorios: hisopado nasofaríngeo si no expectora.'
+  blood_culture_rule:
+    one_of:
+    - BUN >30 mg/dL
+    - PCR >15 mg/dL
+    - Leucocitos >15000
+    or_two_of:
+    - PAD <60 mmHg
+    - FC >120 lpm
+    - FR >30 rpm
+    - Dolor pleurítico
+    timing: Antes de primera dosis IV de antibióticos
+  sars_cov2_suspected: PCR específica SARS-CoV-2
+  panel_selection_if_no_sars_cov2: 'Si muestra profunda: panel neumonía FilmArray; si no: panel patógenos respiratorios
+    en hisopado nasofaríngeo'
+treatments:
+  T01_sin_riesgo:
+    duration: 5-7 días
+    options:
+    - Cefuroxime 1500 mg IV cada 8 h
+    - Ampicilina/sulbactam 3 g IV cada 6 h
+    - Moxifloxacina 400 mg IV cada día
+  T02_PsA:
+    duration: 5-7 días
+    options:
+    - Piperacilina/tazobactam 4.5 g IV cada 8 h
+    - Cefepime 1 g IV cada 8 h
+    - Meropenem 1 g IV cada 8 h
+    - Ceftazidima/avibactam 2.5 g IV cada 8 h
+    specific_conditions:
+    - Piperacilina/tazobactam 4.5 g IV c/6 h en UCI
+    - Cefepime 2 g IV c/8 h en UCI
+    - Meropenem 2 g IV c/8 h en UCI con choque, solo si colonización/infección previa BLEE+
+    - Ceftazidima/avibactam solo para colonización/infección previa por carbapenemasas; si 
+      metalobetalactamasas, agregar aztreonam
+  T03_MRSA_sin_PsA:
+    duration: 5-7 días
+    base:
+    - Cefuroxime 1500 mg IV cada 8 h
+    - Ampicilina/sulbactam 3 g IV cada 6 h
+    plus:
+    - Linezolid 600 mg IV cada 12 h
+    - Vancomicina 15 mg/kg IV cada 12 h
+    anti_MRSA_conditions:
+    - Preferir iniciar anti-MRSA con prueba microbiológica positiva
+    - 'Vancomicina: carga única de 25-30 mg/kg; luego 15 mg/kg IV cada 12 h'
+    vancomy_loading: 'Vancomicina: carga única de 25-30 mg/kg'
+    maintenance: Vancomicina 15 mg/kg IV c/12 h
+  T04_MRSA_y_PsA:
+    duration: 5-7 días
+    base:
+    - Piperacilina/tazobactam 4.5 g IV cada 8 h
+    - Cefepime 1 g IV cada 8 h
+    - Meropenem 1 g IV cada 8 h
+    - Ceftazidima/avibactam 2.5 g IV cada 8 h
+    plus:
+    - Linezolid 600 mg IV cada 12 h
+    - Vancomicina 15-20 mg/kg IV cada 12 h
+    specific_conditions:
+    - Piperacilina/tazobactam 4.5 g IV c/6 h en UCI
+    - Cefepime 2 g IV c/8 h en UCI
+    - Meropenem 2 g IV c/8 h en UCI con choque, solo si colonización/infección previa BLEE+
+    - Ceftazidima/avibactam solo para colonización/infección previa por carbapenemasas; si 
+      metalobetalactamasas, agregar aztreonam
+    anti_MRSA_conditions:
+    - Preferir iniciar anti-MRSA con prueba microbiológica positiva
+    - 'Vancomicina: carga única de 25-30 mg/kg; luego 15-20 mg/kg IV cada 12 h'
+    vancomy_loading: 'Vancomicina: carga única de 25-30 mg/kg'
+    maintenance: Vancomicina 15-20 mg/kg IV c/12 h
+  T05_postviral:
+    duration: 5-7 días
+    condition: NAC postviral sin sospecha ni colonización MRSA
+    options:
+    - Cefuroxima 1500 mg IV c/8 h
+    - Ceftriaxona 2 g IV cada día
+  parallel:
+  - 'Ante influenza positiva: oseltamivir 75 mg VO cada 12 h por 5 días'
+  - 'Ante SARS-CoV-2 con hipoxemia: dexametasona 6 mg IV cada día'
+  - 'Si sólo se identifica virus: suspender antimicrobianos excepto en UCI'
+  general_rules:
+  - Ajustar antibiótico según cultivo o prueba molecular
+  - Usar macrólidos sólo si las pruebas moleculares identifican microorganismos atípicos
+  T06_postviral_con_MRSA:
+    duration: 5-7 días
+    condition: NAC postviral con sospecha o colonización MRSA
+    base:
+    - Cefuroxima 1500 mg IV c/8 h
+    - Ampicilina/sulbactam 3 g IV c/6 h
+    plus:
+    - Linezolid 600 mg IV c/12 h
+    - 'Vancomicina: carga única 25-30 mg/kg; luego 15 mg/kg IV c/12 h'
+    restricted_alternative: Ceftarolina 600 mg IV c/8 h monoterapia solo si coexisten enterobacterias 
+      sensibles y MRSA y hay autorización de Infectología
+    instruction: Preferir evidencia microbiológica positiva
+discharge:
+  all_required:
+  - Afebril >=48 h
+  - PAS >90 mmHg
+  - FC <100 lpm
+  - FR <24 rpm
+  - Saturación O2 >90 % O PaO2 >60 mmHg
+  - Tolera vía oral
+  - Comorbilidades compensadas
+  - Antibiótico ambulatorio asegurado
+  - Condiciones sociales permiten alta
+  at_discharge:
+  - 'Informar signos de recaída: fiebre, disnea, dolor torácico'
+  - Cita Medicina Interna a las 4 semanas
+suspected_nac_signs:
+- Tos
+- Expectoración
+- Dolor pleurítico
+- Taquipnea
+- Disnea
+- Desaturación
+- Hallazgos auscultatorios compatibles
+risk_factors:
+  MRSA:
+  - Infección concomitante de piel/tejidos blandos (absceso o celulitis purulenta)
+  - Neumonía necrosante o absceso pulmonar
+  - Aislamiento respiratorio previo de MRSA
+  Pseudomonas_aeruginosa:
+  - Colonización/infección previa por enterobacterias BLEE o productoras de carbapenemasas
+  - Aislamiento respiratorio previo de Pseudomonas aeruginosa
+  - Hospitalización en 90 días con antibióticos IV
+  - Bronquiectasias/enfermedad pulmonar estructural, fibrosis severa, fibrosis quística o NIU
+  - EPOC con exacerbaciones frecuentes o esteroides sistémicos repetidos
+  - Oxigenoterapia domiciliaria
+  - Neutropenia grave y prolongada (<500/µL), o dosis altas de esteroides/otros inmunosupresores
+  - Traqueostomía
+hospital_outpatient_therapy:
+  duration: 5-7 días
+  options:
+  - Amoxicilina/clavulanato 875/125 mg VO
+  - Cefuroxima 500 mg VO cada 12 h
+  follow_up: Signos de alarma y seguimiento
+diagram:
+  sections:
+    1: Confirmación y decisión de ingreso
+    2: Diagnóstico hospitalario y ubicación asistencial
+    3: Tratamiento y egreso
+  nodes:
+  - id: inicio
+    section: 1
+    kind: start
+    text: 'ADULTO CON SOSPECHA CLÍNICA DE NAC
+
+      Tos, expectoración, dolor pleurítico, taquipnea, disnea,
+
+      desaturación y/o hallazgos auscultatorios compatibles'
+  - id: rx
+    section: 1
+    kind: action
+    text: Solicitar radiografía de tórax
+  - id: neutropenia
+    section: 1
+    kind: decision
+    text: '¿Neutropenia febril o inmunosupresión
+
+      con síntomas respiratorios bajos?'
+  - id: tc_neutro
+    section: 1
+    kind: action
+    text: Tomografía de tórax simple
+  - id: tc_neutro_ok
+    section: 1
+    kind: decision
+    text: '¿Tomografía compatible
+
+      con neumonía?'
+  - id: infiltrado
+    section: 1
+    kind: decision
+    text: '¿Infiltrado pulmonar reciente
+
+      compatible en la radiografía?'
+  - id: sospecha_alta
+    section: 1
+    kind: decision
+    text: '¿Alta sospecha clínica pese a Rx
+
+      negativa o no concluyente?'
+  - id: prioridad_tc
+    section: 1
+    kind: decision
+    text: '¿Es prioritario confirmar el diagnóstico
+
+      o se sospecha necrosis, absceso
+
+      o empiema tabicado?'
+  - id: tc
+    section: 1
+    kind: action
+    text: Realizar tomografía de tórax
+  - id: tc_ok
+    section: 1
+    kind: decision
+    text: '¿Tomografía compatible
+
+      con neumonía?'
+  - id: rx48
+    section: 1
+    kind: action
+    text: 'Repetir radiografía de tórax
+
+      a las 48 horas'
+  - id: rx48_ok
+    section: 1
+    kind: decision
+    text: '¿Radiografía de control compatible
+
+      con neumonía?'
+  - id: no_confirmada
+    section: 1
+    kind: end
+    text: NAC no confirmada por imágenes
+  - id: confirmada
+    section: 1
+    kind: milestone
+    text: 'NAC CONFIRMADA
+
+      Clínica y hallazgo radiológico compatibles'
+  - id: lab_ingreso
+    section: 1
+    kind: action
+    text: 'Hemoleucograma y BUN
+
+      para valoración de hospitalización'
+  - id: hosp_criterios
+    section: 1
+    kind: info
+    text: 'INDICACIONES DE HOSPITALIZACIÓN
+
+      • Descompensación de enfermedad de base
+
+      • Inmunosupresión
+
+      • Sospecha de gérmenes resistentes
+
+      • Intolerancia a la vía oral
+
+      • Sepsis o choque de origen pulmonar
+
+      • Compromiso multilobar o derrame pleural en Rx
+
+      • CURB-65 ≥ 2
+
+      • Barreras sociales al cumplimiento o seguimiento
+
+      • Requerimiento de oxígeno suplementario'
+  - id: hosp_dec
+    section: 1
+    kind: decision
+    text: '¿Existe al menos una indicación
+
+      de hospitalización?'
+  - id: ambulatorio
+    section: 1
+    kind: treatment
+    text: 'MANEJO AMBULATORIO · 5–7 DÍAS
+
+      Amoxicilina/clavulanato 875/125 mg VO
+
+      O cefuroxima 500 mg VO cada 12 h
+
+      Indicar signos de alarma y seguimiento'
+  - id: hospital_inicio
+    section: 1
+    kind: milestone
+    text: MANEJO HOSPITALARIO
+  - id: hospital_labs
+    section: 2
+    kind: action
+    text: 'Adicionar PCR, creatinina, lactato y sodio
+
+      Valorar SpO₂ al ingreso'
+  - id: choque
+    section: 2
+    kind: decision
+    text: '¿Choque séptico, sepsis grave
+
+      o falla orgánica múltiple?'
+  - id: choque_labs
+    section: 2
+    kind: action
+    text: 'Solicitar coagulación, AST, ALT, bilirrubinas
+
+      y gases arteriales'
+  - id: desatura
+    section: 2
+    kind: decision
+    text: ¿Desaturación?
+  - id: gas
+    section: 2
+    kind: action
+    text: Realizar gases arteriales
+  - id: micro_start
+    section: 2
+    kind: milestone
+    text: 'DIAGNÓSTICO MICROBIOLÓGICO
+
+      Sólo en pacientes hospitalizados'
+  - id: esputo
+    section: 2
+    kind: action
+    text: 'Gram y cultivo de esputo en todo hospitalizado
+
+      Si no hay muestra espontánea: inducción 15–20 min
+
+      con solución salina hipertónica al 3 %
+
+      Calidad: <10 células epiteliales y >25 leucocitos/campo'
+  - id: filmarray
+    section: 2
+    kind: action
+    text: 'Evaluación microbiológica en NAC hospitalizada
+
+      Gram/cultivo + panel según disponibilidad de muestra y sospecha de SARS-CoV-2'
+  - id: muestra
+    section: 2
+    kind: decision
+    text: '¿Hay muestra profunda
+
+      (esputo, aspirado traqueal o BAL)?'
+  - id: panel_neumonia
+    section: 2
+    kind: action
+    text: 'Panel de neumonía FilmArray
+
+      Primera opción: muestra profunda'
+  - id: panel_resp
+    section: 2
+    kind: action
+    text: 'Panel de patógenos respiratorios
+
+      Hisopado nasofaríngeo si no hay muestra profunda'
+  - id: hemo_criterios
+    section: 2
+    kind: info
+    text: 'CRITERIOS PARA HEMOCULTIVOS
+
+      A) ≥1 de: BUN >30 mg/dL, PCR >15 mg/dL,
+
+      leucocitos >15.000
+
+      O BIEN
+
+      B) ≥2 de: PAD <60 mmHg, FC >120 lpm,
+
+      FR >30 rpm, dolor pleurítico'
+  - id: hemo_dec
+    section: 2
+    kind: decision
+    text: '¿Cumple criterios
+
+      para hemocultivos?'
+  - id: hemocultivos
+    section: 2
+    kind: action
+    text: 'Antes de la primera dosis IV de antibiótico:
+
+      2 muestras en botellas de hemocultivo
+
+      y 1 muestra en botella para anaerobios'
+  - id: sin_hemocultivos
+    section: 2
+    kind: action
+    text: 'No solicitar hemocultivos
+
+      por estos criterios'
+  - id: derrame
+    section: 2
+    kind: decision
+    text: '¿Derrame pleural unilateral >1 cm,
+
+      sin causa aparente y presunto
+
+      paraneumónico?'
+  - id: toracentesis
+    section: 2
+    kind: action
+    text: 'Toracentesis diagnóstica
+
+      Líquido: citoquímico, LDH, proteínas totales,
+
+      Gram y cultivo
+
+      Suero: LDH y proteínas totales'
+  - id: uci_criterios
+    section: 2
+    kind: info
+    text: 'INDICACIONES DE UCI/UCE — CUALQUIERA DE:
+
+      • Insuficiencia respiratoria
+
+      • Necesidad de soporte ventilatorio
+
+      • Choque séptico o necesidad de soporte vasopresor
+
+      • Lactato >2 mmol/L
+
+      • Falla renal aguda que requiera reemplazo renal
+
+      • Falla orgánica multisistémica
+
+
+      O ≥3 CRITERIOS MENORES:
+
+      • BUN >30 mg/dL
+
+      • FR >30 rpm
+
+      • Hipotensión que requiera líquidos IV agresivos
+
+      • Infiltrados multilobares
+
+      • PaO₂/FiO₂ <250
+
+      • Confusión
+
+      • Hipotermia (T <36 °C)
+
+      • Plaquetas <100.000/µL
+
+      • Leucocitos <4.000/µL'
+  - id: uci_dec
+    section: 2
+    kind: decision
+    text: '¿Indicación de ingreso
+
+      a UCI/UCE?'
+  - id: sala
+    section: 2
+    kind: milestone
+    text: SALA GENERAL
+  - id: uci
+    section: 2
+    kind: milestone
+    text: UCI / UCE
+  - id: postviral
+    section: 3
+    kind: decision
+    text: ¿NAC postviral?
+  - id: mrsa
+    section: 3
+    kind: decision
+    text: "¿INDICACIÓN DE COBERTURA EMPÍRICA ANTI-MRSA?\nCualquiera de:\n• Infección de piel/tejidos blandos asociada\n\
+      \  (absceso o celulitis purulenta)\n• Neumonía necrosante o absceso pulmonar\n• Aislamiento respiratorio
+      previo de MRSA\nPreferir confirmación microbiológica."
+  - id: psa_mrsa
+    section: 3
+    kind: decision
+    text: "¿ADEMÁS RIESGO DE P. AERUGINOSA\nO ENTEROBACTERIAS RESISTENTES?\n• Colonización/infección previa por
+      enterobacterias\n  BLEE o productoras de carbapenemasas\n• Aislamiento respiratorio previo de P. aeruginosa\n\
+      • Hospitalización en ≤90 días + antibióticos IV\n• Bronquiectasias/enfermedad pulmonar estructural,\n  fibrosis
+      severa, fibrosis quística o NIU\n• EPOC con exacerbaciones frecuentes o esteroides\n  sistémicos repetidos\n\
+      • Oxigenoterapia domiciliaria\n• Neutropenia grave/prolongada (<500/µL) o dosis\n  altas de esteroides/otros
+      inmunosupresores\n• Traqueostomía"
+  - id: psa_no_mrsa
+    section: 3
+    kind: decision
+    text: "¿RIESGO DE P. AERUGINOSA\nO ENTEROBACTERIAS RESISTENTES?\n• Colonización/infección previa por enterobacterias\n\
+      \  BLEE o productoras de carbapenemasas\n• Aislamiento respiratorio previo de P. aeruginosa\n• Hospitalización
+      en ≤90 días + antibióticos IV\n• Bronquiectasias/enfermedad pulmonar estructural,\n  fibrosis severa, fibrosis
+      quística o NIU\n• EPOC con exacerbaciones frecuentes o esteroides\n  sistémicos repetidos\n• Oxigenoterapia
+      domiciliaria\n• Neutropenia grave/prolongada (<500/µL) o dosis\n  altas de esteroides/otros inmunosupresores\n\
+      • Traqueostomía"
+  - id: t_postviral
+    section: 3
+    kind: treatment
+    text: 'NAC POSTVIRAL SIN SOSPECHA NI COLONIZACIÓN MRSA · 5–7 DÍAS
+
+      Elegir una alternativa:
+
+      • Cefuroxima 1.500 mg IV c/8 h
+
+      • Ceftriaxona 2 g IV cada día'
+  - id: t_mrsa_psa
+    section: 3
+    kind: treatment
+    text: "RIESGO MRSA + P. AERUGINOSA/RESISTENTES · 5–7 DÍAS\nElegir un antipseudomónico:\n• Piperacilina/tazobactam
+      4,5 g IV c/8 h, O\n• Cefepime 1 g IV c/8 h, O\n• Meropenem 1 g IV c/8 h, O\n• Ceftazidima/avibactam 2,5
+      g IV c/8 h\nMÁS linezolid 600 mg IV c/12 h, O vancomicina:\ncarga única 25–30 mg/kg; luego 15–20 mg/kg IV
+      c/12 h\nCONDICIONES Y AJUSTES:\n• Pip/tazo: en UCI, 4,5 g IV c/6 h\n• Cefepime: en UCI, 2 g IV c/8 h\n•
+      Meropenem: en UCI con choque, 2 g IV c/8 h;\n  solo con colonización/infección previa BLEE+\n• Ceftazidima/avibactam:
+      solo con infección/\n  colonización previa por carbapenemasas; si MBL,\n  agregar aztreonam.\nAnti-MRSA:
+      preferir confirmación microbiológica."
+  - id: t_mrsa
+    section: 3
+    kind: treatment
+    text: 'RIESGO MRSA SIN P. AERUGINOSA · 5–7 DÍAS
+
+      Elegir: cefuroxima 1.500 mg IV c/8 h, O
+
+      ampicilina/sulbactam 3 g IV c/6 h
+
+      MÁS linezolid 600 mg IV c/12 h, O vancomicina:
+
+      carga única 25–30 mg/kg; luego 15 mg/kg IV c/12 h
+
+      Preferir confirmación microbiológica.'
+  - id: t_psa
+    section: 3
+    kind: treatment
+    text: "RIESGO P. AERUGINOSA/RESISTENTES · 5–7 DÍAS\nElegir un antipseudomónico:\n• Piperacilina/tazobactam
+      4,5 g IV c/8 h, O\n• Cefepime 1 g IV c/8 h, O\n• Meropenem 1 g IV c/8 h, O\n• Ceftazidima/avibactam 2,5
+      g IV c/8 h\nCONDICIONES Y AJUSTES:\n• Pip/tazo: en UCI, 4,5 g IV c/6 h\n• Cefepime: en UCI, 2 g IV c/8 h\n\
+      • Meropenem: en UCI con choque, 2 g IV c/8 h;\n  solo con colonización/infección previa BLEE+\n• Ceftazidima/avibactam:
+      solo con infección/\n  colonización previa por carbapenemasas; si MBL,\n  agregar aztreonam."
+  - id: t_sin
+    section: 3
+    kind: treatment
+    text: 'NAC SIN FACTORES DE RIESGO · 5–7 DÍAS
+
+      Elegir cefuroxima 1.500 mg IV c/8 h O
+
+      ampicilina/sulbactam 3 g IV c/6 h O
+
+      moxifloxacina 400 mg IV cada día
+
+      En alergia a penicilina: moxifloxacina O
+
+      levofloxacina 750 mg IV'
+  - id: reevaluar
+    section: 3
+    kind: milestone
+    text: 'REEVALUAR RESPUESTA CLÍNICA Y MICROBIOLOGÍA
+
+      Ajustar tratamiento según prueba molecular o cultivo
+
+      Macrólidos sólo si se identifican microorganismos atípicos'
+  - id: virus_solo
+    section: 3
+    kind: decision
+    text: ¿Sólo se identifica virus?
+  - id: influenza
+    section: 3
+    kind: decision
+    text: ¿Influenza positiva?
+  - id: covid
+    section: 3
+    kind: decision
+    text: ¿SARS-CoV-2 con hipoxemia?
+  - id: suspender
+    section: 3
+    kind: action
+    text: 'Suspender antimicrobianos,
+
+      excepto en UCI'
+  - id: oseltamivir
+    section: 3
+    kind: action
+    text: 'Aplicar oseltamivir 75 mg VO
+
+      cada 12 h durante 5 días'
+  - id: dexametasona
+    section: 3
+    kind: action
+    text: 'Aplicar dexametasona 6 mg IV
+
+      cada día'
+  - id: seguimiento
+    section: 3
+    kind: milestone
+    text: CONTINUAR SEGUIMIENTO CLÍNICO
+  - id: alta_criterios
+    section: 3
+    kind: info
+    text: 'CRITERIOS DE ALTA: TODOS OBLIGATORIOS
+
+      • Afebril ≥48 horas
+
+      • PAS >90 mmHg
+
+      • FC <100 lpm
+
+      • FR <24 rpm
+
+      • SatO₂ >90 % O PaO₂ >60 mmHg
+
+      • Tolera vía oral
+
+      • Comorbilidades compensadas
+
+      • Antibiótico ambulatorio asegurado
+
+      • Condiciones sociales que permiten el alta'
+  - id: alta_dec
+    section: 3
+    kind: decision
+    text: ¿Cumple TODOS los criterios de alta?
+  - id: alta
+    section: 3
+    kind: end
+    text: 'ALTA
+
+      Educar sobre recaída: fiebre, disnea, dolor torácico
+
+      Control con Medicina Interna a las 4 semanas'
+  - id: continuar
+    section: 3
+    kind: end
+    text: 'Continuar manejo hospitalario
+
+      y reevaluación clínica'
+  - id: sospecha_covid
+    section: 2
+    kind: decision
+    text: ¿Sospecha de SARS-CoV-2?
+  - id: pcr_covid
+    section: 2
+    kind: action
+    text: Solicitar PCR específica para SARS-CoV-2
+  - id: postviral_mrsa
+    section: 3
+    kind: decision
+    text: '¿Sospecha o colonización
+
+      por MRSA?'
+  - id: t_postviral_mrsa
+    section: 3
+    kind: treatment
+    text: "NAC POSTVIRAL CON SOSPECHA/COLONIZACIÓN MRSA · 5–7 DÍAS\nPRIMERA OPCIÓN — elegir betalactámico:\n•
+      Cefuroxima 1.500 mg IV c/8 h, O\n• Ampicilina/sulbactam 3 g IV c/6 h\nMÁS un anti-MRSA:\n• Linezolid 600
+      mg IV c/12 h, O\n• Vancomicina: carga única 25–30 mg/kg;\n  luego 15 mg/kg IV c/12 h\nALTERNATIVA RESTRINGIDA:\n\
+      • Ceftarolina 600 mg IV c/8 h en monoterapia solo\n  con enterobacterias sensibles + MRSA; autoriza Infectología.\n\
+      Preferir evidencia microbiológica positiva."
+  edges:
+  - from: inicio
+    to: rx
+    label: ''
+  - from: neutropenia
+    to: tc_neutro
+    label: Sí
+  - from: tc_neutro
+    to: tc_neutro_ok
+    label: ''
+  - from: tc_neutro_ok
+    to: confirmada
+    label: Sí
+  - from: tc_neutro_ok
+    to: no_confirmada
+    label: 'No'
+  - from: infiltrado
+    to: confirmada
+    label: Sí
+  - from: infiltrado
+    to: sospecha_alta
+    label: 'No'
+  - from: sospecha_alta
+    to: prioridad_tc
+    label: Sí
+  - from: sospecha_alta
+    to: no_confirmada
+    label: 'No'
+  - from: prioridad_tc
+    to: tc
+    label: Sí
+  - from: prioridad_tc
+    to: rx48
+    label: 'No'
+  - from: tc
+    to: tc_ok
+    label: ''
+  - from: tc_ok
+    to: confirmada
+    label: Sí
+  - from: tc_ok
+    to: no_confirmada
+    label: 'No'
+  - from: rx48
+    to: rx48_ok
+    label: ''
+  - from: rx48_ok
+    to: confirmada
+    label: Sí
+  - from: rx48_ok
+    to: no_confirmada
+    label: 'No'
+  - from: confirmada
+    to: lab_ingreso
+    label: ''
+  - from: lab_ingreso
+    to: hosp_dec
+    label: ''
+  - from: hosp_criterios
+    to: hosp_dec
+    label: ''
+    reference: true
+  - from: hosp_dec
+    to: ambulatorio
+    label: 'No'
+  - from: hosp_dec
+    to: hospital_inicio
+    label: Sí
+  - from: hospital_inicio
+    to: hospital_labs
+    label: ''
+  - from: hospital_labs
+    to: choque
+    label: ''
+  - from: choque
+    to: choque_labs
+    label: Sí
+  - from: choque
+    to: desatura
+    label: 'No'
+  - from: desatura
+    to: gas
+    label: Sí
+  - from: desatura
+    to: micro_start
+    label: 'No'
+  - from: gas
+    to: micro_start
+    label: ''
+  - from: micro_start
+    to: esputo
+    label: ''
+  - from: esputo
+    to: filmarray
+    label: ''
+  - from: muestra
+    to: panel_neumonia
+    label: Sí
+  - from: muestra
+    to: panel_resp
+    label: 'No'
+  - from: panel_neumonia
+    to: hemo_dec
+    label: ''
+  - from: panel_resp
+    to: hemo_dec
+    label: ''
+  - from: hemo_criterios
+    to: hemo_dec
+    label: ''
+    reference: true
+  - from: hemo_dec
+    to: hemocultivos
+    label: Sí
+  - from: hemo_dec
+    to: sin_hemocultivos
+    label: 'No'
+  - from: hemocultivos
+    to: derrame
+    label: ''
+  - from: sin_hemocultivos
+    to: derrame
+    label: ''
+  - from: derrame
+    to: toracentesis
+    label: Sí
+  - from: derrame
+    to: uci_dec
+    label: 'No'
+  - from: toracentesis
+    to: uci_dec
+    label: ''
+  - from: uci_criterios
+    to: uci_dec
+    label: ''
+    reference: true
+  - from: uci_dec
+    to: sala
+    label: 'No'
+  - from: uci_dec
+    to: uci
+    label: Sí
+  - from: sala
+    to: postviral
+    label: ''
+  - from: uci
+    to: postviral
+    label: ''
+  - from: postviral
+    to: mrsa
+    label: 'No'
+  - from: mrsa
+    to: psa_mrsa
+    label: Sí
+  - from: mrsa
+    to: psa_no_mrsa
+    label: 'No'
+  - from: psa_mrsa
+    to: t_mrsa_psa
+    label: Sí
+  - from: psa_mrsa
+    to: t_mrsa
+    label: 'No'
+  - from: psa_no_mrsa
+    to: t_psa
+    label: Sí
+  - from: psa_no_mrsa
+    to: t_sin
+    label: 'No'
+  - from: t_postviral
+    to: reevaluar
+    label: ''
+  - from: t_mrsa_psa
+    to: reevaluar
+    label: ''
+  - from: t_mrsa
+    to: reevaluar
+    label: ''
+  - from: t_psa
+    to: reevaluar
+    label: ''
+  - from: t_sin
+    to: reevaluar
+    label: ''
+  - from: reevaluar
+    to: virus_solo
+    label: Evaluar
+    independent: true
+  - from: reevaluar
+    to: influenza
+    label: Evaluar
+    independent: true
+  - from: reevaluar
+    to: covid
+    label: Evaluar
+    independent: true
+  - from: virus_solo
+    to: suspender
+    label: Sí
+  - from: virus_solo
+    to: seguimiento
+    label: 'No'
+  - from: influenza
+    to: oseltamivir
+    label: Sí
+  - from: influenza
+    to: seguimiento
+    label: 'No'
+  - from: covid
+    to: dexametasona
+    label: Sí
+  - from: covid
+    to: seguimiento
+    label: 'No'
+  - from: suspender
+    to: seguimiento
+    label: ''
+  - from: oseltamivir
+    to: seguimiento
+    label: ''
+  - from: dexametasona
+    to: seguimiento
+    label: ''
+  - from: seguimiento
+    to: alta_dec
+    label: ''
+  - from: alta_criterios
+    to: alta_dec
+    label: ''
+    reference: true
+  - from: alta_dec
+    to: alta
+    label: Sí
+  - from: alta_dec
+    to: continuar
+    label: 'No'
+  - from: rx
+    to: neutropenia
+    label: ''
+  - from: neutropenia
+    to: infiltrado
+    label: 'No'
+  - from: choque_labs
+    to: micro_start
+    label: ''
+  - from: filmarray
+    to: sospecha_covid
+    label: ''
+  - from: sospecha_covid
+    to: pcr_covid
+    label: Sí
+  - from: sospecha_covid
+    to: muestra
+    label: 'No'
+  - from: pcr_covid
+    to: hemo_dec
+    label: ''
+  - from: postviral
+    to: postviral_mrsa
+    label: Sí
+  - from: postviral_mrsa
+    to: t_postviral
+    label: 'No'
+  - from: postviral_mrsa
+    to: t_postviral_mrsa
+    label: Sí
+  - from: t_postviral_mrsa
+    to: reevaluar
+    label: ''

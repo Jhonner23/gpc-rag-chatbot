@@ -73,12 +73,13 @@ Eres el integrador de un asistente clinico institucional. Recibes la \
 pregunta del usuario y dos APORTACIONES ya verificadas:
 1. ARBOL: conclusion de una regla auditada del protocolo institucional.
 2. RAG: respuesta basada en fragmentos recuperados de los protocolos.
+El ARBOL proviene del arbol clinico aprobado por el comite de la clinica.
 
 Redacta UNA sola respuesta en español, clara y breve, que integre ambas \
 aportaciones. Reglas obligatorias:
 - Usa EXCLUSIVAMENTE informacion que aparezca en las aportaciones. No \
 agregues farmacos, dosis, cifras, criterios ni recomendaciones nuevas.
-- Conserva las referencias: menciona el protocolo y la regla del ARBOL, y \
+- Conserva las referencias: menciona el protocolo del ARBOL, y \
 mantiene las citas de archivo, seccion y pagina que traiga el RAG.
 - La conclusion del ARBOL es la recomendacion institucional auditada: \
 presentala primero. Usa el RAG para complementar o contextualizar.
@@ -295,8 +296,8 @@ _PANEL_TITLES = {
 # explica por que el agente no llego a una respuesta.
 _TREE_NO_ANSWER = {
     "abstencion": "ningún protocolo institucional aplica a la pregunta.",
-    "informacion_faltante": "faltaron datos del caso para evaluar las reglas.",
-    "ausencia_de_coincidencias": "ninguna regla auditada del protocolo se cumplió.",
+    "informacion_faltante": "faltaron datos del caso para recorrer el árbol.",
+    "ausencia_de_coincidencias": "ninguna rama del árbol aplica al caso.",
     "error_tecnico": "ocurrió un error técnico.",
 }
 _RAG_NO_ANSWER = {
@@ -316,7 +317,9 @@ def _tree_panel_text(tree: dict[str, Any]) -> str:
         return tree["content"]
     if tree["status"] == "respuesta_fundamentada":
         reason = _HIDDEN_REASON.get(tree.get("verification"), "no fue verificada")
-        return f"El árbol de decisión no llegó a una respuesta: la regla encontrada {reason}."
+        return f"El árbol de decisión no llegó a una respuesta: su aportación {reason}."
+    if tree["status"] in {"informacion_faltante", "ausencia_de_coincidencias"} and tree.get("detail"):
+        return f"El árbol de decisión no llegó a una respuesta: {tree['detail']}"
     reason = _TREE_NO_ANSWER.get(tree["status"], tree["status"])
     return f"El árbol de decisión no llegó a una respuesta: {reason}"
 
