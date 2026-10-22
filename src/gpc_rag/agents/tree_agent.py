@@ -293,7 +293,7 @@ def _indent(text: str) -> str:
 def _render_walk(chart: Flowchart, result: WalkResult) -> dict[str, Any]:
     steps: list[Step] = [s for s in result.steps if s.node.kind != "start"]
     lines = [
-        f"Recorrido del árbol clínico {chart.protocol_id} {chart.version}, aprobado por el comité de la clínica:",
+        f"Recorrido del árbol clínico {chart.protocol_id} {chart.version}:",
         "",
     ]
     for step in steps:
@@ -319,7 +319,7 @@ def _render_walk(chart: Flowchart, result: WalkResult) -> dict[str, Any]:
 
 def _render_consult(chart: Flowchart, node_ids: list[str]) -> dict[str, Any]:
     lines = [
-        f"Nodos del árbol clínico {chart.protocol_id} {chart.version} (aprobado por el comité) relacionados con la consulta:"
+        f"Nodos del árbol clínico {chart.protocol_id} {chart.version} relacionados con la consulta:"
     ]
     cited: list[FlowNode] = []
     shown: set[str] = set()
@@ -360,7 +360,7 @@ def _render_consult(chart: Flowchart, node_ids: list[str]) -> dict[str, Any]:
 def _render_overview(chart: Flowchart) -> dict[str, Any]:
     decisions = decision_overview(chart)
     lines = [
-        f"Puntos de decisión del árbol clínico {chart.protocol_id} {chart.version} (aprobado por el comité), en orden:",
+        f"Puntos de decisión del árbol clínico {chart.protocol_id} {chart.version}, en orden:",
         "",
     ]
     lines += [

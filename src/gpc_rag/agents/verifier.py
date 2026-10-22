@@ -22,7 +22,7 @@ Estados de cada agente (los mismos para todos):
                               aplica, o el RAG reconoce que las fuentes no
                               cubren el tema).
 - informacion_faltante:       el arbol agoto las preguntas sin datos suficientes.
-- ausencia_de_coincidencias:  ninguna regla auditada se cumplio, o el RAG no
+- ausencia_de_coincidencias:  ninguna rama del arbol aplica al caso, o el RAG no
                               recupero fragmentos.
 - error_tecnico:              la rama fallo o supero su tiempo maximo.
 
@@ -70,7 +70,7 @@ _CONTRADICTION_ATTEMPTS = 2
 
 _CONTRADICTION_SYSTEM_PROMPT = """\
 Eres un auditor que compara dos aportaciones sobre la misma pregunta clinica:
-- ARBOL: conclusion de una regla auditada del protocolo institucional.
+- ARBOL: recorrido o nodos del arbol clinico del protocolo institucional.
 - RAG: respuesta basada en fragmentos recuperados de los protocolos.
 
 Determina si se CONTRADICEN: recomiendan acciones incompatibles entre si, o \
@@ -248,7 +248,7 @@ def _version_discrepancies(tree: dict[str, Any], rag: dict[str, Any]) -> list[st
 
 
 _RELEVANCE_SYSTEM_PROMPT = """\
-Eres un auditor. Decide si la APORTACION ARBOL (reglas de un protocolo \
+Eres un auditor. Decide si la APORTACION ARBOL (arbol clinico de un protocolo \
 institucional) responde, total o parcialmente, a la PREGUNTA del usuario. \
 No respondas la pregunta ni uses conocimiento propio.
 

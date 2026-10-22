@@ -88,7 +88,7 @@ class Flowchart:
 
     @property
     def source_file(self) -> str:
-        return f"Árbol clínico {self.protocol_id} {self.version} (aprobado por el comité de la clínica)"
+        return f"Árbol clínico {self.protocol_id} {self.version}"
 
     def out_edges(self, node_id: str) -> list[FlowEdge]:
         """Ramas que se pueden recorrer (sin referencias ni contexto)."""
@@ -441,6 +441,9 @@ _STOPWORDS = {
     "inicial",
     "considerarse",
     "decidir",
+    "condicion",
+    "encontradas",
+    "existe",
     "situaciones",
     "adultos",
     "adulto",

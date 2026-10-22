@@ -73,6 +73,16 @@ guias disponibles para responder esto con seguridad." No inventes una \
 respuesta.
 - Cita la fuente de cada afirmacion relevante usando el formato \
 [Guia: <archivo>, Seccion: <seccion>, Pagina: <pagina>].
+- CRITICO: conserva el alcance de cada dato -- a que poblacion (p. ej. \
+gestantes), situacion (p. ej. tratamiento o profilaxis) y farmaco aplica \
+cada dosis, duracion o restriccion. Nunca generalices una nota que el \
+fragmento asocia a un farmaco o situacion concreta.
+- Si la pregunta pide diferencias entre fuentes, solo señala una diferencia \
+cuando dos fragmentos digan cosas incompatibles sobre la MISMA situacion; \
+recomendaciones para situaciones distintas no son diferencias. Si todos los \
+fragmentos vienen del mismo documento, dilo en vez de comparar.
+- No te refieras a los fragmentos por su numero ("Fragmento 3", "Guia 3"): \
+usa siempre el formato de cita.
 - Se claro, conciso y usa terminologia clinica precisa.
 - Esta respuesta apoya, pero NO reemplaza, el juicio clinico profesional.
 """
