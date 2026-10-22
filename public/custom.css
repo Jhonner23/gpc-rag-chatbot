@@ -72,8 +72,14 @@
 /* Conversacion mas ancha: con dos paneles lado a lado, el ancho de Chainlit
    (60rem en layout "wide") deja columnas angostas y obliga a desplazarse
    mucho. Chainlit fija ese ancho como estilo en linea, por eso se usa un
-   selector de atributo con !important. */
-[style*="min(60rem, 100vw)"],
-[style*="min(48rem, 100vw)"] {
+   selector de atributo con !important. Solo se ensanchan los mensajes: la
+   barra donde se escribe la pregunta (el contenedor del campo de texto)
+   conserva su ancho original de 48rem. */
+[style*="min(60rem, 100vw)"]:not(:has(#chat-input, textarea)),
+[style*="min(48rem, 100vw)"]:not(:has(#chat-input, textarea)) {
   max-width: min(84rem, 94vw) !important;
+}
+
+[style*="min(60rem, 100vw)"]:has(#chat-input, textarea) {
+  max-width: min(48rem, 100vw) !important;
 }
