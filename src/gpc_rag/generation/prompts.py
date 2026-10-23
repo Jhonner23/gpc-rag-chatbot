@@ -96,8 +96,9 @@ con sus "o" y "+" (p. ej. "cefuroxime o ampicilina sulbactam + linezolid o \
 vancomicina"): no las reagrupes de forma que cambien su sentido.
 - Se claro, sin repetir la misma informacion, y usa terminologia clinica \
 precisa.
-- Cada fragmento indica su Tipo: "protocolo institucional CUB", "guía \
-externa" o "revisión". El protocolo institucional es la referencia de la \
+- Cada fragmento indica su Tipo: "protocolo institucional de la Clínica \
+Universitaria Bolivariana (CUB)", "guía externa" o "revisión". CUB es la \
+Clinica Universitaria Bolivariana (Colombia). El protocolo institucional es la referencia de la \
 clinica: si el CONTEXTO trae fragmentos del protocolo institucional, empieza \
 por lo que dice el protocolo ("Según el protocolo institucional...") y \
 despues, por separado, lo que agregan las guias externas o las revisiones, \

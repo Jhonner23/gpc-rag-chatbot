@@ -73,4 +73,6 @@ def test_context_names_the_source_type() -> None:
     )
     context = format_context([RetrievedChunk(chunk=chunk, score=1.0)])
     assert "(Tipo: guía externa; ATS 2025)" in context
-    assert "(Tipo: protocolo institucional CUB)" in format_context([_sample_retrieved_chunk()])
+    assert "(Tipo: protocolo institucional de la Clínica Universitaria Bolivariana (CUB))" in (
+        format_context([_sample_retrieved_chunk()])
+    )

@@ -27,7 +27,8 @@ CATALOG_FILENAME = "fuentes.yaml"
 
 # Como se nombra cada tipo de fuente ante el modelo y en el chat.
 SOURCE_TYPE_LABELS = {
-    INSTITUTIONAL: "protocolo institucional CUB",
+    # Con "CUB" a secas el modelo llego a llamarlo "protocolo cubano".
+    INSTITUTIONAL: "protocolo institucional de la Clínica Universitaria Bolivariana (CUB)",
     "guia": "guía externa",
     "revision": "revisión",
 }
