@@ -84,6 +84,10 @@ def test_admin_sections_are_penalized_unless_the_question_names_them() -> None:
     # Subsecciones clinicas dentro de la introduccion y definiciones: sin cambio.
     assert _admin_penalty("4. INTRODUCCIÓN — Manifestaciones clínicas", "x", 0.3) == 0.0
     assert _admin_penalty("3. DEFINICIONES", "x", 0.3) == 0.0
+    assert (
+        _admin_penalty("1. ¿Radiografía de tórax? — Necesidades de investigación futura", "x", 0.3)
+        == -0.3
+    )
     assert _admin_penalty("2. ALCANCE", "x", 0.0) == 0.0
     header = "Proceso: Cuidado y tratamiento Código: CT-PL-193 Versión: 9"
     assert _admin_penalty("PROTOCOLO DE NAC", "manejo inicial", 0.3, header) == -0.3

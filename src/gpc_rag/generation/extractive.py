@@ -195,8 +195,31 @@ def segment(rc: RetrievedChunk) -> list[str]:
         units.append(lead)
     flush()
     return [
-        u for u in units if len(u.split()) >= _MIN_UNIT_WORDS and not _CAPTION_UNIT_RE.match(u)
+        u
+        for u in _attach_anaphora(units)
+        if len(u.split()) >= _MIN_UNIT_WORDS and not _CAPTION_UNIT_RE.match(u)
     ]
+
+
+# Oracion que remite a la anterior ("No contamos con datos locales para
+# validar este hallazgo...", "These patients..."): sola pierde de que habla.
+_ANAPHORA_RE = re.compile(
+    r"^(este|esta|estos|estas|esto|dicho|dicha|dichos|dichas|ello|en ellos|en ellas"
+    r"|this|these|those|such|it|they)\b|\b(este|esta|estos|estas) (hallazgo|resultado|"
+    r"grupo|caso|escenario|enfoque|recomendaci[oó]n)\b",
+    re.IGNORECASE,
+)
+
+
+def _attach_anaphora(units: list[str]) -> list[str]:
+    """Une a la oracion anterior las que remiten a ella."""
+    merged: list[str] = []
+    for unit in units:
+        if merged and _ANAPHORA_RE.search(unit[:80]):
+            merged[-1] = f"{merged[-1]} {unit}"
+        else:
+            merged.append(unit)
+    return merged
 
 
 def build_units(sources: list[RetrievedChunk]) -> list[Unit]:
@@ -219,7 +242,10 @@ trabajo es elegir los ids de las oraciones que responden la pregunta. No \
 respondas, no resumas y no reescribas nada.
 
 Reglas:
-- Elige solo oraciones que respondan directamente lo que se pregunta.
+- Elige todas las oraciones que respondan directamente lo que se pregunta \
+(no solo una), y ninguna que no lo haga.
+- No elijas oraciones especulativas o sobre necesidades de investigacion \
+("podrian", "no contamos con datos") si hay recomendaciones concretas.
 - Si eliges una recomendacion o un tratamiento, elige tambien la oracion que \
 dice a que pacientes o situacion aplica (condicion, poblacion, excepciones), \
 si esta en la lista.

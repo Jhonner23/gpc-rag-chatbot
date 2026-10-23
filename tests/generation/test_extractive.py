@@ -136,3 +136,18 @@ def test_numeric_callouts_and_inline_bullets_are_cleaned() -> None:
         score=1.0,
     )
     assert segment(rc) == ["Main indications: pregnancy; urologic procedures with mucosal bleeding."]
+
+
+def test_sentences_that_refer_to_the_previous_one_keep_it() -> None:
+    rc = RetrievedChunk(
+        chunk=Chunk(
+            text="Riesgo\n\nLa colonizacion previa por Pseudomonas aumenta el riesgo de infeccion. "
+            "No contamos con datos locales para validar este hallazgo en nuestra poblacion.",
+            source_file="x.pdf",
+            section="Riesgo",
+            chunk_id="f",
+        ),
+        score=1.0,
+    )
+    (unit,) = segment(rc)
+    assert unit.startswith("La colonizacion previa") and unit.endswith("en nuestra poblacion.")

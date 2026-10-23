@@ -118,6 +118,15 @@ _ADMIN_SECTIONS = {
     "criterio de clasificacion": "clasificacion",
     "control de cambios": "cambios",
     "plan de delegacion": "delegacion",
+    # Secciones de las guias y articulos externos que no dan recomendaciones.
+    "necesidades de investigacion": "investigacion",
+    "esta guia no aplica": "aplica",
+    "metodologia": "metodologia",
+    "methods": "metodo",
+    "research needs": "investigacion",
+    "outstanding research": "investigacion",
+    "conclusions and research needs": "investigacion",
+    "controversies and uncertainties": "controversia",
 }
 # Encabezado del documento ("Proceso: Cuidado y tratamiento Código: CT-PL-193
 # Versión: 9 Fecha aprobación: ..."): solo sirve si preguntan por la version.
