@@ -239,13 +239,25 @@ def _reciprocal_rank_fusion(
 
 
 def with_institutional_quota(
-    ranked: list[RetrievedChunk], top_k: int, quota: int, min_score: float
+    ranked: list[RetrievedChunk],
+    top_k: int,
+    quota: int,
+    min_score: float,
+    min_final_score: float | None = None,
 ) -> list[RetrievedChunk]:
     """Los `top_k` mejores, reservando hasta `quota` lugares para los
     protocolos institucionales que el reranker considero minimamente
     relevantes (`min_score`). Si la pregunta no tiene que ver con los
     protocolos (p. ej. malaria), sus fragmentos no superan el minimo y no se
-    fuerzan. El resultado conserva el orden por puntaje."""
+    fuerzan. El resultado conserva el orden por puntaje.
+
+    `min_final_score`: puntaje minimo (ya penalizado) para entrar al contexto.
+    Ante preguntas generales todos los puntajes son bajos y la penalizacion de
+    secciones sin recomendaciones solo las reordenaba: "Necesidades de
+    investigacion futura" o "Esta guia no aplica a" seguian entre los 8. Con
+    el minimo quedan fuera, aunque el contexto tenga menos de 8 fragmentos."""
+    if min_final_score is not None:
+        ranked = [rc for rc in ranked if rc.score >= min_final_score]
     reserved = [
         rc
         for rc in ranked
@@ -383,6 +395,7 @@ class HybridRetriever:
                 retrieval.top_k_final,
                 quota,
                 float(retrieval.get("institutional_min_score", 0.05)),
+                retrieval.get("min_final_score"),
             )
 
         return fused[: retrieval.top_k_final]

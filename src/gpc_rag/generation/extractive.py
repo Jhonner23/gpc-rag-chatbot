@@ -48,7 +48,11 @@ _MAX_SENTENCE_WORDS = 70
 _MAX_LIST_WORDS = 80
 _MIN_UNIT_WORDS = 4
 _BULLET_RE = re.compile(r"^\s*(?:[-•*]|\d{1,2}[.)])\s+")
-_SENTENCE_SPLIT_RE = re.compile(r"(?<=[.;])\s+(?=[A-ZÁÉÍÓÚÑ¿(])")
+_SENTENCE_SPLIT_RE = re.compile(r"(?<=[.;])\s+(?=[A-ZÁÉÍÓÚÑ¿(])|\s*(?=[†‡§¶])")
+# Notas al pie de figuras ("...MRSA.8 †Recomendaciones... ‡Señales...") y
+# referencias pegadas al punto ("MRSA.8") en las fuentes externas.
+_FOOTNOTE_MARK_RE = re.compile(r"[†‡§¶]")
+_DOT_REF_RE = re.compile(r"(?<=[A-Za-z)])\.(\d{1,3}(?:[,–-]\d{1,3})*)(?=\s|$)")
 # Titulos de cuadros, tablas o figuras solos ("Box 2. Main Indications to
 # Treat Asymptomatic Bacteriuria"): no dicen nada por si mismos.
 _CAPTION_UNIT_RE = re.compile(
@@ -162,7 +166,13 @@ def _body(rc: RetrievedChunk) -> str:
     return text
 
 
-def _is_table_row(body: str) -> bool:
+def _is_table_row(rc: RetrievedChunk, body: str) -> bool:
+    """Fila del archivo de tablas revisadas (ingestion/tables.py): su texto
+    empieza con su encabezado y un punto. Sin esa condicion, la lista de
+    Definiciones del protocolo ("Termino: definicion") se tomaba por fila y
+    entraba completa como una sola oracion."""
+    if not rc.chunk.text.startswith(f"{rc.chunk.section}."):
+        return False
     lines = [line for line in body.splitlines() if line.strip()]
     if not lines:
         return False
@@ -171,7 +181,7 @@ def _is_table_row(body: str) -> bool:
 
 
 def _split_long(paragraph: str) -> list[str]:
-    if len(paragraph.split()) <= _MAX_SENTENCE_WORDS:
+    if len(paragraph.split()) <= _MAX_SENTENCE_WORDS and not _FOOTNOTE_MARK_RE.search(paragraph):
         return [paragraph]
     return [s.strip() for s in _SENTENCE_SPLIT_RE.split(paragraph) if s.strip()]
 
@@ -179,7 +189,7 @@ def _split_long(paragraph: str) -> list[str]:
 def segment(rc: RetrievedChunk) -> list[str]:
     """Unidades de texto de un fragmento, en su orden."""
     body = _body(rc)
-    if _is_table_row(body):
+    if _is_table_row(rc, body):
         # Fila de tabla: una sola unidad, para que la condicion de la fila no
         # se separe de su tratamiento ni de sus notas.
         return [_table_row_unit(body, rc.chunk.section)]
@@ -207,7 +217,13 @@ def segment(rc: RetrievedChunk) -> list[str]:
         has_bullets = any(_BULLET_RE.match(line) for line in lines)
         for line in lines if has_bullets else [paragraph]:
             if _BULLET_RE.match(line):
-                bullets.append(_clean(_BULLET_RE.sub("", line)))
+                item = _clean(_BULLET_RE.sub("", line))
+                if bullets and item[:1].islower():
+                    # Renglon partido por el extractor ("...estructurales o" /
+                    # "- funcionales de las vias urinarias"): continua el anterior.
+                    bullets[-1] = f"{bullets[-1].rstrip(' .')} {item}"
+                else:
+                    bullets.append(item)
                 continue
             flush()
             cleaned = _clean(line)
@@ -253,9 +269,10 @@ def build_units(sources: list[RetrievedChunk]) -> list[Unit]:
     seen: set[str] = set()
     for rank, rc in enumerate(sources):
         for order, raw in enumerate(segment(rc)):
-            text = (
-                _TRAILING_REFS_RE.sub("", raw) if rc.chunk.source_type != INSTITUTIONAL else raw
-            )
+            text = raw
+            if rc.chunk.source_type != INSTITUTIONAL:
+                text = _DOT_REF_RE.sub(".", _TRAILING_REFS_RE.sub("", text))
+                text = _FOOTNOTE_MARK_RE.sub("", text).strip()
             key = text.lower()
             if key in seen:  # solape entre fragmentos consecutivos
                 continue
@@ -273,6 +290,11 @@ respondas, no resumas y no reescribas nada.
 Reglas:
 - Elige las oraciones que respondan directamente lo que se pregunta \
 (normalmente entre 2 y 6), y ninguna que no lo haga.
+- Las preguntas sobre el enfoque, el manejo o cuando hacer algo se responden \
+con acciones concretas (criterios, indicaciones, examenes, tratamientos), no \
+con frases generales ("su abordaje se centra en...", "las ITU son un motivo \
+frecuente de consulta..."). Si el protocolo institucional trae esas acciones, \
+eligelas.
 - No elijas oraciones que describan el documento, su panel, su proposito, su \
 alcance o su metodo ("el panel abordo...", "esta guia tiene como \
 proposito..."): solo las que dicen que hacer con el paciente.

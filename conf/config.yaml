@@ -15,6 +15,7 @@ retrieval:
   top_k_final: 8           # despues de rerank, cuantos chunks van al prompt (con 6, la fila de tratamiento de bacteriuria asintomatica de la Tabla 1 quedaba 7a)
   institutional_quota: 3       # lugares reservados (de top_k_final) para los protocolos de la CUB, si son relevantes
   institutional_min_score: 0.05 # puntaje minimo del reranker para ocupar un lugar reservado
+  min_final_score: 0.05     # puntaje minimo (ya penalizado) para entrar al contexto
   use_reranker: true
   reranker_model: "BAAI/bge-reranker-v2-m3"
   admin_section_penalty: 0.3 # resta a Objetivo, Alcance, Introduccion... si la pregunta no las nombra (ver retrieval/hybrid.py)
@@ -27,7 +28,7 @@ retrieval:
 # - generativo: el modelo redacta la respuesta, una pasada por tipo de fuente.
 rag:
   mode: extractivo
-  max_units: 8              # maximo de oraciones en la respuesta
+  max_units: 6              # maximo de oraciones en la respuesta
   min_relevance: 0.1        # si ningun fragmento supera este puntaje del reranker, abstencion
 
 app:

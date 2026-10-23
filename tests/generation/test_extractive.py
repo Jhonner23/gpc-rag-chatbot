@@ -195,3 +195,50 @@ def test_low_relevance_abstains_without_calling_the_selector() -> None:
     gen = _FakeGenerator(["u1"])
     assert extractive_answer(gen, "¿Malaria?", [low], min_relevance=0.1) == REFUSAL
     assert gen.prompts == []
+
+
+def test_definitions_are_not_a_table_row_and_wrapped_items_are_joined() -> None:
+    rc = RetrievedChunk(
+        chunk=Chunk(
+            text="3. DEFINICIONES\n\n- Bacteriuria asintomática: recuento significativo sin "
+            "síntomas atribuibles a ITU, con dos urocultivos en mujeres no gestantes y uno en "
+            "hombres y gestantes, tomados de forma apropiada en el servicio de urgencias.\n"
+            "- ITU complicada: ITU que ocurre en presencia de alteraciones estructurales o\n"
+            "- funcionales de las vías urinarias.\n"
+            "- Cistitis: infección aguda de la vejiga con bacteriuria significativa y sin fiebre.",
+            source_file="itu.pdf",
+            section="3. DEFINICIONES",
+            chunk_id="i",
+        ),
+        score=1.0,
+    )
+    (unit,) = segment(rc)  # lista corta: una unidad, no una "fila de tabla"
+    assert unit.startswith("3. DEFINICIONES: Bacteriuria asintomática:")
+    assert "estructurales o funcionales de las vías urinarias; Cistitis:" in unit
+
+
+def test_figure_footnotes_are_split_and_dot_references_removed() -> None:
+    rc = RetrievedChunk(
+        chunk=Chunk(
+            text="Figure 2\n\nRisk factors are previous MRSA infection and high local MRSA "
+            "prevalence.8 †Advice from the 2025 ATS guideline. ‡Warning signs are continued fever.",
+            source_file="lancet.pdf",
+            section="Figure 2",
+            chunk_id="j",
+            source_type="revision",
+        ),
+        score=1.0,
+    )
+    assert [u.text for u in build_units([rc])] == [
+        "Risk factors are previous MRSA infection and high local MRSA prevalence.",
+        "Advice from the 2025 ATS guideline.",
+        "Warning signs are continued fever.",
+    ]
+
+
+def test_minimum_final_score_drops_low_fragments() -> None:
+    from gpc_rag.retrieval.hybrid import with_institutional_quota
+
+    low = RetrievedChunk(chunk=_IDSA.chunk, score=-0.1)
+    high = RetrievedChunk(chunk=_ROW.chunk, score=0.6)
+    assert with_institutional_quota([high, low], 8, 3, 0.05, min_final_score=0.05) == [high]
