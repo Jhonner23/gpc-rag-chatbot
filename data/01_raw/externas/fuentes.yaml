@@ -1,0 +1,74 @@
+# Fuentes externas del RAG enviadas por la clinica (ver
+# src/gpc_rag/ingestion/sources.py). Complementan a los protocolos
+# institucionales de data/01_raw/gpc/, que siguen siendo la referencia.
+#
+# Los PDF van en esta misma carpeta y NO se versionan (son de editoriales y
+# el repositorio es publico); solo se versiona este catalogo.
+#
+# tipo: guia (guia de practica clinica) o revision (articulo de revision,
+# seminario o monografia). tema: NAC o ITU.
+
+documentos:
+  # --- Infeccion del tracto urinario ---
+  - archivo: "Guia ITU- IDSA elección AB 2025.pdf"
+    titulo: "IDSA 2025: selección del antibiótico en ITU complicada"
+    tipo: guia
+    tema: ITU
+    anio: 2025
+  - archivo: "ITU guia IDSA 2025.pdf"
+    titulo: "IDSA 2025: duración del antibiótico en ITU complicada"
+    tipo: guia
+    tema: ITU
+    anio: 2025
+  - archivo: "Guia ITU 2023 - Infectio- Colombia.pdf"
+    titulo: "GPC colombiana de infección de vías urinarias complicada (Infectio 2023)"
+    tipo: guia
+    tema: ITU
+    anio: 2023
+  - archivo: "ITU review 2024.pdf"
+    titulo: "Urinary Tract Infections: Core Curriculum 2024 (AJKD)"
+    tipo: revision
+    tema: ITU
+    anio: 2024
+  - archivo: "Urinary Tract Infection in Adults - ClinicalKey 2026.pdf"
+    titulo: "Urinary Tract Infection in Adults (ClinicalKey, Elsevier Point of Care 2026)"
+    tipo: revision
+    tema: ITU
+    anio: 2026
+  - archivo: "p173 (1).pdf"
+    titulo: "Acute Pyelonephritis in Adults: Rapid Evidence Review (AFP 2020)"
+    tipo: revision
+    tema: ITU
+    anio: 2020
+
+  # --- Neumonia adquirida en la comunidad ---
+  - archivo: "ATS- Guia neumonía 2025.pdf"
+    titulo: "ATS 2025: diagnóstico y manejo de la NAC"
+    tipo: guia
+    tema: NAC
+    anio: 2025
+  - archivo: "Guia NAC ATS-IDSA 2019.pdf"
+    titulo: "ATS/IDSA 2019: diagnóstico y tratamiento de la NAC en adultos"
+    tipo: guia
+    tema: NAC
+    anio: 2019
+  - archivo: "Guia de práctica clínica Colombiana NAC 2026.pdf"
+    titulo: "GPC colombiana de NAC (Infectio 2026)"
+    tipo: guia
+    tema: NAC
+    anio: 2026
+  - archivo: "Community-acquired pneumonia.pdf"
+    titulo: "Community-acquired pneumonia (Lancet Seminar 2025)"
+    tipo: revision
+    tema: NAC
+    anio: 2025
+  - archivo: "JAMA NAC review.pdf"
+    titulo: "Community-Acquired Pneumonia: A Review (JAMA 2024)"
+    tipo: revision
+    tema: NAC
+    anio: 2024
+  - archivo: "NAC NEJM review.pdf"
+    titulo: "Community-acquired pneumonia review (NEJM Evidence 2025)"
+    tipo: revision
+    tema: NAC
+    anio: 2025

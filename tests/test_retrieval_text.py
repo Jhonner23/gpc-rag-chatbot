@@ -88,3 +88,34 @@ def test_admin_sections_are_penalized_unless_the_question_names_them() -> None:
     header = "Proceso: Cuidado y tratamiento Código: CT-PL-193 Versión: 9"
     assert _admin_penalty("PROTOCOLO DE NAC", "manejo inicial", 0.3, header) == -0.3
     assert _admin_penalty("PROTOCOLO DE NAC", "¿Qué versión está vigente?", 0.3, header) == 0.0
+
+
+def test_institutional_quota_reserves_relevant_protocol_fragments() -> None:
+    from gpc_rag.common.models import Chunk, RetrievedChunk
+    from gpc_rag.retrieval.hybrid import with_institutional_quota
+
+    def rc(i: int, score: float, kind: str) -> RetrievedChunk:
+        return RetrievedChunk(
+            chunk=Chunk(text=str(i), source_file=f"{kind}.pdf", chunk_id=str(i), source_type=kind),
+            score=score,
+        )
+
+    ranked = [rc(i, 0.9 - i * 0.05, "guia") for i in range(8)] + [
+        rc(10, 0.30, "institucional"),
+        rc(11, 0.20, "institucional"),
+        rc(12, 0.01, "institucional"),  # irrelevante: no se fuerza
+    ]
+    chosen = with_institutional_quota(ranked, top_k=8, quota=3, min_score=0.05)
+    ids = [r.chunk.chunk_id for r in chosen]
+    assert len(chosen) == 8
+    assert "10" in ids and "11" in ids and "12" not in ids
+    assert [r.score for r in chosen] == sorted((r.score for r in chosen), reverse=True)
+    # Sin cupo, solo puntaje.
+    assert all(
+        r.chunk.source_type == "guia"
+        for r in with_institutional_quota(ranked, top_k=8, quota=0, min_score=0.05)
+    )
+
+
+def test_english_stopwords_are_ignored() -> None:
+    assert _tokenize("The treatment of the pneumonia is not") == ["treatment", "pneumonia", "not"]

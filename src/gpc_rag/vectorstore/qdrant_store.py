@@ -13,6 +13,20 @@ from gpc_rag.common.models import Chunk, RetrievedChunk
 logger = logging.getLogger(__name__)
 
 
+def _chunk_from_payload(payload: dict, point_id: object) -> Chunk:
+    return Chunk(
+        text=payload.get("text", ""),
+        source_file=payload.get("source_file", "desconocido"),
+        section=payload.get("section", "Sin seccion"),
+        page=payload.get("page"),
+        chunk_index=payload.get("chunk_index", 0),
+        chunk_id=str(point_id),
+        # Colecciones indexadas antes de que existieran las fuentes externas.
+        source_type=payload.get("source_type", "institucional"),
+        source_title=payload.get("source_title", ""),
+    )
+
+
 class QdrantStore:
     def __init__(self, cfg: DictConfig, vector_size: int):
         self.client = QdrantClient(url=cfg.env.qdrant_url)
@@ -49,25 +63,35 @@ class QdrantStore:
         ]
         self.client.upsert(collection_name=self.collection_name, points=points)
 
-    def search(self, query_vector: list[float], top_k: int) -> list[RetrievedChunk]:
+    def search(
+        self, query_vector: list[float], top_k: int, source_type: str | None = None
+    ) -> list[RetrievedChunk]:
+        """Busqueda por similitud; con `source_type`, solo en ese tipo de fuente."""
+        query_filter = (
+            qmodels.Filter(
+                must=[
+                    qmodels.FieldCondition(
+                        key="source_type", match=qmodels.MatchValue(value=source_type)
+                    )
+                ]
+            )
+            if source_type
+            else None
+        )
         hits = self.client.query_points(
             collection_name=self.collection_name,
             query=query_vector,
             limit=top_k,
+            query_filter=query_filter,
         ).points
-        results = []
-        for hit in hits:
-            payload = hit.payload or {}
-            chunk = Chunk(
-                text=payload.get("text", ""),
-                source_file=payload.get("source_file", "desconocido"),
-                section=payload.get("section", "Sin seccion"),
-                page=payload.get("page"),
-                chunk_index=payload.get("chunk_index", 0),
-                chunk_id=str(hit.id),
+        return [
+            RetrievedChunk(
+                chunk=_chunk_from_payload(hit.payload or {}, hit.id),
+                score=hit.score,
+                retrieval_method="dense",
             )
-            results.append(RetrievedChunk(chunk=chunk, score=hit.score, retrieval_method="dense"))
-        return results
+            for hit in hits
+        ]
 
     def scroll_all_chunks(self) -> list[Chunk]:
         """Trae todos los chunks indexados (para construir el indice BM25 en memoria)."""
@@ -81,18 +105,9 @@ class QdrantStore:
                 with_payload=True,
                 with_vectors=False,
             )
-            for record in records:
-                payload = record.payload or {}
-                chunks.append(
-                    Chunk(
-                        text=payload.get("text", ""),
-                        source_file=payload.get("source_file", "desconocido"),
-                        section=payload.get("section", "Sin seccion"),
-                        page=payload.get("page"),
-                        chunk_index=payload.get("chunk_index", 0),
-                        chunk_id=str(record.id),
-                    )
-                )
+            chunks.extend(
+                _chunk_from_payload(record.payload or {}, record.id) for record in records
+            )
             if next_offset is None:
                 break
         return chunks

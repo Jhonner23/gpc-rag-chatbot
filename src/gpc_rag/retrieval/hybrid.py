@@ -18,6 +18,7 @@ from rank_bm25 import BM25Okapi
 
 from gpc_rag.common.models import Chunk, RetrievedChunk
 from gpc_rag.embeddings.ollama_embeddings import OllamaEmbedder
+from gpc_rag.ingestion.sources import INSTITUTIONAL
 from gpc_rag.vectorstore.qdrant_store import QdrantStore
 
 logger = logging.getLogger(__name__)
@@ -48,6 +49,11 @@ _STOPWORDS = frozenset(
     me mi muy nos o otra otras otro otros para pero por porque puede pueden que se
     segun ser si sin sobre son su sus tambien tiene tienen todo todos tu un una unas
     uno unos y ya debe deben cuyo cuya""".split()  # noqa: SIM905 -- lista legible
+    # Ingles, para las guias y revisiones externas. "not" se conserva, igual
+    # que "no".
+    + """the of and to in is for with on as by be are was were this that these
+    those or an at from it its which than also may can has have had been into
+    their there such""".split()  # noqa: SIM905 -- lista legible
 )
 
 
@@ -205,6 +211,25 @@ def _reciprocal_rank_fusion(
     return fused
 
 
+def with_institutional_quota(
+    ranked: list[RetrievedChunk], top_k: int, quota: int, min_score: float
+) -> list[RetrievedChunk]:
+    """Los `top_k` mejores, reservando hasta `quota` lugares para los
+    protocolos institucionales que el reranker considero minimamente
+    relevantes (`min_score`). Si la pregunta no tiene que ver con los
+    protocolos (p. ej. malaria), sus fragmentos no superan el minimo y no se
+    fuerzan. El resultado conserva el orden por puntaje."""
+    reserved = [
+        rc
+        for rc in ranked
+        if rc.chunk.source_type == INSTITUTIONAL and rc.score >= min_score
+    ][:quota]
+    reserved_ids = {rc.chunk.chunk_id for rc in reserved}
+    rest = [rc for rc in ranked if rc.chunk.chunk_id not in reserved_ids]
+    chosen = reserved + rest[: max(top_k - len(reserved), 0)]
+    return sorted(chosen, key=lambda rc: rc.score, reverse=True)
+
+
 class HybridRetriever:
     def __init__(self, cfg: DictConfig, embedder: OllamaEmbedder, store: QdrantStore):
         self.cfg = cfg
@@ -228,13 +253,16 @@ class HybridRetriever:
         self._bm25 = BM25Okapi(tokenized) if tokenized else None
         logger.info("Indice BM25 construido con %d chunks.", len(chunks))
 
-    def _bm25_search(self, query: str, top_k: int) -> list[RetrievedChunk]:
+    def _bm25_search(
+        self, query: str, top_k: int, source_type: str | None = None
+    ) -> list[RetrievedChunk]:
         if self._bm25 is None or not self._bm25_chunks:
             return []
         scores = self._bm25.get_scores(_bm25_query_tokens(query))
-        ranked = sorted(
-            zip(self._bm25_chunks, scores, strict=True), key=lambda x: x[1], reverse=True
-        )[:top_k]
+        pairs = zip(self._bm25_chunks, scores, strict=True)
+        if source_type:
+            pairs = (pair for pair in pairs if pair[0].source_type == source_type)
+        ranked = sorted(pairs, key=lambda x: x[1], reverse=True)[:top_k]
         return [
             RetrievedChunk(chunk=chunk, score=float(score), retrieval_method="bm25")
             for chunk, score in ranked
@@ -285,16 +313,47 @@ class HybridRetriever:
         reranked.sort(key=lambda rc: rc.score, reverse=True)
         return reranked[:top_k]
 
+    def _institutional_candidates(
+        self, query: str, query_vector: list[float], limit: int
+    ) -> list[RetrievedChunk]:
+        """Mejores candidatos solo entre los protocolos institucionales.
+
+        Con las guias y revisiones externas el indice paso de ~70 a ~850
+        fragmentos, y los de la CUB podian quedar fuera de los 12 primeros de
+        la busqueda densa y de BM25: el protocolo institucional ni siquiera
+        llegaba al reranker."""
+        retrieval = self.cfg.retrieval
+        dense = self.store.search(
+            query_vector, top_k=retrieval.top_k_dense, source_type=INSTITUTIONAL
+        )
+        bm25 = self._bm25_search(query, top_k=retrieval.top_k_bm25, source_type=INSTITUTIONAL)
+        return _reciprocal_rank_fusion([dense, bm25])[:limit]
+
     def retrieve(self, query: str) -> list[RetrievedChunk]:
+        retrieval = self.cfg.retrieval
         query = retrieval_query(query)
         query_vector = self.embedder.embed_query(query)
-        dense_results = self.store.search(query_vector, top_k=self.cfg.retrieval.top_k_dense)
-        bm25_results = self._bm25_search(query, top_k=self.cfg.retrieval.top_k_bm25)
+        dense_results = self.store.search(query_vector, top_k=retrieval.top_k_dense)
+        bm25_results = self._bm25_search(query, top_k=retrieval.top_k_bm25)
 
         fused = _reciprocal_rank_fusion([dense_results, bm25_results])
+        quota = int(retrieval.get("institutional_quota", 0))
 
-        if self.cfg.retrieval.use_reranker and fused:
-            candidate_pool = fused[: max(self.cfg.retrieval.top_k_final * 3, 10)]
-            return self._rerank(query, candidate_pool, self.cfg.retrieval.top_k_final)
+        if retrieval.use_reranker and fused:
+            candidate_pool = fused[: max(retrieval.top_k_final * 3, 10)]
+            if quota:
+                seen = {rc.chunk.chunk_id for rc in candidate_pool}
+                candidate_pool += [
+                    rc
+                    for rc in self._institutional_candidates(query, query_vector, quota * 2)
+                    if rc.chunk.chunk_id not in seen
+                ]
+            ranked = self._rerank(query, candidate_pool, len(candidate_pool))
+            return with_institutional_quota(
+                ranked,
+                retrieval.top_k_final,
+                quota,
+                float(retrieval.get("institutional_min_score", 0.05)),
+            )
 
-        return fused[: self.cfg.retrieval.top_k_final]
+        return fused[: retrieval.top_k_final]

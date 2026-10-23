@@ -13,8 +13,10 @@ data/**
 # Tablas transcritas y revisadas de cada PDF (ver ingestion/tables.py): van
 # junto al PDF y se versionan igual que el.
 !data/01_raw/gpc/*.tablas.yaml
-
-# clonar el repo alcance, sin depender de que cada quien tenga su copia.
+# Fuentes externas (guias y revisiones de editoriales): los PDF de
+# data/01_raw/externas/ NO se versionan, el repositorio es publico. Solo se
+# versiona su catalogo.
+!data/01_raw/externas/fuentes.yaml
 
 # also keep all .gitkeep files
 !.gitkeep
@@ -44,7 +46,7 @@ sdist/
 var/
 *.egg-info/
 .installed.cfg
-*.egg'
+*.egg
 venv
 
 # PyInstaller
@@ -156,3 +158,4 @@ eval/comparacion_rag_arbol.md
 
 # Evaluacion de recuperacion: texto exportado del indice (derivado, no se versiona)
 eval/chunks_protocolos.json
+eval/agentes_codigo*.txt

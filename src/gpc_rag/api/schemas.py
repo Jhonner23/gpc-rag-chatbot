@@ -19,6 +19,8 @@ class SourceOut(BaseModel):
     section: str
     page: int | None = None
     score: float
+    source_type: str = "institucional"
+    source_title: str = ""
 
 
 class AgentPanelOut(BaseModel):

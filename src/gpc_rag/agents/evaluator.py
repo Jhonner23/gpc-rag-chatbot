@@ -39,6 +39,7 @@ from gpc_rag.agents.timeouts import llm_timeout
 from gpc_rag.common.grounding import grounding_problems
 from gpc_rag.common.models import RetrievedChunk
 from gpc_rag.common.refusal import is_refusal
+from gpc_rag.ingestion.sources import source_label
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +82,8 @@ especifico, en español>"}
 def _format_context(sources: list[RetrievedChunk]) -> str:
     blocks = [
         f"[Guia: {rc.chunk.source_file}, Seccion: {rc.chunk.section}, "
-        f"Pagina: {rc.chunk.page}]\n{rc.chunk.text}"
+        f"Pagina: {rc.chunk.page}] (Tipo: {source_label(rc.chunk.source_type)})\n"
+        f"{rc.chunk.text}"
         for rc in sources
     ]
     return "\n\n".join(blocks) if blocks else "(sin contexto recuperado)"
@@ -114,7 +116,11 @@ def evaluate_answer_status(
         )
         return APROBADA, None
 
-    problems = grounding_problems(answer, [rc.chunk.source_file for rc in sources])
+    problems = grounding_problems(
+        answer,
+        [rc.chunk.source_file for rc in sources],
+        aliases=[rc.chunk.source_title for rc in sources],
+    )
     if problems:
         logger.info("Evaluador: rechazo determinista: %s", " ".join(problems))
         return RECHAZADA, " ".join(problems)

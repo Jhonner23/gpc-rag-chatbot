@@ -1,4 +1,8 @@
-from gpc_rag.ingestion.chunking import approx_token_count, chunk_document, split_into_sections
+from gpc_rag.ingestion.chunking import (
+    approx_token_count,
+    chunk_document,
+    split_into_sections,
+)
 
 SAMPLE_MD = """# Seccion 1
 Contenido de prueba sobre diabetes tipo 2, manejo farmacologico y no

@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from gpc_rag.common.models import Chunk
 from gpc_rag.ingestion.tables import strip_markdown_tables
 
-_HEADER_RE = re.compile(r"^(#{1,4})\s+(.*)$", re.MULTILINE)
+_HEADER_RE = re.compile(r"^(#{1,6})\s+(.*)$", re.MULTILINE)
 
 # Paginas que pasaron por OCR (ver ingestion/extract.py) no traen encabezados
 # markdown reales (#, ##...) -- el texto queda "plano". Muchas GPC sin embargo
@@ -77,6 +77,8 @@ _PICTURE_TEXT_RE = re.compile(
 # ("Gráfico 1. Etiología de la neumonía... en la CUB") y quedaba primera en
 # BM25 para cualquier pregunta sobre la neumonia adquirida en comunidad.
 _PICTURE_CAPTION_RE = re.compile(r"^\*\*(gr[aá]fico|figura)\s*\d+\.?\*\*.*$", re.IGNORECASE | re.MULTILINE)
+# Etiquetas HTML que el extractor deja en los articulos (<mark>, <u>, <sup>).
+_HTML_TAG_RE = re.compile(r"</?(mark|u|sup|sub|span|br)\b[^>]*>", re.IGNORECASE)
 _EMPTY_MARKUP_LINE_RE = re.compile(r"^[\s*_\-]*$")
 
 # Un "encabezado" de mas de esta longitud es en realidad un parrafo que el
@@ -91,6 +93,7 @@ def clean_page_text(text: str) -> str:
     lineas que quedan vacias."""
     text = _PICTURE_TEXT_RE.sub("", text)
     text = _PICTURE_CAPTION_RE.sub("", text)
+    text = _HTML_TAG_RE.sub("", text)
     for pattern in _BOILERPLATE_RES:
         text = pattern.sub("", text)
     lines = [line.rstrip() for line in text.splitlines()]
@@ -99,7 +102,69 @@ def clean_page_text(text: str) -> str:
 
 
 _CONTINUATION = "\x00continuacion"
-_BIBLIOGRAPHY_RE = re.compile(r"referencias|bibliograf", re.IGNORECASE)
+_BIBLIOGRAPHY_RE = re.compile(
+    r"referencias|bibliograf|references|additional readings?|lecturas recomendadas"
+    # Secciones de los articulos que no son contenido clinico.
+    r"|article information|author contributions|conflict of interest|disclosures"
+    r"|acknowledg|agradecimientos|conflictos? de inter[eé]s|financiaci[oó]n"
+    r"|author affiliations|corresponding author|submissions?\b|accepted for publication",
+    re.IGNORECASE,
+)
+# Linea con forma de referencia bibliografica ("Smith J, et al. ... 2019;200:
+# e45", "doi:10...", "PMID"). En los articulos de revista la bibliografia no
+# siempre tiene titulo propio (columnas laterales del Lancet), asi que tambien
+# se descarta un fragmento cuando la mayoria de sus lineas son referencias.
+_CITATION_LINE_RE = re.compile(
+    r"\bet al\b|\bdoi\b|\bpmid\b|\b(19|20)\d{2}\s*;\s*\d+|\b(19|20)\d{2}\s*\.\s*\d+\s*[:(]",
+    re.IGNORECASE,
+)
+_MIN_CITATION_LINES = 4
+_CITATION_LINES_RATIO = 0.5
+
+
+def _looks_like_bibliography(text: str) -> bool:
+    lines = [line for line in text.splitlines() if line.strip()]
+    hits = sum(1 for line in lines if _CITATION_LINE_RE.search(line))
+    if not hits:
+        return False
+    return hits == len(lines) or (
+        hits >= _MIN_CITATION_LINES and hits >= _CITATION_LINES_RATIO * len(lines)
+    )
+
+
+# Encabezados y pies de pagina de revista que se repiten en casi todas las
+# paginas ("AMERICAN THORACIC SOCIETY DOCUMENTS", "© 2024 American Medical
+# Association. All rights reserved.", "Downloaded from jamanetwork.com by
+# ...", la URL de ClinicalKey). Sin quitarlos se colaban en los fragmentos y
+# terminaban como titulo de seccion de casi todo el documento. Se detectan
+# por documento: una linea que aparece en al menos el 40 % de las paginas
+# (y en 3 o mas) es encabezado o pie, no contenido.
+_RUNNING_LINE_MIN_PAGES = 3
+_RUNNING_LINE_PAGE_RATIO = 0.4
+_TABLE_RULE_RE = re.compile(r"^\|?[\s:|-]+\|?$")
+
+
+def _line_key(line: str) -> str:
+    plain = _HTML_TAG_RE.sub("", line)
+    plain = re.sub(r"^#+\s*", "", plain.strip())
+    return re.sub(r"\s+", " ", re.sub(r"[*_]+", "", plain)).strip().lower()
+
+
+def running_lines(pages: list[dict]) -> set[str]:
+    """Lineas (normalizadas) que se repiten como encabezado o pie de pagina."""
+    counts: dict[str, int] = {}
+    for page in pages:
+        for key in {_line_key(line) for line in (page.get("text") or "").splitlines()}:
+            if len(key) >= 6 and not _TABLE_RULE_RE.match(key) and "picture text" not in key:
+                counts[key] = counts.get(key, 0) + 1
+    threshold = max(_RUNNING_LINE_MIN_PAGES, _RUNNING_LINE_PAGE_RATIO * len(pages))
+    return {key for key, n in counts.items() if n >= threshold}
+
+
+def _drop_running_lines(text: str, keys: set[str]) -> str:
+    if not keys:
+        return text
+    return "\n".join(line for line in text.splitlines() if _line_key(line) not in keys)
 
 
 def _is_bibliography(title: str) -> bool:
@@ -211,7 +276,10 @@ def split_into_sections(
     inline = [
         (m.start(), m.end(), _strip_markdown_markers(m.group("label")))
         for m in _INLINE_LABEL_RE.finditer(markdown_text)
-        if (m.group("inner") or m.group("outer")) and not _CAPTION_RE.match(m.group("label"))
+        if (m.group("inner") or m.group("outer"))
+        and not _CAPTION_RE.match(m.group("label"))
+        # "**12.** Smith J, et al." es el numero de una referencia, no un titulo.
+        and re.search(r"[^\W\d_]", m.group("label"))
     ]
     inline += [
         (m.start(), m.end(), m.group("label").strip())
@@ -309,9 +377,10 @@ def chunk_document(
     # seccion era la bibliografia, se descarta igual que ella.
     last_title = "Sin seccion"
     path = _TitlePath()
+    repeated = running_lines(pages)
 
     for page in pages:
-        text = clean_page_text(page["text"])
+        text = clean_page_text(_drop_running_lines(page["text"], repeated))
         if page["page"] in drop_tables_on_pages:
             text = strip_markdown_tables(text)
         if not text:
@@ -337,7 +406,7 @@ def chunk_document(
                 else min_chunk_tokens
             )
             for piece in pieces:
-                if approx_token_count(piece) < min_tokens:
+                if approx_token_count(piece) < min_tokens or _looks_like_bibliography(piece):
                     continue
                 chunks.append(
                     Chunk(

@@ -59,3 +59,18 @@ def test_format_context_does_not_number_fragments():
     assert context.startswith(
         "[Guia: guia_diabetes.pdf, Seccion: Tratamiento farmacologico, Pagina: 12]"
     )
+
+
+def test_context_names_the_source_type() -> None:
+    chunk = Chunk(
+        text="Use ceftriaxone.",
+        source_file="ats.pdf",
+        section="Treatment",
+        page=3,
+        chunk_id="x",
+        source_type="guia",
+        source_title="ATS 2025",
+    )
+    context = format_context([RetrievedChunk(chunk=chunk, score=1.0)])
+    assert "(Tipo: guía externa; ATS 2025)" in context
+    assert "(Tipo: protocolo institucional CUB)" in format_context([_sample_retrieved_chunk()])

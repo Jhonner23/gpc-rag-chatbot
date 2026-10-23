@@ -30,6 +30,7 @@ import chainlit as cl
 import httpx
 
 from gpc_rag.common.refusal import is_refusal
+from gpc_rag.ingestion.sources import INSTITUTIONAL, source_label
 
 API_URL = os.environ.get("API_URL", "http://localhost:8000")
 # En CPU, una pregunta con reintento del RAG puede pasar de 5 minutos
@@ -56,7 +57,13 @@ def _format_sources(sources: list[dict]) -> str:
     if not sources:
         return ""
     lines = [
-        f"- **{_escape(s['source_file'])}**, sección: {_escape(str(s['section']))}"
+        f"- **{_escape(s.get('source_title') or s['source_file'])}**"
+        + (
+            f" ({source_label(s['source_type'])})"
+            if s.get("source_type") and s["source_type"] != INSTITUTIONAL
+            else ""
+        )
+        + f", sección: {_escape(str(s['section']))}"
         + (f", pág. {s['page']}" if s.get("page") is not None else "")
         for s in sources
     ]

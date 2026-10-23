@@ -110,11 +110,17 @@ def inference_markers(text: str) -> list[str]:
     return sorted({m.group(0) for m in _INFERENCE_RE.finditer(plain)})
 
 
-def grounding_problems(text: str, sources: Iterable[str]) -> list[str]:
-    """Problemas de fundamentacion detectables sin modelo (vacio si ninguno)."""
+def grounding_problems(
+    text: str, sources: Iterable[str], aliases: Iterable[str] = ()
+) -> list[str]:
+    """Problemas de fundamentacion detectables sin modelo (vacio si ninguno).
+
+    `sources` son los archivos recuperados; `aliases`, otros nombres validos
+    para citarlos (el titulo de las fuentes externas, que tambien va en el
+    contexto)."""
     sources = list(sources)
     problems = []
-    unknown = unknown_citations(text, sources)
+    unknown = unknown_citations(text, sources + [a for a in aliases if a])
     if unknown:
         problems.append(
             "Cita documentos que no estan entre las fuentes recuperadas: "

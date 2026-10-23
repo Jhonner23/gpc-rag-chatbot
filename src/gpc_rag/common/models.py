@@ -15,6 +15,10 @@ class Chunk:
     page: int | None = None
     chunk_index: int = 0
     chunk_id: str = ""
+    # "institucional" (protocolos de la CUB), "guia" (guia externa) o
+    # "revision" (articulo de revision o monografia). Ver ingestion/sources.py.
+    source_type: str = "institucional"
+    source_title: str = ""
 
     def metadata(self) -> dict:
         return {
@@ -22,6 +26,8 @@ class Chunk:
             "section": self.section,
             "page": self.page,
             "chunk_index": self.chunk_index,
+            "source_type": self.source_type,
+            "source_title": self.source_title,
         }
 
 
@@ -52,6 +58,8 @@ def _sources_as_dicts(sources: list[RetrievedChunk]) -> list[dict]:
             "section": rc.chunk.section,
             "page": rc.chunk.page,
             "score": round(rc.score, 4),
+            "source_type": rc.chunk.source_type,
+            "source_title": rc.chunk.source_title,
         }
         for rc in sources
     ]

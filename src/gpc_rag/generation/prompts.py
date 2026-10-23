@@ -28,6 +28,7 @@ ese hueco, que la regla original (solo farmacos/dosis) no cubria.
 from __future__ import annotations
 
 from gpc_rag.common.models import RetrievedChunk
+from gpc_rag.ingestion.sources import source_label
 
 SYSTEM_PROMPT = """\
 Eres un asistente clinico que responde preguntas sobre Guias de Practica \
@@ -95,6 +96,18 @@ con sus "o" y "+" (p. ej. "cefuroxime o ampicilina sulbactam + linezolid o \
 vancomicina"): no las reagrupes de forma que cambien su sentido.
 - Se claro, sin repetir la misma informacion, y usa terminologia clinica \
 precisa.
+- Cada fragmento indica su Tipo: "protocolo institucional CUB", "guía \
+externa" o "revisión". El protocolo institucional es la referencia de la \
+clinica: si el CONTEXTO trae fragmentos del protocolo institucional, empieza \
+por lo que dice el protocolo ("Según el protocolo institucional...") y \
+despues, por separado, lo que agregan las guias externas o las revisiones, \
+nombrando cada fuente.
+- Si una guia externa o una revision recomienda algo distinto al protocolo \
+institucional para la MISMA situacion, muestralo como diferencia entre las \
+fuentes, sin decidir cual aplicar. Nunca atribuyas a una fuente lo que dice \
+otra.
+- Si un fragmento esta en ingles, traducelo fielmente al español: conserva \
+exactamente farmacos, dosis, unidades, intervalos, duraciones y condiciones.
 - Esta respuesta apoya, pero NO reemplaza, el juicio clinico profesional.
 """
 
@@ -106,7 +119,12 @@ def format_context(chunks: list[RetrievedChunk]) -> str:
     # "Referencias: Fragmento 1..5" con titulos y paginas que no existen.
     for rc in chunks:
         c = rc.chunk
-        header = f"[Guia: {c.source_file}, Seccion: {c.section}, Pagina: {c.page}]"
+        header = (
+            f"[Guia: {c.source_file}, Seccion: {c.section}, Pagina: {c.page}]"
+            f" (Tipo: {source_label(c.source_type)}"
+            + (f"; {c.source_title}" if c.source_title else "")
+            + ")"
+        )
         blocks.append(f"{header}\n{c.text}")
     return "\n\n".join(blocks) if blocks else "(sin contexto relevante encontrado)"
 
