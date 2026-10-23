@@ -97,3 +97,28 @@ def test_answer_is_literal_units_with_citations_protocol_first_in_document_order
 
 def test_no_selected_units_is_an_abstention() -> None:
     assert extractive_answer(_FakeGenerator([]), "¿Malaria?", [_IDSA]) == REFUSAL
+
+
+def test_captions_alone_are_not_units_and_ids_are_removed_from_translations() -> None:
+    from gpc_rag.generation.extractive import translate_units
+
+    rc = RetrievedChunk(
+        chunk=Chunk(
+            text="Asymptomatic Bacteriuria\n\nBox 2. Main Indications to Treat Asymptomatic "
+            "Bacteriuria\n\nThe first is pregnant women, because treatment lowers the risk of "
+            "pyelonephritis.",
+            source_file="ajkd.pdf",
+            section="Asymptomatic Bacteriuria",
+            chunk_id="d",
+            source_type="revision",
+        ),
+        score=1.0,
+    )
+    units = build_units([rc])
+    assert [u.text[:9] for u in units] == ["The first"]
+
+    class _Gen:
+        def chat_json(self, system, user, schema, num_predict):
+            return json.dumps({"traducciones": {"u1": "u1: La primera son las gestantes."}})
+
+    assert translate_units(_Gen(), units) == {"u1": "La primera son las gestantes."}

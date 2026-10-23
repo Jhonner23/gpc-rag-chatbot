@@ -48,6 +48,14 @@ _MAX_SENTENCE_WORDS = 70
 _MIN_UNIT_WORDS = 4
 _BULLET_RE = re.compile(r"^\s*(?:[-•*]|\d{1,2}[.)])\s+")
 _SENTENCE_SPLIT_RE = re.compile(r"(?<=[.;])\s+(?=[A-ZÁÉÍÓÚÑ¿(])")
+# Titulos de cuadros, tablas o figuras solos ("Box 2. Main Indications to
+# Treat Asymptomatic Bacteriuria"): no dicen nada por si mismos.
+_CAPTION_UNIT_RE = re.compile(
+    r"^(box|table|figure|fig\.|cuadro|tabla|figura|gr[aá]fico)\s*\d+\.?\s+[^.;:]{0,100}\.?$",
+    re.IGNORECASE,
+)
+# El modelo a veces repite el id al traducir ("u3: Caja 2...").
+_LEADING_ID_RE = re.compile(r"^\s*u\d+\s*[:.-]\s*", re.IGNORECASE)
 _KEY_VALUE_RE = re.compile(r"^[^:\n]{2,60}:\s*\S")
 _MARKDOWN_RE = re.compile(r"(\*\*|__|(?<!\w)[*_](?!\s)|(?<!\s)[*_](?!\w)|^#+\s*)", re.MULTILINE)
 
@@ -156,7 +164,9 @@ def segment(rc: RetrievedChunk) -> list[str]:
     if lead and not bullets:
         units.append(lead)
     flush()
-    return [u for u in units if len(u.split()) >= _MIN_UNIT_WORDS]
+    return [
+        u for u in units if len(u.split()) >= _MIN_UNIT_WORDS and not _CAPTION_UNIT_RE.match(u)
+    ]
 
 
 def build_units(sources: list[RetrievedChunk]) -> list[Unit]:
@@ -197,8 +207,11 @@ Responde UNICAMENTE con JSON: {"ids": ["u3", "u7", ...]}"""
 _TRANSLATE_SYSTEM = """\
 Traduce al español cada texto, de forma literal y completa. Conserva \
 exactamente los nombres de farmacos, dosis, unidades, numeros, intervalos, \
-duraciones, negaciones ("no", "not") y condiciones. No agregues, quites ni \
-expliques nada. Responde UNICAMENTE con JSON: {"traducciones": {"<id>": \
+duraciones, negaciones ("no", "not") y condiciones. Usa la terminologia \
+medica estandar en español (p. ej. pyelonephritis = pielonefritis, \
+asymptomatic bacteriuria = bacteriuria asintomatica, cystitis = cistitis, \
+UTI = ITU). No agregues, quites ni expliques nada, y no incluyas el id en \
+el texto traducido. Responde UNICAMENTE con JSON: {"traducciones": {"<id>": \
 "<texto traducido>", ...}}"""
 
 
@@ -290,7 +303,7 @@ def translate_units(generator, units: list[Unit]) -> dict[str, str]:
         logger.warning("RAG extractivo: traduccion no interpretable: %r", content)
         return {}
     return {
-        uid: text.strip()
+        uid: _LEADING_ID_RE.sub("", text).strip()
         for uid, text in translations.items()
         if isinstance(text, str) and text.strip() and uid in {u.uid for u in english}
     }
