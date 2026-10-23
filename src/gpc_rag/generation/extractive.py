@@ -92,9 +92,41 @@ def is_english(text: str) -> bool:
     return en > es
 
 
+# Llamadas numericas de los articulos ("[6]", "[12, 13]") y vinetas sueltas
+# dentro de una linea ("embarazo; • Procedimientos").
+_NUMERIC_CALLOUT_RE = re.compile(r"\s*\[\d+(?:\s*[,–-]\s*\d+)*\]")
+_INLINE_BULLET_RE = re.compile(r"\s*[•➢▪◦]\s*")
+
+
 def _clean(text: str) -> str:
     text = _MARKDOWN_RE.sub("", text)
+    text = _NUMERIC_CALLOUT_RE.sub("", text)
+    text = _INLINE_BULLET_RE.sub(" ", text)
     return re.sub(r"\s+", " ", text).strip()
+
+
+def _table_row_unit(body: str, section: str) -> str:
+    """Una fila de tabla en una linea legible: "Encabezado. Col: valor. Col:
+    valor. Notas: (1) ...; (3) ..." (sin repetir el encabezado). Las celdas
+    se separan con punto porque sus valores ya usan ";" entre farmacos."""
+    cells: list[str] = []
+    notes: list[str] = []
+    in_notes = False
+    for raw in body.splitlines():
+        line = _clean(raw)
+        if not line:
+            continue
+        if line.lower().startswith("notas de la tabla"):
+            in_notes = True
+            continue
+        if in_notes:
+            notes.append(_BULLET_RE.sub("", line).rstrip(" ."))
+        elif line.rstrip(" .") != _clean(section).rstrip(" ."):
+            cells.append(line.rstrip(" ."))
+    text = f"{_clean(section)}. " + ". ".join(cells) + "."
+    if notes:
+        text += " Notas: " + "; ".join(notes) + "."
+    return text
 
 
 def _last_level(section: str) -> str:
@@ -133,9 +165,7 @@ def segment(rc: RetrievedChunk) -> list[str]:
     if _is_table_row(body):
         # Fila de tabla: una sola unidad, para que la condicion de la fila no
         # se separe de su tratamiento ni de sus notas.
-        row = [_clean(line) for line in body.splitlines() if line.strip()]
-        heading = _clean(rc.chunk.section)
-        return [f"{heading}. " + " ".join(r if r.endswith(".") else r + "." for r in row)]
+        return [_table_row_unit(body, rc.chunk.section)]
 
     units: list[str] = []
     bullets: list[str] = []
@@ -199,7 +229,9 @@ solo dan dosis.
 - Prefiere las oraciones del protocolo institucional de la Clinica \
 Universitaria Bolivariana (CUB) cuando traten el tema; agrega las de guias \
 externas o revisiones que lo complementen.
-- No elijas oraciones repetidas ni de otro tema.
+- No elijas oraciones repetidas ni de otro tema o situacion clinica distinta \
+a la preguntada (p. ej. choque septico si la pregunta es sobre bacteriuria \
+asintomatica), aunque vengan del mismo documento.
 - Si ninguna oracion responde la pregunta, devuelve la lista vacia.
 
 Responde UNICAMENTE con JSON: {"ids": ["u3", "u7", ...]}"""
@@ -329,7 +361,7 @@ def compose(units: list[Unit], translations: dict[str, str]) -> str:
     lines = []
     for unit in sorted(units, key=_display_order):
         text = translations.get(unit.uid)
-        shown = f"{text} {TRANSLATED_MARK}" if text else unit.text
+        shown = f"{_clean(text)} {TRANSLATED_MARK}" if text else unit.text
         lines.append(f"- {shown} {_citation(unit.source)}")
     return "\n".join(lines)
 

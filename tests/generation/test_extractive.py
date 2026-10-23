@@ -62,7 +62,8 @@ def test_lists_keep_their_lead_and_table_rows_stay_whole() -> None:
     ]
     (row,) = segment(_ROW)
     assert row.startswith("Tabla 2. Gestante — Bacteriuria asintomática. Condición:")
-    assert "¿Requiere urocultivo de control?: No." in row
+    assert row.endswith("¿Requiere urocultivo de control?: No.")
+    assert row.count("Tabla 2. Gestante") == 1
 
 
 class _FakeGenerator:
@@ -122,3 +123,16 @@ def test_captions_alone_are_not_units_and_ids_are_removed_from_translations() ->
             return json.dumps({"traducciones": {"u1": "u1: La primera son las gestantes."}})
 
     assert translate_units(_Gen(), units) == {"u1": "La primera son las gestantes."}
+
+
+def test_numeric_callouts_and_inline_bullets_are_cleaned() -> None:
+    rc = RetrievedChunk(
+        chunk=Chunk(
+            text="Box\n\nMain indications: pregnancy; • urologic procedures with mucosal bleeding [6].",
+            source_file="x.pdf",
+            section="Box",
+            chunk_id="e",
+        ),
+        score=1.0,
+    )
+    assert segment(rc) == ["Main indications: pregnancy; urologic procedures with mucosal bleeding."]
