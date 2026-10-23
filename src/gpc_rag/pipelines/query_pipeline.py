@@ -39,6 +39,7 @@ class QueryPipeline:
                 question,
                 retrieved,
                 max_units=int(rag_cfg.get("max_units", 8)),
+                min_relevance=float(rag_cfg.get("min_relevance", 0.0)),
                 extra_instruction=extra_instruction,
             )
         else:

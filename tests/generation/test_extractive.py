@@ -164,3 +164,34 @@ def test_quiz_answers_are_removed() -> None:
         score=1.0,
     )
     assert segment(rc) == ["Pregnancy is an indication for the treatment of ASB."]
+
+
+def test_long_lists_are_split_and_reference_numbers_removed() -> None:
+    items = "\n".join(
+        f"- Item number {i} about screening asymptomatic bacteriuria in adults with a long "
+        f"explanation of the reasons and the evidence behind it 1 52 53" for i in range(6)
+    )
+    rc = RetrievedChunk(
+        chunk=Chunk(
+            text=f"Screening tests\n\nScreening tests:\n{items}\n\nAdults older than 65.",
+            source_file="ck.pdf",
+            section="Screening tests",
+            chunk_id="h",
+            source_type="revision",
+        ),
+        score=1.0,
+    )
+    units = [u.text for u in build_units([rc])]
+    assert len(units) == 7
+    assert units[0] == (
+        "Screening tests: Item number 0 about screening asymptomatic bacteriuria in adults "
+        "with a long explanation of the reasons and the evidence behind it."
+    )
+    assert units[-1] == "Adults older than 65."  # un numero solo no se toca
+
+
+def test_low_relevance_abstains_without_calling_the_selector() -> None:
+    low = RetrievedChunk(chunk=_IDSA.chunk, score=0.02)
+    gen = _FakeGenerator(["u1"])
+    assert extractive_answer(gen, "¿Malaria?", [low], min_relevance=0.1) == REFUSAL
+    assert gen.prompts == []

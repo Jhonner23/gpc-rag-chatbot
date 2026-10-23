@@ -45,6 +45,7 @@ REFUSAL = (
 TRANSLATED_MARK = "(traducido del inglés)"
 
 _MAX_SENTENCE_WORDS = 70
+_MAX_LIST_WORDS = 80
 _MIN_UNIT_WORDS = 4
 _BULLET_RE = re.compile(r"^\s*(?:[-•*]|\d{1,2}[.)])\s+")
 _SENTENCE_SPLIT_RE = re.compile(r"(?<=[.;])\s+(?=[A-ZÁÉÍÓÚÑ¿(])")
@@ -103,6 +104,13 @@ _QUIZ_RE = re.compile(
     r",?\s*(so|therefore|thus)?\s*the (correct )?answer is \(?[a-e]\)?\.?|\bpor lo que la respuesta es \(?[a-e]\)?\.?",
     re.IGNORECASE,
 )
+
+
+# Numeros de referencia que ClinicalKey deja como texto al final de cada
+# frase ("...nonpregnant adults 1 52 53;"). Solo en fuentes externas y solo
+# cuando son dos o mas seguidos tras una palabra: un numero solo al final
+# ("older than 65.") puede ser un dato.
+_TRAILING_REFS_RE = re.compile(r"(?<=[a-z)])(?:\s\d{1,3}){2,4}(?=\s*(?:[;.]|$))")
 
 
 def _clean(text: str) -> str:
@@ -184,11 +192,20 @@ def segment(rc: RetrievedChunk) -> list[str]:
         nonlocal bullets, lead
         if bullets:
             prefix = lead.rstrip(" :") if lead else _last_level(rc.chunk.section)
-            units.append(f"{prefix}: " + "; ".join(b.rstrip(" .;") for b in bullets) + ".")
+            items = [b.rstrip(" .;") for b in bullets]
+            joined = f"{prefix}: " + "; ".join(items) + "."
+            if len(joined.split()) <= _MAX_LIST_WORDS:
+                units.append(joined)
+            else:
+                # Lista larga: un elemento por unidad, cada uno con su frase de
+                # entrada (una sola unidad de 300 palabras no se traducia).
+                units.extend(f"{prefix}: {item}." for item in items)
         bullets, lead = [], None
 
     for paragraph in re.split(r"\n\s*\n", body):
-        for line in paragraph.splitlines() if _BULLET_RE.match(paragraph) else [paragraph]:
+        lines = paragraph.splitlines()
+        has_bullets = any(_BULLET_RE.match(line) for line in lines)
+        for line in lines if has_bullets else [paragraph]:
             if _BULLET_RE.match(line):
                 bullets.append(_clean(_BULLET_RE.sub("", line)))
                 continue
@@ -235,7 +252,10 @@ def build_units(sources: list[RetrievedChunk]) -> list[Unit]:
     units: list[Unit] = []
     seen: set[str] = set()
     for rank, rc in enumerate(sources):
-        for order, text in enumerate(segment(rc)):
+        for order, raw in enumerate(segment(rc)):
+            text = (
+                _TRAILING_REFS_RE.sub("", raw) if rc.chunk.source_type != INSTITUTIONAL else raw
+            )
             key = text.lower()
             if key in seen:  # solape entre fragmentos consecutivos
                 continue
@@ -253,8 +273,12 @@ respondas, no resumas y no reescribas nada.
 Reglas:
 - Elige las oraciones que respondan directamente lo que se pregunta \
 (normalmente entre 2 y 6), y ninguna que no lo haga.
-- No elijas oraciones que solo describan el alcance o el objetivo de un \
-documento o de una de sus preguntas.
+- No elijas oraciones que describan el documento, su panel, su proposito, su \
+alcance o su metodo ("el panel abordo...", "esta guia tiene como \
+proposito..."): solo las que dicen que hacer con el paciente.
+- Si la pregunta es sobre una enfermedad o condicion que ninguna oracion \
+trata (p. ej. malaria cuando las oraciones hablan de neumonia o de ITU), \
+devuelve la lista vacia aunque haya oraciones sobre antibioticos o fiebre.
 - No elijas oraciones especulativas o sobre necesidades de investigacion \
 ("podrian", "no contamos con datos") si hay recomendaciones concretas.
 - Si eliges una recomendacion o un tratamiento, elige tambien la oracion que \
@@ -342,10 +366,20 @@ def select_units(
     return chosen[:max_units]
 
 
+_TRANSLATE_BATCH = 3
+
+
 def translate_units(generator, units: list[Unit]) -> dict[str, str]:
-    """Traduccion de las unidades en ingles ({uid: texto}); las que fallen se
-    dejan en su idioma original."""
+    """Traduccion de las unidades en ingles ({uid: texto}), de a pocas por
+    llamada; las que fallen se dejan en su idioma original."""
     english = [u for u in units if u.english]
+    translations: dict[str, str] = {}
+    for start in range(0, len(english), _TRANSLATE_BATCH):
+        translations.update(_translate_batch(generator, english[start : start + _TRANSLATE_BATCH]))
+    return translations
+
+
+def _translate_batch(generator, english: list[Unit]) -> dict[str, str]:
     if not english:
         return {}
     schema = {
@@ -364,7 +398,7 @@ def translate_units(generator, units: list[Unit]) -> dict[str, str]:
         _TRANSLATE_SYSTEM,
         prompt,
         schema,
-        num_predict=sum(2 * len(u.text.split()) + 20 for u in english),
+        num_predict=sum(3 * len(u.text.split()) + 40 for u in english),
     )
     try:
         translations = json.loads(content).get("traducciones") or {}
@@ -409,7 +443,13 @@ def extractive_answer(
     sources: list[RetrievedChunk],
     max_units: int = 8,
     extra_instruction: str | None = None,
+    min_relevance: float = 0.0,
 ) -> str:
+    if not sources or max(rc.score for rc in sources) < min_relevance:
+        # Ningun fragmento le parecio pertinente al reranker (p. ej. malaria):
+        # abstencion sin pedirle al selector que elija entre oraciones ajenas.
+        logger.info("RAG extractivo: ningun fragmento supera %.2f; abstencion.", min_relevance)
+        return REFUSAL
     units = build_units(sources)
     chosen = select_units(generator, question, units, max_units, extra_instruction)
     logger.info(

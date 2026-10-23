@@ -89,6 +89,10 @@ def test_admin_sections_are_penalized_unless_the_question_names_them() -> None:
         == -0.3
     )
     assert _admin_penalty("2. ALCANCE", "x", 0.0) == 0.0
+    assert _admin_penalty("Resumen", "manejo inicial", 0.3) == -0.3
+    assert _admin_penalty("Methods", "x", 0.3, source_type="guia", page=5) == -0.3
+    assert _admin_penalty("Treatment", "x", 0.3, source_type="guia", page=1) == -0.3
+    assert _admin_penalty("Treatment", "x", 0.3, source_type="guia", page=4) == 0.0
     header = "Proceso: Cuidado y tratamiento Código: CT-PL-193 Versión: 9"
     assert _admin_penalty("PROTOCOLO DE NAC", "manejo inicial", 0.3, header) == -0.3
     assert _admin_penalty("PROTOCOLO DE NAC", "¿Qué versión está vigente?", 0.3, header) == 0.0

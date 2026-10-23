@@ -127,6 +127,14 @@ _ADMIN_SECTIONS = {
     "outstanding research": "investigacion",
     "conclusions and research needs": "investigacion",
     "controversies and uncertainties": "controversia",
+    # Resumen, introduccion y conclusiones de los articulos: describen el
+    # documento ("el panel abordo 16 areas...") en lugar de recomendar.
+    "resumen": "resumen",
+    "abstract": "resumen",
+    "summary": "resumen",
+    "introduction": "introduccion",
+    "conclusion": "conclusion",
+    "overview": "resumen",
 }
 # Encabezado del documento ("Proceso: Cuidado y tratamiento Código: CT-PL-193
 # Versión: 9 Fecha aprobación: ..."): solo sirve si preguntan por la version.
@@ -139,7 +147,14 @@ def _plain(text: str) -> str:
     return "".join(c for c in text if not unicodedata.combining(c))
 
 
-def _admin_penalty(section: str, query: str, penalty: float, text: str = "") -> float:
+def _admin_penalty(
+    section: str,
+    query: str,
+    penalty: float,
+    text: str = "",
+    source_type: str = INSTITUTIONAL,
+    page: int | None = None,
+) -> float:
     """Penalizacion (negativa) si la seccion es administrativa y la pregunta
     no la nombra. Se mira el ultimo nivel del titulo ("4. INTRODUCCIÓN —
     Manifestaciones clínicas" no es administrativa; "4. INTRODUCCIÓN" si)."""
@@ -155,6 +170,9 @@ def _admin_penalty(section: str, query: str, penalty: float, text: str = "") -> 
     query_plain = _plain(query)
     if _DOCUMENT_HEADER_RE.search(_plain(text)):
         return 0.0 if re.search(r"version|codigo|fecha", query_plain) else -penalty
+    # Portada de un articulo externo (titulo, autores, resumen): no recomienda.
+    if source_type != INSTITUTIONAL and page == 1:
+        return -penalty
     for level in candidates:
         for prefix, keyword in _ADMIN_SECTIONS.items():
             if level.startswith(prefix):
@@ -314,6 +332,8 @@ class HybridRetriever:
                     query,
                     self.cfg.retrieval.get("admin_section_penalty", _DEFAULT_ADMIN_PENALTY),
                     rc.chunk.text,
+                    rc.chunk.source_type,
+                    rc.chunk.page,
                 ),
                 retrieval_method="rerank",
             )

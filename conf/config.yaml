@@ -28,6 +28,7 @@ retrieval:
 rag:
   mode: extractivo
   max_units: 8              # maximo de oraciones en la respuesta
+  min_relevance: 0.1        # si ningun fragmento supera este puntaje del reranker, abstencion
 
 app:
   name: "GPC RAG Chatbot"
