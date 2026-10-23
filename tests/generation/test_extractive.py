@@ -151,3 +151,16 @@ def test_sentences_that_refer_to_the_previous_one_keep_it() -> None:
     )
     (unit,) = segment(rc)
     assert unit.startswith("La colonizacion previa") and unit.endswith("en nuestra poblacion.")
+
+
+def test_quiz_answers_are_removed() -> None:
+    rc = RetrievedChunk(
+        chunk=Chunk(
+            text="Review\n\nPregnancy is an indication for the treatment of ASB, so the answer is (a).",
+            source_file="ajkd.pdf",
+            section="Review",
+            chunk_id="g",
+        ),
+        score=1.0,
+    )
+    assert segment(rc) == ["Pregnancy is an indication for the treatment of ASB."]

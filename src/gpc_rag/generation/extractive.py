@@ -98,7 +98,16 @@ _NUMERIC_CALLOUT_RE = re.compile(r"\s*\[\d+(?:\s*[,–-]\s*\d+)*\]")
 _INLINE_BULLET_RE = re.compile(r"\s*[•➢▪◦]\s*")
 
 
+# Formato de autoevaluacion de AJKD ("..., so the answer is (a).").
+_QUIZ_RE = re.compile(
+    r",?\s*(so|therefore|thus)?\s*the (correct )?answer is \(?[a-e]\)?\.?|\bpor lo que la respuesta es \(?[a-e]\)?\.?",
+    re.IGNORECASE,
+)
+
+
 def _clean(text: str) -> str:
+    text = _QUIZ_RE.sub(".", text)
+    text = re.sub(r"\.\s*\.", ".", text)
     text = _MARKDOWN_RE.sub("", text)
     text = _NUMERIC_CALLOUT_RE.sub("", text)
     text = _INLINE_BULLET_RE.sub(" ", text)
@@ -242,8 +251,10 @@ trabajo es elegir los ids de las oraciones que responden la pregunta. No \
 respondas, no resumas y no reescribas nada.
 
 Reglas:
-- Elige todas las oraciones que respondan directamente lo que se pregunta \
-(no solo una), y ninguna que no lo haga.
+- Elige las oraciones que respondan directamente lo que se pregunta \
+(normalmente entre 2 y 6), y ninguna que no lo haga.
+- No elijas oraciones que solo describan el alcance o el objetivo de un \
+documento o de una de sus preguntas.
 - No elijas oraciones especulativas o sobre necesidades de investigacion \
 ("podrian", "no contamos con datos") si hay recomendaciones concretas.
 - Si eliges una recomendacion o un tratamiento, elige tambien la oracion que \
