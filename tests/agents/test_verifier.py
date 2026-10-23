@@ -157,3 +157,13 @@ def test_unrelated_tree_contribution_is_not_eligible() -> None:
     assert tree["verification"] == "no_relacionada" and not tree["eligible"]
     assert rag["eligible"]
     assert out["discrepancies"] == []  # sin dos aportaciones elegibles no se comparan
+
+
+def test_model_selected_consult_nodes_skip_the_relevance_judge() -> None:
+    """Los nodos que eligio el modelo para la pregunta no pasan por un segundo
+    juicio de relacion: aunque el juez diria "no relacionada", se publican."""
+    state = _state("arbol.pdf", "rag.pdf")
+    state["tree_result"] = {**state["tree_result"], "nodes_selected_by_model": True}
+    result = _verify(state, related='{"relacionada": false}')
+    tree = next(c for c in result["contributions"] if c["agent"] == "arbol")
+    assert tree["eligible"] and tree["verification"] == "verificada"

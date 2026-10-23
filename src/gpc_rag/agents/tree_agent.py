@@ -448,16 +448,16 @@ def select_nodes(chart: Flowchart, question: str, cfg: DictConfig) -> list[str]:
     return list(dict.fromkeys(selected))[:_MAX_SELECTED_NODES]
 
 
-def _consult_ranking(chart: Flowchart, question: str, cfg: DictConfig) -> list[str]:
-    """Nodos para el modo consulta: los que elige el modelo local; si la
-    llamada falla, coincidencia de palabras (BM25)."""
+def _consult_ranking(chart: Flowchart, question: str, cfg: DictConfig) -> tuple[list[str], bool]:
+    """Nodos para el modo consulta y si los eligio el modelo: los que elige el
+    modelo local; si la llamada falla, coincidencia de palabras (BM25)."""
     try:
         selected = select_nodes(chart, question, cfg)
         if selected:
-            return selected
+            return selected, True
     except Exception:  # un fallo del modelo no debe dejar al arbol sin respuesta
         logger.exception("Agente arbol: fallo la seleccion de nodos; se usa BM25.")
-    return rank_nodes_for_query(chart, question)
+    return rank_nodes_for_query(chart, question), False
 
 
 # Nodos del grafo ------------------------------------------------------------
@@ -508,10 +508,13 @@ def tree_agent_node(state: AgentState, cfg: DictConfig) -> dict:
     chart = get_flowchart(protocol_id)
 
     if state.get("tree_mode") == "consulta":
-        node_ids = _consult_ranking(chart, state["question"], cfg)
+        node_ids, by_model = _consult_ranking(chart, state["question"], cfg)
         result = (
             _render_consult(chart, node_ids) if node_ids else _render_overview(chart)
         )
+        # Los nodos elegidos por el modelo a partir de la pregunta ya pasaron
+        # un juicio de relevancia (verifier.py no repite el de relacion).
+        result["nodes_selected_by_model"] = bool(node_ids) and by_model
         logger.info(
             "Agente arbol: modo consulta nodos=%s protocolo=%s",
             node_ids or "resumen",

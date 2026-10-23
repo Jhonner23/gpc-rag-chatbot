@@ -348,7 +348,15 @@ def verify_contributions(state: AgentState, cfg: DictConfig) -> dict:
 
     # La aportacion del arbol solo se publica si responde a la pregunta
     # (falla cerrada: si no se puede decidir, no se publica).
-    if tree["eligible"]:
+    # Juicio de relacion: solo si los nodos no los eligio el modelo para esta
+    # pregunta (recorrido de un caso, resumen o respaldo por palabras). Con
+    # nodos elegidos por el modelo era un segundo juicio sobre lo mismo, y en
+    # la pregunta "¿enfoque recomendado para el manejo inicial de la NAC?"
+    # rechazo cuatro veces nodos pertinentes (radiografia, hemoleucograma y
+    # BUN, decision de hospitalizar, manejo ambulatorio) aun con Ollama
+    # atendiendo una peticion a la vez.
+    tree_result = state.get("tree_result") or {}
+    if tree["eligible"] and not tree_result.get("nodes_selected_by_model"):
         related = _tree_is_related(state["question"], tree, cfg)
         if related is not True:
             tree = {
