@@ -77,6 +77,18 @@ _PICTURE_TEXT_RE = re.compile(
 # ("Gráfico 1. Etiología de la neumonía... en la CUB") y quedaba primera en
 # BM25 para cualquier pregunta sobre la neumonia adquirida en comunidad.
 _PICTURE_CAPTION_RE = re.compile(r"^\*\*(gr[aá]fico|figura)\s*\d+\.?\*\*.*$", re.IGNORECASE | re.MULTILINE)
+# Sellos de descarga y datos de contacto de los PDF de editoriales: "Descargado
+# para <nombre> (<correo>) en Pontifical Bolivarian University de ClinicalKey",
+# "Downloaded from jamanetwork.com by ...", correos de autores. Traen datos
+# personales de quien descargo el articulo y no son contenido clinico: se
+# quita la linea completa.
+_STAMP_LINE_RE = re.compile(
+    r"[\w.+-]+\s?@\s?[\w-]+(\s?\.[\w-]+)+|can be contacted at|address correspondence"
+    r"|descargado para|downloaded (from|for|by)\b|para uso personal exclusivamente"
+    r"|for personal use only|for the private, non-?commercial|reprint orders"
+    r"|autor para correspondencia|correspondence:|corresponding author",
+    re.IGNORECASE,
+)
 # Etiquetas HTML que el extractor deja en los articulos (<mark>, <u>, <sup>).
 _HTML_TAG_RE = re.compile(r"</?(mark|u|sup|sub|span|br)\b[^>]*>", re.IGNORECASE)
 _EMPTY_MARKUP_LINE_RE = re.compile(r"^[\s*_\-]*$")
@@ -94,6 +106,7 @@ def clean_page_text(text: str) -> str:
     text = _PICTURE_TEXT_RE.sub("", text)
     text = _PICTURE_CAPTION_RE.sub("", text)
     text = _HTML_TAG_RE.sub("", text)
+    text = "\n".join(line for line in text.splitlines() if not _STAMP_LINE_RE.search(line))
     for pattern in _BOILERPLATE_RES:
         text = pattern.sub("", text)
     lines = [line.rstrip() for line in text.splitlines()]
@@ -147,7 +160,10 @@ _TABLE_RULE_RE = re.compile(r"^\|?[\s:|-]+\|?$")
 def _line_key(line: str) -> str:
     plain = _HTML_TAG_RE.sub("", line)
     plain = re.sub(r"^#+\s*", "", plain.strip())
-    return re.sub(r"\s+", " ", re.sub(r"[*_]+", "", plain)).strip().lower()
+    plain = re.sub(r"\s+", " ", re.sub(r"[*_]+", "", plain)).strip().lower()
+    # Los numeros se ignoran al comparar: un encabezado como "CID 2026:82 (15
+    # April) • i37" cambia de pagina en pagina solo en el numero.
+    return re.sub(r"\d+", "#", plain)
 
 
 def running_lines(pages: list[dict]) -> set[str]:

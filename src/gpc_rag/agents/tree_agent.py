@@ -58,6 +58,7 @@ from gpc_rag.agents.schemas import (
 )
 from gpc_rag.agents.state import AgentState
 from gpc_rag.agents.timeouts import llm_timeout
+from gpc_rag.common.llm_options import ollama_options
 
 logger = logging.getLogger(__name__)
 
@@ -136,7 +137,7 @@ def classify_question(question: str, cfg: DictConfig) -> tuple[str | None, str]:
             {"role": "user", "content": question},
         ],
         format=protocol_schema(valid_ids),
-        options={"temperature": 0.0, "num_predict": 50},
+        options=ollama_options(cfg, 50),
         stream=False,
     )
     content = response["message"]["content"].strip()
@@ -200,7 +201,7 @@ def extract_decision_answers(
         format=decisions_schema(
             {d.id: _decision_labels(chart, d) for d in decisions}, _LLM_UNKNOWN
         ),
-        options={"temperature": 0.0, "num_predict": 800},
+        options=ollama_options(cfg, 800),
         stream=False,
     )
     content = response["message"]["content"].strip()
@@ -439,7 +440,7 @@ def select_nodes(chart: Flowchart, question: str, cfg: DictConfig) -> list[str]:
             {"role": "user", "content": question},
         ],
         format=node_selection_schema([n.id for n in nodes], _MAX_SELECTED_NODES),
-        options={"temperature": 0.0, "num_predict": 120},
+        options=ollama_options(cfg, 120),
         stream=False,
     )
     parsed = json.loads(response["message"]["content"])

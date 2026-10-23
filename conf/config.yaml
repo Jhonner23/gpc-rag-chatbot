@@ -21,6 +21,14 @@ retrieval:
   section_boost: 0.0         # impulso a secciones "N. ..." (ver retrieval/hybrid.py); desactivado
   reranker_max_length: 1024  # tokens por par (pregunta + fragmento) en el reranker
 
+# Respuesta del RAG (ver src/gpc_rag/generation/):
+# - extractivo: el modelo elige oraciones textuales de las fuentes, que se
+#   muestran con su cita (las de ingles, traducidas). No redacta texto nuevo.
+# - generativo: el modelo redacta la respuesta, una pasada por tipo de fuente.
+rag:
+  mode: extractivo
+  max_units: 8              # maximo de oraciones en la respuesta
+
 app:
   name: "GPC RAG Chatbot"
   collection_name: "gpc_guidelines"

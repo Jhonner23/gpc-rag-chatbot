@@ -57,6 +57,7 @@ from omegaconf import DictConfig
 from gpc_rag.agents.schemas import CONTRADICTION_SCHEMA, RELEVANCE_SCHEMA
 from gpc_rag.agents.state import AgentState
 from gpc_rag.agents.timeouts import llm_timeout
+from gpc_rag.common.llm_options import ollama_options
 from gpc_rag.common.models import RetrievedChunk
 from gpc_rag.common.refusal import is_refusal
 
@@ -273,7 +274,7 @@ def _tree_is_related(
                     {"role": "user", "content": user_prompt},
                 ],
                 format=RELEVANCE_SCHEMA,
-                options={"temperature": 0.0, "num_predict": 50},
+                options=ollama_options(cfg, 50),
                 stream=False,
             )
             content = response["message"]["content"].strip()
@@ -313,7 +314,7 @@ def _content_discrepancy(
                     {"role": "user", "content": user_prompt},
                 ],
                 format=CONTRADICTION_SCHEMA,
-                options={"temperature": 0.0, "num_predict": 200},
+                options=ollama_options(cfg, 200),
                 stream=False,
             )
             content = response["message"]["content"].strip()

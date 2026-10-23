@@ -9,3 +9,6 @@ model: "qwen2.5:3b-instruct"
 temperature: 0.0
 seed: 42
 max_tokens: 1200
+# Ventana de contexto explicita: con el valor por defecto de Ollama el prompt
+# del RAG se recortaba en silencio (ver common/llm_options.py).
+num_ctx: 8192

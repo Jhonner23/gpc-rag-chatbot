@@ -37,6 +37,7 @@ from omegaconf import DictConfig
 from gpc_rag.agents.schemas import EVALUATOR_SCHEMA
 from gpc_rag.agents.timeouts import llm_timeout
 from gpc_rag.common.grounding import grounding_problems
+from gpc_rag.common.llm_options import ollama_options
 from gpc_rag.common.models import RetrievedChunk
 from gpc_rag.common.refusal import is_refusal
 from gpc_rag.ingestion.sources import source_label
@@ -140,7 +141,7 @@ def evaluate_answer_status(
                 {"role": "user", "content": user_prompt},
             ],
             format=EVALUATOR_SCHEMA,
-            options={"temperature": 0.0, "num_predict": 300},
+            options=ollama_options(cfg, 300),
             stream=False,
         )
         content = response["message"]["content"].strip()

@@ -25,16 +25,19 @@ def test_catalog_covers_the_clinic_documents_and_tolerates_zip_names() -> None:
 
 
 def _journal_pages(n: int) -> list[dict]:
+    topics = ["Diagnosis", "Severity", "Antibiotics", "Steroids", "Follow-up", "Discharge"]
     body = (
-        "## Question {i}\n\n"
-        "Patients without risk factors should receive amoxicillin 1 g three times "
-        "daily for {i} days according to the panel recommendation.\n\n"
+        "## {topic}\n\n"
+        "Patients with community-acquired pneumonia and {topic} criteria should be "
+        "assessed by the treating team according to the panel.\n\n"
     )
     return [
         {
             "text": "### <mark>AMERICAN THORACIC SOCIETY DOCUMENTS</mark>\n\n"
-            + body.format(i=i + 1)
-            + "Downloaded from jamanetwork.com by Universidad user on 08/26/2026",
+            + body.format(topic=topics[i])
+            + f"Clinical Practice Guidelines • CID 2026:82 (15 April) • i3{i}\n\n"
+            + "Descargado para Ana Perez (ana.perez@upb.edu.co) en ClinicalKey. "
+            "Para uso personal exclusivamente.",
             "page": i + 1,
         }
         for i in range(n)
@@ -45,8 +48,11 @@ def test_running_headers_and_footers_are_removed() -> None:
     chunks = chunk_document(_journal_pages(6), source_file="x.pdf", min_chunk_tokens=5)
     assert chunks
     assert all("AMERICAN THORACIC" not in c.text for c in chunks)
-    assert all("Downloaded from" not in c.text for c in chunks)
-    assert [c.section for c in chunks] == [f"Question {i}" for i in range(1, 7)]
+    assert all("CID 2026" not in c.text for c in chunks)  # cambia solo el numero de pagina
+    assert all("@" not in c.text and "Descargado" not in c.text for c in chunks)
+    assert [c.section for c in chunks] == [
+        "Diagnosis", "Severity", "Antibiotics", "Steroids", "Follow-up", "Discharge"
+    ]
 
 
 def test_references_are_not_indexed_even_without_a_heading() -> None:

@@ -13,6 +13,7 @@ from gpc_rag.common.models import RagAnswer
 from gpc_rag.common.settings import load_config
 from gpc_rag.embeddings.ollama_embeddings import OllamaEmbedder
 from gpc_rag.generation.by_source import generate_by_source
+from gpc_rag.generation.extractive import extractive_answer
 from gpc_rag.generation.ollama_llm import OllamaGenerator
 from gpc_rag.retrieval.hybrid import HybridRetriever
 from gpc_rag.vectorstore.qdrant_store import QdrantStore
@@ -30,11 +31,22 @@ class QueryPipeline:
 
     def answer(self, question: str, extra_instruction: str | None = None) -> RagAnswer:
         retrieved = self.retriever.retrieve(question)
-        # Una pasada por tipo de fuente, compuesta en una sola respuesta
-        # (ver generation/by_source.py).
-        answer_text = generate_by_source(
-            self.generator, question, retrieved, extra_instruction=extra_instruction
-        )
+        rag_cfg = self.cfg.get("rag") or {}
+        if rag_cfg.get("mode", "generativo") == "extractivo":
+            # Oraciones textuales de las fuentes (ver generation/extractive.py).
+            answer_text = extractive_answer(
+                self.generator,
+                question,
+                retrieved,
+                max_units=int(rag_cfg.get("max_units", 8)),
+                extra_instruction=extra_instruction,
+            )
+        else:
+            # Una pasada por tipo de fuente, compuesta en una sola respuesta
+            # (ver generation/by_source.py).
+            answer_text = generate_by_source(
+                self.generator, question, retrieved, extra_instruction=extra_instruction
+            )
         return RagAnswer(question=question, answer=answer_text, sources=retrieved)
 
 

@@ -7,6 +7,7 @@ from collections.abc import Iterator
 from ollama import Client
 from omegaconf import DictConfig
 
+from gpc_rag.common.llm_options import num_ctx
 from gpc_rag.common.models import RetrievedChunk
 from gpc_rag.generation.prompts import build_messages
 
@@ -17,10 +18,15 @@ class OllamaGenerator:
         self.temperature = cfg.llm.temperature
         self.max_tokens = cfg.llm.max_tokens
         self.seed = cfg.llm.get("seed")
+        self.num_ctx = num_ctx(cfg)
         self.client = Client(host=cfg.env.ollama_url)
 
     def _options(self) -> dict:
-        options = {"temperature": self.temperature, "num_predict": self.max_tokens}
+        options = {
+            "temperature": self.temperature,
+            "num_predict": self.max_tokens,
+            "num_ctx": self.num_ctx,
+        }
         if self.seed is not None:
             options["seed"] = self.seed
         return options
@@ -33,6 +39,18 @@ class OllamaGenerator:
             model=self.model,
             messages=messages,
             options=self._options(),
+            stream=False,
+        )
+        return response["message"]["content"]
+
+    def chat_json(self, system: str, user: str, schema: dict, num_predict: int) -> str:
+        """Llamada con salida JSON restringida a `schema` (modo extractivo)."""
+        options = {**self._options(), "num_predict": num_predict}
+        response = self.client.chat(
+            model=self.model,
+            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+            format=schema,
+            options=options,
             stream=False,
         )
         return response["message"]["content"]
