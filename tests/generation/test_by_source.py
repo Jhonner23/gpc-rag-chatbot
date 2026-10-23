@@ -3,13 +3,7 @@
 from __future__ import annotations
 
 from gpc_rag.common.models import Chunk, RetrievedChunk
-from gpc_rag.generation.by_source import (
-    EXTERNAL_HEADING,
-    INSTITUTIONAL_HEADING,
-    NO_INSTITUTIONAL,
-    compose,
-    generate_by_source,
-)
+from gpc_rag.generation.by_source import compose, generate_by_source
 
 _REFUSAL = "No encuentro informacion suficiente en las guias disponibles para responder esto con seguridad."
 
@@ -39,8 +33,7 @@ def test_each_pass_sees_only_its_own_sources_and_the_answer_is_one_text() -> Non
     text = generate_by_source(gen, "¿Cuándo tratar?", sources, extra_instruction="Sé estricto.")
     assert [kinds for kinds, _ in gen.calls] == [{"institucional"}, {"guia", "revision"}]
     assert all("Sé estricto." in extra for _, extra in gen.calls)
-    assert text.index(INSTITUTIONAL_HEADING) < text.index(EXTERNAL_HEADING)
-    assert "Tratar solo en gestantes." in text and "IDSA: no tratar." in text
+    assert text == "Tratar solo en gestantes.\n\nIDSA: no tratar."  # una sola respuesta, sin encabezados
 
 
 def test_only_institutional_sources_keep_the_single_pass() -> None:
@@ -51,7 +44,6 @@ def test_only_institutional_sources_keep_the_single_pass() -> None:
 
 
 def test_refusals_are_replaced_or_kept_as_abstention() -> None:
-    mixed = compose(_REFUSAL, "Según ATS 2025: amoxicilina.")
-    assert NO_INSTITUTIONAL in mixed and _REFUSAL not in mixed
+    assert compose(_REFUSAL, "Amoxicilina [Guia: ats.pdf].") == "Amoxicilina [Guia: ats.pdf]."
     assert compose(_REFUSAL, _REFUSAL) == _REFUSAL
-    assert compose("Protocolo: X.", _REFUSAL) == f"**{INSTITUTIONAL_HEADING}**\nProtocolo: X."
+    assert compose("Protocolo: X.", _REFUSAL) == "Protocolo: X."

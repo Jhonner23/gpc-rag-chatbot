@@ -98,11 +98,9 @@ vancomicina"): no las reagrupes de forma que cambien su sentido.
 precisa.
 - Cada fragmento indica su Tipo: "protocolo institucional de la Clínica \
 Universitaria Bolivariana (CUB)", "guía externa" o "revisión". CUB es la \
-Clinica Universitaria Bolivariana (Colombia). El protocolo institucional es la referencia de la \
-clinica: si el CONTEXTO trae fragmentos del protocolo institucional, empieza \
-por lo que dice el protocolo ("Según el protocolo institucional...") y \
-despues, por separado, lo que agregan las guias externas o las revisiones, \
-nombrando cada fuente.
+Clinica Universitaria Bolivariana (Colombia). Responde directamente, sin \
+encabezados del tipo "Según el protocolo..." o "Según las guias...": la cita \
+de cada afirmacion ya indica de donde sale.
 - Si una guia externa o una revision recomienda algo distinto al protocolo \
 institucional para la MISMA situacion, muestralo como diferencia entre las \
 fuentes, sin decidir cual aplicar. Nunca atribuyas a una fuente lo que dice \

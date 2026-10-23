@@ -10,11 +10,12 @@ comparar en una sola pasada supera lo que hace con fiabilidad.
 
 Por eso la respuesta se genera en dos pasadas, cada una solo con los
 fragmentos de su grupo (el protocolo institucional; las guias y revisiones
-externas), y se compone sin modelo en un unico texto con un bloque por
-grupo. Asi el RAG sigue dando una sola respuesta, pero ninguna pasada puede
-atribuir al protocolo lo que dice una guia externa, porque no la ve. Las
-diferencias quedan a la vista en los dos bloques; la contradiccion con el
-arbol la sigue senalando el verificador.
+externas), y se une sin modelo en un unico texto: primero lo del protocolo y
+a continuacion lo de las fuentes externas, sin encabezados (lo pidio la
+asesora: una sola respuesta). La cita de cada afirmacion dice de donde sale.
+Ninguna pasada puede atribuir al protocolo lo que dice una guia externa,
+porque no la ve; la contradiccion con el arbol la sigue senalando el
+verificador.
 """
 
 from __future__ import annotations
@@ -23,18 +24,12 @@ from gpc_rag.common.models import RetrievedChunk
 from gpc_rag.common.refusal import is_refusal
 from gpc_rag.ingestion.sources import INSTITUTIONAL
 
-INSTITUTIONAL_HEADING = "Según el protocolo institucional de la Clínica Universitaria Bolivariana (CUB):"
-EXTERNAL_HEADING = "Según las guías y revisiones externas:"
-NO_INSTITUTIONAL = (
-    "El protocolo institucional de la Clínica Universitaria Bolivariana (CUB) "
-    "no trae información sobre esto entre los fragmentos recuperados."
-)
-
 _GROUP_INSTRUCTIONS = {
     INSTITUTIONAL: (
         "Todos los fragmentos de este CONTEXTO son del protocolo institucional de la "
         "Clinica Universitaria Bolivariana (CUB). Responde solo con lo que dice ese "
-        "protocolo, sin mencionar otras guias."
+        "protocolo, sin mencionar otras guias. Si no trae lo que se pregunta, responde "
+        "unicamente la frase de que no hay informacion suficiente."
     ),
     "externas": (
         "Todos los fragmentos de este CONTEXTO son guias externas o articulos de "
@@ -61,23 +56,18 @@ def _instruction(group: str, extra: str | None) -> str:
 
 
 def compose(institutional_text: str | None, external_text: str | None) -> str:
-    """Une las dos partes en una sola respuesta, sin redactar nada nuevo
-    salvo los encabezados y el aviso de que el protocolo no trae el dato."""
-    has_inst = bool(institutional_text) and not is_refusal(institutional_text)
-    has_ext = bool(external_text) and not is_refusal(external_text)
-    if not has_inst and not has_ext:
-        # Ningun grupo responde: se devuelve el rechazo tal cual (corto), para
-        # que el sistema lo trate como abstencion.
-        return institutional_text or external_text or ""
-    if has_inst and not external_text:
-        return institutional_text.strip()
-    blocks = [
-        f"**{INSTITUTIONAL_HEADING}**\n"
-        + (institutional_text.strip() if has_inst else NO_INSTITUTIONAL)
+    """Une las partes que si responden en un solo texto, sin redactar nada
+    nuevo: primero el protocolo, despues las fuentes externas. La parte que
+    se abstiene se omite; si ninguna responde, queda el rechazo (corto) para
+    que el sistema lo trate como abstencion."""
+    parts = [
+        text.strip()
+        for text in (institutional_text, external_text)
+        if text and not is_refusal(text)
     ]
-    if has_ext:
-        blocks.append(f"**{EXTERNAL_HEADING}**\n{external_text.strip()}")
-    return "\n\n".join(blocks)
+    if not parts:
+        return institutional_text or external_text or ""
+    return "\n\n".join(parts)
 
 
 def generate_by_source(
