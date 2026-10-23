@@ -330,27 +330,34 @@ class HybridRetriever:
             return []
         pairs = [(query, rc.chunk.text) for rc in candidates]
         raw_scores = [float(s) for s in self.reranker.predict(pairs)]
-        reranked = [
-            RetrievedChunk(
-                chunk=rc.chunk,
-                score=raw_score
-                + _recommendation_boost(
-                    rc.chunk.section,
-                    raw_score,
-                    self.cfg.retrieval.get("section_boost", _DEFAULT_SECTION_BOOST),
-                )
-                + _admin_penalty(
-                    rc.chunk.section,
-                    query,
-                    self.cfg.retrieval.get("admin_section_penalty", _DEFAULT_ADMIN_PENALTY),
-                    rc.chunk.text,
-                    rc.chunk.source_type,
-                    rc.chunk.page,
-                ),
-                retrieval_method="rerank",
+        retrieval = self.cfg.retrieval
+        exclude_admin = bool(retrieval.get("exclude_admin_sections", False))
+        reranked = []
+        for rc, raw_score in zip(candidates, raw_scores, strict=True):
+            penalty = _admin_penalty(
+                rc.chunk.section,
+                query,
+                retrieval.get("admin_section_penalty", _DEFAULT_ADMIN_PENALTY),
+                rc.chunk.text,
+                rc.chunk.source_type,
+                rc.chunk.page,
             )
-            for rc, raw_score in zip(candidates, raw_scores, strict=True)
-        ]
+            if exclude_admin and penalty < 0:
+                # Seccion sin recomendaciones que la pregunta no nombra: no
+                # entra al contexto (con solo restar puntaje, "Necesidades de
+                # investigacion futura" o el resumen de la GPC seguian entre
+                # los 8 porque el reranker les daba mas de 0.35).
+                continue
+            boost = _recommendation_boost(
+                rc.chunk.section,
+                raw_score,
+                retrieval.get("section_boost", _DEFAULT_SECTION_BOOST),
+            )
+            reranked.append(
+                RetrievedChunk(
+                    chunk=rc.chunk, score=raw_score + boost + penalty, retrieval_method="rerank"
+                )
+            )
         reranked.sort(key=lambda rc: rc.score, reverse=True)
         return reranked[:top_k]
 

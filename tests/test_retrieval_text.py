@@ -127,3 +127,26 @@ def test_institutional_quota_reserves_relevant_protocol_fragments() -> None:
 
 def test_english_stopwords_are_ignored() -> None:
     assert _tokenize("The treatment of the pneumonia is not") == ["treatment", "pneumonia", "not"]
+
+
+def test_admin_sections_are_excluded_from_the_context_when_configured() -> None:
+    from omegaconf import OmegaConf
+
+    from gpc_rag.common.models import Chunk, RetrievedChunk
+    from gpc_rag.retrieval.hybrid import HybridRetriever
+
+    class _Reranker:
+        def predict(self, pairs):
+            return [0.9 for _ in pairs]
+
+    retriever = HybridRetriever.__new__(HybridRetriever)
+    retriever.cfg = OmegaConf.create(
+        {"retrieval": {"exclude_admin_sections": True, "admin_section_penalty": 0.3}}
+    )
+    retriever._reranker = _Reranker()
+    chunks = [
+        RetrievedChunk(chunk=Chunk(text="t", source_file="g.pdf", section=s, chunk_id=s, page=7), score=0)
+        for s in ("Pregunta 1 — Necesidades de investigación futura", "Tratamiento empírico")
+    ]
+    ranked = retriever._rerank("¿Tratamiento de la NAC?", chunks, 8)
+    assert [r.chunk.section for r in ranked] == ["Tratamiento empírico"]

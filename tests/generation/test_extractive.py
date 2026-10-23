@@ -78,8 +78,10 @@ class _FakeGenerator:
             return json.dumps(
                 {"traducciones": {u: "Tratar la bacteriuria asintomática no previene la ITU." for u in uids}}
             )
-        assert set(self.ids) <= set(schema["properties"]["ids"]["items"]["enum"])
-        return json.dumps({"ids": [*self.ids, "u999"]})  # un id inexistente se ignora
+        allowed = set(schema["properties"]["ids"]["items"]["enum"])
+        # Devuelve los ids de esta seleccion (protocolo o externas) y uno
+        # inexistente, que debe ignorarse.
+        return json.dumps({"ids": [*(i for i in self.ids if i in allowed), "u999"]})
 
 
 def test_answer_is_literal_units_with_citations_protocol_first_in_document_order() -> None:
@@ -242,3 +244,12 @@ def test_minimum_final_score_drops_low_fragments() -> None:
     low = RetrievedChunk(chunk=_IDSA.chunk, score=-0.1)
     high = RetrievedChunk(chunk=_ROW.chunk, score=0.6)
     assert with_institutional_quota([high, low], 8, 3, 0.05, min_final_score=0.05) == [high]
+
+
+def test_protocol_and_external_units_are_selected_separately() -> None:
+    sources = [_ROW, _IDSA, _INDICATIONS]
+    gen = _FakeGenerator([])
+    extractive_answer(gen, "¿Cuándo tratar?", sources)
+    assert len(gen.prompts) == 2
+    assert "Tabla 2" in gen.prompts[0] and "Treatment of asymptomatic" not in gen.prompts[0]
+    assert "Treatment of asymptomatic" in gen.prompts[1] and "Tabla 2" not in gen.prompts[1]

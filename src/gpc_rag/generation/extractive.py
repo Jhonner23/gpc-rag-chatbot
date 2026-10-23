@@ -325,7 +325,7 @@ exactamente los nombres de farmacos, dosis, unidades, numeros, intervalos, \
 duraciones, negaciones ("no", "not") y condiciones. Usa la terminologia \
 medica estandar en español (p. ej. pyelonephritis = pielonefritis, \
 asymptomatic bacteriuria = bacteriuria asintomatica, cystitis = cistitis, \
-UTI = ITU). No agregues, quites ni expliques nada, y no incluyas el id en \
+UTI = ITU, screening = tamizaje). No agregues, quites ni expliques nada, y no incluyas el id en \
 el texto traducido. Responde UNICAMENTE con JSON: {"traducciones": {"<id>": \
 "<texto traducido>", ...}}"""
 
@@ -473,10 +473,22 @@ def extractive_answer(
         logger.info("RAG extractivo: ningun fragmento supera %.2f; abstencion.", min_relevance)
         return REFUSAL
     units = build_units(sources)
-    chosen = select_units(generator, question, units, max_units, extra_instruction)
+    institutional = [u for u in units if u.source.chunk.source_type == INSTITUTIONAL]
+    external = [u for u in units if u.source.chunk.source_type != INSTITUTIONAL]
+    # Seleccion por separado: primero el protocolo institucional, despues las
+    # fuentes externas. En una sola seleccion, ante "¿enfoque recomendado
+    # para el manejo inicial de la NAC?" el modelo eligio dos frases
+    # generales del resumen de la GPC 2026 y ninguna del protocolo, aunque
+    # sus indicaciones de hospitalizacion estaban en la lista.
+    inst_max = max_units // 2 + max_units % 2 if external else max_units
+    chosen = select_units(generator, question, institutional, inst_max, extra_instruction)
+    chosen += select_units(
+        generator, question, external, max_units - len(chosen), extra_instruction
+    ) if external and len(chosen) < max_units else []
     logger.info(
-        "RAG extractivo: %d unidades candidatas, elegidas=%s",
+        "RAG extractivo: %d unidades candidatas (%d del protocolo), elegidas=%s",
         len(units),
+        len(institutional),
         [u.uid for u in chosen],
     )
     return compose(chosen, translate_units(generator, chosen))
