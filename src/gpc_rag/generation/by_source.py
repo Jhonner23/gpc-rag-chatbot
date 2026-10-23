@@ -20,9 +20,25 @@ verificador.
 
 from __future__ import annotations
 
+import re
+
 from gpc_rag.common.models import RetrievedChunk
 from gpc_rag.common.refusal import is_refusal
 from gpc_rag.ingestion.sources import INSTITUTIONAL
+from gpc_rag.retrieval.hybrid import retrieval_query
+
+# Cada pasada ve un solo grupo de fuentes: si respondiera "¿que diferencias
+# hay entre las guias?" con lo que ve, el protocolo diria "no hay diferencias,
+# todo viene del mismo documento" justo antes de que las guias externas digan
+# otra cosa. Cada pasada responde solo la parte clinica de la pregunta.
+_NO_COMPARISON = (
+    "Responde solo el tema clinico de la pregunta. No compares fuentes, no digas si "
+    "hay o no diferencias entre guias y no hagas una lista de fuentes: eso se arma "
+    "aparte."
+)
+# Llamadas numericas de los articulos ("[1]", "[12, 13]"), que no son citas
+# del corpus.
+_NUMERIC_CALLOUT_RE = re.compile(r"\s*\[\d+(?:\s*[,–-]\s*\d+)*\]")
 
 _GROUP_INSTRUCTIONS = {
     INSTITUTIONAL: (
@@ -52,7 +68,9 @@ def split_by_source(
 
 
 def _instruction(group: str, extra: str | None) -> str:
-    return "\n".join(part for part in (_GROUP_INSTRUCTIONS[group], extra) if part)
+    return "\n".join(
+        part for part in (_GROUP_INSTRUCTIONS[group], _NO_COMPARISON, extra) if part
+    )
 
 
 def compose(institutional_text: str | None, external_text: str | None) -> str:
@@ -61,7 +79,7 @@ def compose(institutional_text: str | None, external_text: str | None) -> str:
     se abstiene se omite; si ninguna responde, queda el rechazo (corto) para
     que el sistema lo trate como abstencion."""
     parts = [
-        text.strip()
+        _NUMERIC_CALLOUT_RE.sub("", text).strip()
         for text in (institutional_text, external_text)
         if text and not is_refusal(text)
     ]
@@ -77,14 +95,17 @@ def generate_by_source(
     institutional, external = split_by_source(sources)
     if not external:
         return generator.generate(question, sources, extra_instruction=extra_instruction)
+    clinical_question = retrieval_query(question)
     inst_text = (
         generator.generate(
-            question, institutional, extra_instruction=_instruction(INSTITUTIONAL, extra_instruction)
+            clinical_question,
+            institutional,
+            extra_instruction=_instruction(INSTITUTIONAL, extra_instruction),
         )
         if institutional
         else None
     )
     ext_text = generator.generate(
-        question, external, extra_instruction=_instruction("externas", extra_instruction)
+        clinical_question, external, extra_instruction=_instruction("externas", extra_instruction)
     )
     return compose(inst_text, ext_text)

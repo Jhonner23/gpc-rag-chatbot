@@ -47,3 +47,21 @@ def test_refusals_are_replaced_or_kept_as_abstention() -> None:
     assert compose(_REFUSAL, "Amoxicilina [Guia: ats.pdf].") == "Amoxicilina [Guia: ats.pdf]."
     assert compose(_REFUSAL, _REFUSAL) == _REFUSAL
     assert compose("Protocolo: X.", _REFUSAL) == "Protocolo: X."
+
+
+def test_each_pass_answers_only_the_clinical_part_of_a_compound_question() -> None:
+    class _Recorder(_FakeGenerator):
+        def generate(self, question, chunks, extra_instruction=None):
+            self.questions = [*getattr(self, "questions", []), question]
+            return super().generate(question, chunks, extra_instruction)
+
+    gen = _Recorder({"institucional": "A.", "externas": "B [1, 2]."})
+    question = (
+        "¿Qué recomiendan las guías sobre la bacteriuria asintomática? "
+        "¿Qué diferencias existen entre las recomendaciones encontradas? "
+        "¿Qué fuentes del corpus contienen información relacionada?"
+    )
+    text = generate_by_source(gen, question, [_rc(1, "institucional"), _rc(2, "guia")])
+    assert gen.questions == ["¿Qué recomiendan las guías sobre la bacteriuria asintomática?"] * 2
+    assert all("No compares fuentes" in extra for _, extra in gen.calls)
+    assert text == "A.\n\nB."  # sin las llamadas numericas del articulo
