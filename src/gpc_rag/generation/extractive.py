@@ -331,11 +331,25 @@ _DANGLING_WORDS = frozenset(
 )
 
 
+# Atribucion de una figura o tabla ("Advice from the 2025 American Thoracic
+# Society guideline on...", "Tomada y adaptada de...") y definicion suelta de
+# una abreviatura ("MRSA=meticillin-resistant Staphylococcus aureus.").
+_ATTRIBUTION_RE = re.compile(
+    r"^(advice|adapted|reproduced|modified|data|source|tomad[oa]|adaptad[oa])\b.{0,40}\b(from|de)\b",
+    re.IGNORECASE,
+)
+_LEADING_ABBREVIATION_RE = re.compile(r"^[A-Z][\w ]{0,15}?\s?=\s?\S")
+
+
 def _unusable_external(text: str) -> bool:
     body = text.rstrip(" |")
     body = re.sub(r"[\d,.\s]+$", lambda m: "." if "." in m.group(0) else "", body)
     if len(_ABBREVIATION_DEF_RE.findall(text)) >= 3:
         return True
+    if _ATTRIBUTION_RE.match(text) or _LEADING_ABBREVIATION_RE.match(text):
+        return True
+    if text[:1].islower() and len(body.split()) < 15:
+        return True  # continuacion de una oracion de otro fragmento
     if body.endswith(_TERMINAL_PUNCT):
         return False
     words = body.split()

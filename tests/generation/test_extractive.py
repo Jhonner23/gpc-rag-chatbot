@@ -233,7 +233,7 @@ def test_figure_footnotes_are_split_and_dot_references_removed() -> None:
     )
     assert [u.text for u in build_units([rc])] == [
         "Risk factors are previous MRSA infection and high local MRSA prevalence.",
-        "Advice from the 2025 ATS guideline.",
+        # "Advice from the 2025 ATS guideline." es la atribucion de la figura.
         "Warning signs are continued fever.",
     ]
 
@@ -313,3 +313,22 @@ def test_cut_fragments_and_abbreviation_legends_are_not_units() -> None:
     )
     texts = [u.text for u in build_units([review])]
     assert texts == ["Chest radiography is recommended to confirm the diagnosis in adults."]
+
+
+def test_figure_attributions_and_loose_abbreviations_are_not_units() -> None:
+    figure = RetrievedChunk(
+        chunk=Chunk(
+            text="Figure 2\n\nThe treatment site is established based on risk stratification.\n\n"
+            "MRSA=meticillin-resistant Staphylococcus aureus.\n\n"
+            "Advice from the 2025 American Thoracic Society guideline on the management of CAP.\n\n"
+            "as prolonged mechanical ventilation, or chronic respiratory disease.",
+            source_file="lancet.pdf",
+            section="Figure 2",
+            page=9,
+            chunk_id="f",
+            source_type="revision",
+        ),
+        score=0.4,
+    )
+    texts = [u.text for u in build_units([figure])]
+    assert texts == ["The treatment site is established based on risk stratification."]
