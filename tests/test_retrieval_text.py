@@ -179,3 +179,21 @@ def test_verbs_and_short_topic_terms_do_not_trigger_the_out_of_corpus_guard() ->
     retriever._vocabulary = frozenset({"pseudomonas", "aeruginosa", "tratamiento", "empirico"})
     assert retriever.out_of_corpus_terms("¿Cuándo cubrir Pseudomonas aeruginosa?") == []
     assert retriever.out_of_corpus_terms("¿Criterios de egreso en ITU para pasar a vía oral?") == []
+
+
+def test_external_documents_are_capped_but_the_protocol_is_not() -> None:
+    from gpc_rag.common.models import Chunk, RetrievedChunk
+    from gpc_rag.retrieval.hybrid import with_institutional_quota
+
+    def rc(i, source, kind, score):
+        chunk = Chunk(text="t", source_file=source, chunk_id=f"{source}{i}", source_type=kind)
+        return RetrievedChunk(chunk=chunk, score=score)
+
+    ranked = [rc(i, "lancet.pdf", "revision", 0.9 - i / 100) for i in range(5)]
+    ranked += [rc(i, "cub.pdf", "institucional", 0.5 - i / 100) for i in range(4)]
+    ranked += [rc(0, "gpc.pdf", "guia", 0.3)]
+    chosen = with_institutional_quota(ranked, 8, 3, 0.05, max_per_external_document=3)
+    files = [r.chunk.source_file for r in chosen]
+    assert files.count("lancet.pdf") == 3
+    assert files.count("cub.pdf") == 4
+    assert "gpc.pdf" in files  # sin el tope, los 2 fragmentos extra del Lancet lo dejaban fuera

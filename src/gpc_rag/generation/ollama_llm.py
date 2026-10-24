@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 
-from ollama import Client
 from omegaconf import DictConfig
 
 from gpc_rag.common.llm_options import num_ctx
 from gpc_rag.common.models import RetrievedChunk
+from gpc_rag.common.ollama_client import Client
 from gpc_rag.generation.prompts import build_messages
 
 

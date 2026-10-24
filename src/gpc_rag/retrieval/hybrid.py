@@ -244,6 +244,7 @@ def with_institutional_quota(
     quota: int,
     min_score: float,
     min_final_score: float | None = None,
+    max_per_external_document: int | None = None,
 ) -> list[RetrievedChunk]:
     """Los `top_k` mejores, reservando hasta `quota` lugares para los
     protocolos institucionales que el reranker considero minimamente
@@ -255,9 +256,25 @@ def with_institutional_quota(
     Ante preguntas generales todos los puntajes son bajos y la penalizacion de
     secciones sin recomendaciones solo las reordenaba: "Necesidades de
     investigacion futura" o "Esta guia no aplica a" seguian entre los 8. Con
-    el minimo quedan fuera, aunque el contexto tenga menos de 8 fragmentos."""
+    el minimo quedan fuera, aunque el contexto tenga menos de 8 fragmentos.
+
+    `max_per_external_document`: maximo de fragmentos de una misma fuente
+    externa. En "enfoque para el manejo inicial de la NAC" la revision del
+    Lancet ocupaba 5 de los 8 lugares (seguimiento a largo plazo incluido) y
+    no entraba ningun fragmento de tratamiento. El protocolo institucional no
+    tiene tope: sus respuestas suelen requerir varias secciones."""
     if min_final_score is not None:
         ranked = [rc for rc in ranked if rc.score >= min_final_score]
+    if max_per_external_document:
+        per_doc: dict[str, int] = {}
+        capped = []
+        for rc in ranked:
+            if rc.chunk.source_type != INSTITUTIONAL:
+                per_doc[rc.chunk.source_file] = per_doc.get(rc.chunk.source_file, 0) + 1
+                if per_doc[rc.chunk.source_file] > max_per_external_document:
+                    continue
+            capped.append(rc)
+        ranked = capped
     reserved = [
         rc
         for rc in ranked
@@ -451,6 +468,7 @@ class HybridRetriever:
                 quota,
                 float(retrieval.get("institutional_min_score", 0.05)),
                 retrieval.get("min_final_score"),
+                retrieval.get("max_chunks_per_external_document"),
             )
 
         return fused[: retrieval.top_k_final]

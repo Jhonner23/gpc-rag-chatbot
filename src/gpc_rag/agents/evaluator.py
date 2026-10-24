@@ -31,7 +31,6 @@ from __future__ import annotations
 import json
 import logging
 
-from ollama import Client
 from omegaconf import DictConfig
 
 from gpc_rag.agents.schemas import EVALUATOR_SCHEMA
@@ -39,6 +38,7 @@ from gpc_rag.agents.timeouts import llm_timeout
 from gpc_rag.common.grounding import grounding_problems
 from gpc_rag.common.llm_options import ollama_options
 from gpc_rag.common.models import RetrievedChunk
+from gpc_rag.common.ollama_client import Client
 from gpc_rag.common.refusal import is_refusal
 from gpc_rag.ingestion.sources import source_label
 

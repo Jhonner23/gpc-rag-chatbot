@@ -16,6 +16,7 @@ retrieval:
   institutional_quota: 3       # lugares reservados (de top_k_final) para los protocolos de la CUB, si son relevantes
   institutional_min_score: 0.05 # puntaje minimo del reranker para ocupar un lugar reservado
   min_final_score: 0.05     # puntaje minimo (ya penalizado) para entrar al contexto
+  max_chunks_per_external_document: 3 # tope por guia o revision externa en el contexto (el protocolo no tiene tope)
   use_reranker: true
   reranker_model: "BAAI/bge-reranker-v2-m3"
   exclude_admin_sections: true # Objetivo, Alcance, Resumen, Necesidades de investigacion... no entran si la pregunta no las nombra
