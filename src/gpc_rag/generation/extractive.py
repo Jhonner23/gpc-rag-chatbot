@@ -31,7 +31,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from gpc_rag.common.models import RetrievedChunk
 from gpc_rag.ingestion.sources import INSTITUTIONAL, source_label
@@ -592,6 +592,30 @@ def compose(units: list[Unit], translations: dict[str, str]) -> str:
     return "\n".join(lines)
 
 
+def merge_continuations(sources: list[RetrievedChunk]) -> list[RetrievedChunk]:
+    """Une los fragmentos consecutivos de una misma seccion (chunk_index n y
+    n+1). Una lista partida entre paginas ("Indicaciones para paso a terapia
+    oral y/o egreso": 48 horas afebril y TAS > 90 en la pagina 3, el resto en
+    la 4) quedaba en dos fragmentos, y el selector elegia solo uno: a la
+    respuesta le faltaban criterios."""
+    by_key = {(rc.chunk.source_file, rc.chunk.section, rc.chunk.chunk_index): rc for rc in sources}
+    merged: list[RetrievedChunk] = []
+    for rc in sources:
+        key = (rc.chunk.source_file, rc.chunk.section)
+        if (*key, rc.chunk.chunk_index - 1) in by_key:
+            continue  # se une al fragmento anterior de la misma seccion
+        text, score, index = rc.chunk.text, rc.score, rc.chunk.chunk_index
+        while (nxt := by_key.get((*key, index + 1))) is not None:
+            text = f"{text}\n\n{_body(nxt)}"
+            score = max(score, nxt.score)
+            index += 1
+        if index == rc.chunk.chunk_index:
+            merged.append(rc)
+        else:
+            merged.append(replace(rc, chunk=replace(rc.chunk, text=text), score=score))
+    return merged
+
+
 def extractive_answer(
     generator,
     question: str,
@@ -605,7 +629,7 @@ def extractive_answer(
         # abstencion sin pedirle al selector que elija entre oraciones ajenas.
         logger.info("RAG extractivo: ningun fragmento supera %.2f; abstencion.", min_relevance)
         return REFUSAL
-    units = build_units(sources)
+    units = build_units(merge_continuations(sources))
     institutional = [u for u in units if u.source.chunk.source_type == INSTITUTIONAL]
     external = [u for u in units if u.source.chunk.source_type != INSTITUTIONAL]
     # Seleccion por separado: primero el protocolo institucional, despues las

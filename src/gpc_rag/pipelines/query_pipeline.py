@@ -56,6 +56,10 @@ class QueryPipeline:
             answer_text = generate_by_source(
                 self.generator, question, retrieved, extra_instruction=extra_instruction
             )
+        missing = self.retriever.uncovered_terms(question, answer_text)
+        if missing and answer_text != REFUSAL:
+            logger.info("RAG: la respuesta no menciona %s; abstencion.", missing)
+            return RagAnswer(question=question, answer=REFUSAL, sources=[])
         return RagAnswer(question=question, answer=answer_text, sources=retrieved)
 
 

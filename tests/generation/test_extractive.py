@@ -346,3 +346,27 @@ def test_cut_last_sentence_of_a_long_unit_is_trimmed() -> None:
     )
     complete = "Admit patients who are septic. Prefer oral therapy when stable."
     assert _trim_unfinished_tail(complete) == complete
+
+
+def test_list_split_across_pages_is_merged() -> None:
+    from gpc_rag.generation.extractive import merge_continuations
+
+    section = "6. TRATAMIENTO — Indicaciones para paso a terapia oral y/o egreso"
+
+    def part(index, page, text, score):
+        chunk = Chunk(
+            text=f"{section}\n\n{text}",
+            source_file="CT-PL-197.pdf",
+            section=section,
+            page=page,
+            chunk_index=index,
+            chunk_id=str(index),
+        )
+        return RetrievedChunk(chunk=chunk, score=score)
+
+    first = part(20, 3, "- 48 horas afebril\n\n- TAS > 90 mmHg", 0.57)
+    second = part(21, 4, "- FC < 100 lpm\n\n- FR < 24 rpm", 0.8)
+    (merged,) = merge_continuations([second, first])
+    (unit,) = segment(merged)
+    assert "48 horas afebril" in unit and "FR < 24 rpm" in unit
+    assert merged.score == 0.8

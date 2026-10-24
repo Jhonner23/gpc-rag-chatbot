@@ -206,3 +206,79 @@ def test_guide_front_matter_is_administrative() -> None:
     assert _admin_penalty("Población de interés", query, 0.3, "x", "guia", 4) < 0
     assert _admin_penalty("Usuarios de la guía", query, 0.3, "x", "guia", 4) < 0
     assert _admin_penalty("Población de interés", "¿Cuál es la población de interés?", 0.3) == 0
+
+
+def _topic_retriever(tmp_path):
+    from collections import Counter
+
+    from omegaconf import OmegaConf
+
+    from gpc_rag.retrieval.hybrid import HybridRetriever
+
+    (tmp_path / "fuentes.yaml").write_text(
+        "documentos:\n"
+        "  - archivo: GPC NAC 2026.pdf\n    titulo: GPC NAC\n    tipo: guia\n    tema: NAC\n"
+        "  - archivo: ITU review.pdf\n    titulo: ITU review\n    tipo: revision\n    tema: ITU\n",
+        encoding="utf-8",
+    )
+    retriever = HybridRetriever.__new__(HybridRetriever)
+    retriever.cfg = OmegaConf.create(
+        {
+            "retrieval": {
+                "topics": {"NAC": ["neumonia", "nac"], "ITU": ["urinaria", "itu", "bacteriuria"]},
+                "institutional_topics": {"CT-PL-193": "NAC", "CT-PL-197": "ITU"},
+                "external_catalog_dir": str(tmp_path),
+                "rare_term_ratio": 0.01,
+            }
+        }
+    )
+    retriever._external_topics = None
+    retriever._bm25_chunks = [object()] * 500
+    retriever._doc_freq = Counter({"meningitis": 1, "bacteriana": 40, "adultos": 300, "esputo": 4})
+    retriever._vocabulary = frozenset(retriever._doc_freq)
+    return retriever
+
+
+def test_chunks_of_another_topic_are_dropped(tmp_path) -> None:
+    from gpc_rag.common.models import Chunk, RetrievedChunk
+
+    retriever = _topic_retriever(tmp_path)
+
+    def rc(source, kind):
+        return RetrievedChunk(chunk=Chunk(text="t", source_file=source, source_type=kind), score=0.5)
+
+    pool = [
+        rc("CT-PL-197_Protocolo_ITU.pdf", "institucional"),
+        rc("CT-PL-193_Protocolo_NAC.pdf", "institucional"),
+        rc("GPC NAC 2026.pdf", "guia"),
+        rc("ITU review.pdf", "revision"),
+        rc("sin catalogo.pdf", "revision"),
+    ]
+    kept = retriever.same_topic("¿En qué casos de infección urinaria se piden hemocultivos?", pool)
+    assert [r.chunk.source_file for r in kept] == [
+        "CT-PL-197_Protocolo_ITU.pdf",
+        "ITU review.pdf",
+        "sin catalogo.pdf",
+    ]
+    # Sin tema o con dos temas no se filtra.
+    assert retriever.same_topic("¿Cuándo es de buena calidad el esputo?", pool) == pool
+    assert retriever.same_topic("¿Neumonía o infección urinaria?", pool) == pool
+
+
+def test_answer_that_does_not_mention_the_asked_disease_is_uncovered(tmp_path) -> None:
+    retriever = _topic_retriever(tmp_path)
+    question = "¿Cómo se maneja la meningitis bacteriana en adultos?"
+    assert retriever.uncovered_terms(question, "Recomendamos ceftriaxona en adultos con NAC.") == [
+        "meningitis"
+    ]
+    esputo = "¿Cuándo se considera de buena calidad una muestra de esputo?"
+    assert retriever.uncovered_terms(esputo, "Muestra de esputo con <10 células epiteliales.") == []
+    # Con un tema del corpus no se exige.
+    assert retriever.uncovered_terms("¿Meningitis en paciente con neumonía?", "Ceftriaxona.") == []
+
+
+def test_admin_section_is_named_by_its_stem() -> None:
+    from gpc_rag.retrieval.hybrid import _admin_penalty
+
+    query = "¿Cómo se clasifican la fuerza de la recomendación y la calidad de la evidencia?"
+    assert _admin_penalty("CRITERIO DE CLASIFICACIÓN DE LAS RECOMENDACIONES", query, 0.3) == 0.0

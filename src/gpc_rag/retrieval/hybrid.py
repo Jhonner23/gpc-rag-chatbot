@@ -12,13 +12,15 @@ from __future__ import annotations
 import logging
 import re
 import unicodedata
+from collections import Counter
+from pathlib import Path
 
 from omegaconf import DictConfig
 from rank_bm25 import BM25Okapi
 
 from gpc_rag.common.models import Chunk, RetrievedChunk
 from gpc_rag.embeddings.ollama_embeddings import OllamaEmbedder
-from gpc_rag.ingestion.sources import INSTITUTIONAL
+from gpc_rag.ingestion.sources import INSTITUTIONAL, _file_key, load_catalog
 from gpc_rag.vectorstore.qdrant_store import QdrantStore
 
 logger = logging.getLogger(__name__)
@@ -179,7 +181,11 @@ def _admin_penalty(
     for level in candidates:
         for prefix, keyword in _ADMIN_SECTIONS.items():
             if level.startswith(prefix):
-                return 0.0 if keyword in query_plain else -penalty
+                # Por la raiz: "¿como se clasifican...?" nombra el "Criterio
+                # de clasificacion"; con la palabra exacta se excluia la tabla
+                # de fuerza y calidad de la evidencia del protocolo.
+                stem = keyword[:7]
+                return 0.0 if stem in query_plain else -penalty
     return 0.0
 
 
@@ -303,6 +309,16 @@ def _looks_like_verb(word: str) -> bool:
     return word in _COMMON_VERBS or bool(_VERB_SUFFIX_RE.search(word))
 
 
+def _content_words(query: str) -> list[str]:
+    """Sustantivos de la pregunta que pueden nombrar un tema (no verbos ni
+    palabras generales)."""
+    return [
+        w
+        for w in _bm25_query_tokens(retrieval_query(query))
+        if w not in _GENERIC_WORDS and len(w) >= 4 and not w.isdigit() and not _looks_like_verb(w)
+    ]
+
+
 class HybridRetriever:
     def __init__(self, cfg: DictConfig, embedder: OllamaEmbedder, store: QdrantStore):
         self.cfg = cfg
@@ -311,6 +327,8 @@ class HybridRetriever:
         self._bm25: BM25Okapi | None = None
         self._bm25_chunks: list[Chunk] = []
         self._vocabulary: frozenset[str] = frozenset()
+        self._doc_freq: Counter[str] = Counter()
+        self._external_topics: dict[str, str] | None = None
         self._reranker = None  # se carga perezosamente, solo si se usa
 
     def build_bm25_index(self) -> None:
@@ -325,9 +343,11 @@ class HybridRetriever:
         self._bm25_chunks = chunks
         tokenized = [_tokenize(c.text) for c in chunks]
         self._bm25 = BM25Okapi(tokenized) if tokenized else None
-        self._vocabulary = frozenset(
-            w for c, toks in zip(chunks, tokenized, strict=True) for w in (*toks, *_tokenize(c.section))
-        )
+        per_chunk = [
+            {*toks, *_tokenize(c.section)} for c, toks in zip(chunks, tokenized, strict=True)
+        ]
+        self._doc_freq = Counter(w for words in per_chunk for w in words)
+        self._vocabulary = frozenset(self._doc_freq)
         logger.info("Indice BM25 construido con %d chunks.", len(chunks))
 
     def _bm25_search(
@@ -429,21 +449,70 @@ class HybridRetriever:
         """
         if not self._vocabulary:
             return []
-        tokens = _bm25_query_tokens(retrieval_query(query))
-        topics = {
-            t for term in self.cfg.retrieval.get("topic_terms", []) for t in _tokenize(str(term))
-        }
-        if topics & set(tokens):
+        if self.question_topics(query):
             return []
-        return [
-            w
-            for w in tokens
-            if w not in self._vocabulary
-            and w not in _GENERIC_WORDS
-            and len(w) >= 4
-            and not w.isdigit()
-            and not _looks_like_verb(w)
-        ]
+        return [w for w in _content_words(query) if w not in self._vocabulary]
+
+    def _topic_words(self) -> dict[str, set[str]]:
+        """{tema: palabras} de retrieval.topics (o retrieval.topic_terms, sin
+        separar por tema)."""
+        retrieval = self.cfg.retrieval
+        topics = retrieval.get("topics")
+        if topics:
+            return {
+                str(name): {t for term in terms for t in _tokenize(str(term))}
+                for name, terms in topics.items()
+            }
+        return {"corpus": {t for term in retrieval.get("topic_terms", []) for t in _tokenize(str(term))}}
+
+    def question_topics(self, query: str) -> set[str]:
+        tokens = set(_tokenize(retrieval_query(query)))
+        return {name for name, words in self._topic_words().items() if words & tokens}
+
+    def chunk_topic(self, chunk: Chunk) -> str | None:
+        """Tema de un fragmento: el de su protocolo (retrieval.institutional_topics,
+        por prefijo del archivo) o el de data/01_raw/externas/fuentes.yaml."""
+        retrieval = self.cfg.retrieval
+        if chunk.source_type == INSTITUTIONAL:
+            for prefix, topic in (retrieval.get("institutional_topics") or {}).items():
+                if chunk.source_file.startswith(str(prefix)):
+                    return str(topic)
+            return None
+        if self._external_topics is None:
+            directory = Path(retrieval.get("external_catalog_dir", "data/01_raw/externas"))
+            try:
+                catalog = load_catalog(directory)
+            except (OSError, ValueError):
+                logger.warning("Sin catalogo de fuentes externas en %s: no se filtra por tema.", directory)
+                catalog = {}
+            self._external_topics = {key: info.topic for key, info in catalog.items()}
+        return self._external_topics.get(_file_key(chunk.source_file))
+
+    def same_topic(self, query: str, candidates: list[RetrievedChunk]) -> list[RetrievedChunk]:
+        """Si la pregunta nombra un solo tema, deja fuera los fragmentos de otro
+        (los de tema desconocido se conservan). En "¿en que casos de infeccion
+        urinaria se deben solicitar hemocultivos?" entraban las
+        recomendaciones de hemocultivos de la GPC de neumonia."""
+        topics = self.question_topics(query)
+        if len(topics) != 1:
+            return candidates
+        return [rc for rc in candidates if self.chunk_topic(rc.chunk) in (None, *topics)]
+
+    def uncovered_terms(self, question: str, answer: str) -> list[str]:
+        """Palabras poco frecuentes de la pregunta que la respuesta no menciona,
+        cuando la pregunta no nombra un tema del corpus.
+
+        "meningitis" aparece en algun documento, asi que el filtro de terminos
+        fuera del corpus no actuaba; el selector eligio recomendaciones de
+        neumonia y el evaluador las aprobo. Si la respuesta no menciona la
+        enfermedad por la que se pregunto, no la responde."""
+        if not self._doc_freq or self.question_topics(question):
+            return []
+        limit = max(3, int(len(self._bm25_chunks) * float(self.cfg.retrieval.get("rare_term_ratio", 0.01))))
+        rare = [w for w in _content_words(question) if 0 < self._doc_freq.get(w, 0) <= limit]
+        answered = set(_tokenize(answer))
+        return [w for w in rare if w not in answered]
+
 
     def retrieve(self, query: str) -> list[RetrievedChunk]:
         retrieval = self.cfg.retrieval
@@ -464,6 +533,7 @@ class HybridRetriever:
                     for rc in self._institutional_candidates(query, query_vector, quota * 2)
                     if rc.chunk.chunk_id not in seen
                 ]
+            candidate_pool = self.same_topic(query, candidate_pool)
             ranked = self._rerank(query, candidate_pool, len(candidate_pool))
             return with_institutional_quota(
                 ranked,
