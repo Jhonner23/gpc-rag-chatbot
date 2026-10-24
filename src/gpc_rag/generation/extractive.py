@@ -286,13 +286,14 @@ def _strip_references(text: str) -> str:
 
 
 # Resumen de un estudio en la discusion de la evidencia de una guia ("El
-# estudio de Prina introdujo...", "El analisis de Metersky y colaboradores...
-# (OR 2.51, IC95%: 1.20-5.25)"): es el respaldo de una recomendacion, no la
-# recomendacion. En "factores para decidir el manejo de la neumonia" el
-# selector las elegia en lugar de recomendaciones.
+# estudio de Prina introdujo...", "El analisis de Metersky y colaboradores..."):
+# es el respaldo de una recomendacion, no la recomendacion. En "factores para
+# decidir el manejo de la neumonia" el selector las elegia en lugar de
+# recomendaciones. Un OR o un IC95 solos no bastan: la GPC tambien los usa al
+# enunciar factores de riesgo ("aislamiento previo de P. aeruginosa (OR=14.2)").
 _STUDY_SUMMARY_RE = re.compile(
-    r"\b(?:el|un|los|este|dicho)\s+(?:estudio|an[aá]lisis|ensayo|metan[aá]lisis)s?\s+de\s+[A-Z]"
-    r"|\by colaboradores\b|\bIC\s?95|\b(?:OR|HR|RR)\s?[=:]?\s?\d"
+    r"\b(?:[Ee]l|[Uu]n|[Ll]os|[Ee]ste|[Dd]icho)\s+(?:estudio|an[aá]lisis|ensayo|metan[aá]lisis)s?\s+de\s+[A-Z]"
+    r"|\by colaboradores\b"
 )
 # Llamadas de referencia pegadas en cursiva markdown ("_SAMR_157", "_P.
 # aeruginosa_ 132") y espacios antes de puntuacion ("Pseudomonas ,").
@@ -303,6 +304,53 @@ _SPACE_BEFORE_PUNCT_RE = re.compile(r"\s+([,.;:])")
 def _tidy_external(text: str) -> str:
     text = _UNDERSCORE_REF_RE.sub("", text).replace("_", "")
     return _SPACE_BEFORE_PUNCT_RE.sub(r"\1", text).strip()
+
+
+# Fragmentos cortados por un salto de columna o de pagina ("No single clinical
+# sign has good predictive") y leyendas que son listas de abreviaturas
+# ("ATS=..., FiO2=..., IDSA=..."): no se pueden citar como recomendacion.
+_ABBREVIATION_DEF_RE = re.compile(r"\b(?!(?:OR|HR|RR)\b)[A-Z][A-Za-z0-9]{1,8}\s?=\s?[A-Za-z]")
+_TERMINAL_PUNCT = tuple(".!?:;)\"»")
+
+
+# Verbo conjugado: una oracion (no un item de lista como "Frailty or poor
+# social support") que no termina en puntuacion quedo cortada.
+_FINITE_VERB_RE = re.compile(
+    r"\b(is|are|was|were|has|have|had|should|can|may|must|recommends?|suggests?"
+    r"|es|son|fue|tiene|tienen|debe|deben|puede|pueden|recomienda|recomendamos|sugerimos)\b",
+    re.IGNORECASE,
+)
+
+
+# Palabra de enlace al final: la oracion sigue en otro lado ("...within the",
+# "...we suggest", "...con menor").
+_DANGLING_WORDS = frozenset(
+    """the a an of to in for with and or but than that which who we be by from at as
+    plus less more greater el la los las un una de del al en con por para y o que
+    se su sus menor mayor""".split()  # noqa: SIM905 -- lista legible
+)
+
+
+def _unusable_external(text: str) -> bool:
+    body = text.rstrip(" |")
+    body = re.sub(r"[\d,.\s]+$", lambda m: "." if "." in m.group(0) else "", body)
+    if len(_ABBREVIATION_DEF_RE.findall(text)) >= 3:
+        return True
+    if body.endswith(_TERMINAL_PUNCT):
+        return False
+    words = body.split()
+    # Solo se descartan los cortes cortos y evidentes. Una unidad larga se
+    # conserva aunque no tenga punto final: puede ser una recomendacion
+    # completa ("Punto de buena practica ... se recomienda adicionar terapia
+    # empirica con macrolido") o una cortada al final de un fragmento que aun
+    # asi trae la recomendacion.
+    if len(words) >= 15:
+        return False
+    return (
+        text[:1].islower()
+        or words[-1].lower() in _DANGLING_WORDS
+        or (len(words) < 8 and bool(_FINITE_VERB_RE.search(body)))
+    )
 
 
 def build_units(sources: list[RetrievedChunk]) -> list[Unit]:
@@ -317,7 +365,9 @@ def build_units(sources: list[RetrievedChunk]) -> list[Unit]:
             text = _strip_references(text)
             if not text:
                 continue
-            if rc.chunk.source_type != INSTITUTIONAL and _STUDY_SUMMARY_RE.search(text):
+            if rc.chunk.source_type != INSTITUTIONAL and (
+                _STUDY_SUMMARY_RE.search(text) or _unusable_external(text)
+            ):
                 continue
             key = text.lower()
             if key in seen:  # solape entre fragmentos consecutivos
@@ -352,10 +402,10 @@ devuelve la lista vacia aunque haya oraciones sobre antibioticos o fiebre.
 - Si eliges una recomendacion o un tratamiento, elige tambien la oracion que \
 dice a que pacientes o situacion aplica (condicion, poblacion, excepciones), \
 si esta en la lista.
-- Si la pregunta es sobre el manejo inicial, elige lo que se hace al \
-diagnosticar (clasificar la gravedad, decidir donde tratar, examenes y \
-antibiotico inicial), no lo del seguimiento, las complicaciones o el largo \
-plazo.
+- Si la pregunta es sobre el manejo inicial, elige primero lo que decide \
+donde tratar al paciente (indicaciones de hospitalizacion o de UCI, escalas de \
+gravedad) y el antibiotico inicial; despues, si cabe, los examenes. No elijas \
+lo del seguimiento, las complicaciones o el largo plazo.
 - Si la pregunta es sobre cuando hacer algo (tratar, hospitalizar, pedir un \
 examen), elige las oraciones que dan esas indicaciones antes que las que \
 solo dan dosis.

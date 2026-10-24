@@ -294,3 +294,22 @@ def test_study_summaries_from_external_guides_are_not_units() -> None:
     )
     texts = [u.text for u in build_units([guide])]
     assert texts == ["Recomendamos cubrir P. aeruginosa en pacientes con aislamiento previo."]
+
+
+def test_cut_fragments_and_abbreviation_legends_are_not_units() -> None:
+    review = RetrievedChunk(
+        chunk=Chunk(
+            text="Clinical features\n\nNo single clinical sign has good predictive\n\n"
+            "Figure 1: Considerations for diagnosis ATS=American Thoracic Society. "
+            "FiO2=fraction of inspired oxygen. IDSA=Infectious Diseases Society of America.\n\n"
+            "Chest radiography is recommended to confirm the diagnosis in adults.",
+            source_file="lancet.pdf",
+            section="Clinical features",
+            page=5,
+            chunk_id="l",
+            source_type="revision",
+        ),
+        score=0.4,
+    )
+    texts = [u.text for u in build_units([review])]
+    assert texts == ["Chest radiography is recommended to confirm the diagnosis in adults."]
