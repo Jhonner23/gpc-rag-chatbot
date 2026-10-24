@@ -159,3 +159,7 @@ eval/comparacion_rag_arbol.md
 # Evaluacion de recuperacion: texto exportado del indice (derivado, no se versiona)
 eval/chunks_protocolos.json
 eval/agentes_codigo*.txt
+
+# Respuestas de las corridas del banco contra la API (scripts/run_golden_chat.py):
+# traen texto de los protocolos (uso exclusivo de la CUB), no se versionan.
+eval/resultados/

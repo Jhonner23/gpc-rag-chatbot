@@ -341,6 +341,24 @@ _ATTRIBUTION_RE = re.compile(
 _LEADING_ABBREVIATION_RE = re.compile(r"^[A-Z][\w ]{0,15}?\s?=\s?\S")
 
 
+_LAST_SENTENCE_END_RE = re.compile(r"[.!?](?=\s+[A-ZÁÉÍÓÚÑ¿¡])")
+
+
+def _trim_unfinished_tail(text: str) -> str:
+    """Quita la ultima oracion de una unidad larga si quedo cortada ("...que
+    tienen factores de riesgo como"), cuando antes hay oraciones completas."""
+    body = text.rstrip(" |")
+    if body.endswith(_TERMINAL_PUNCT):
+        return text
+    ends = list(_LAST_SENTENCE_END_RE.finditer(body))
+    if not ends:
+        return text
+    tail = body[ends[-1].end() :].split()
+    if tail and (tail[-1].lower() in _DANGLING_WORDS or len(tail) < 15):
+        return body[: ends[-1].end()].strip()
+    return text
+
+
 def _unusable_external(text: str) -> bool:
     body = text.rstrip(" |")
     body = re.sub(r"[\d,.\s]+$", lambda m: "." if "." in m.group(0) else "", body)
@@ -379,10 +397,10 @@ def build_units(sources: list[RetrievedChunk]) -> list[Unit]:
             text = _strip_references(text)
             if not text:
                 continue
-            if rc.chunk.source_type != INSTITUTIONAL and (
-                _STUDY_SUMMARY_RE.search(text) or _unusable_external(text)
-            ):
-                continue
+            if rc.chunk.source_type != INSTITUTIONAL:
+                text = _trim_unfinished_tail(text)
+                if _STUDY_SUMMARY_RE.search(text) or _unusable_external(text):
+                    continue
             key = text.lower()
             if key in seen:  # solape entre fragmentos consecutivos
                 continue

@@ -332,3 +332,17 @@ def test_figure_attributions_and_loose_abbreviations_are_not_units() -> None:
     )
     texts = [u.text for u in build_units([figure])]
     assert texts == ["The treatment site is established based on risk stratification."]
+
+
+def test_cut_last_sentence_of_a_long_unit_is_trimmed() -> None:
+    from gpc_rag.generation.extractive import _trim_unfinished_tail
+
+    text = (
+        "Bacterial co-infection with S aureus is a common complication of severe influenza. "
+        "Co-infection with Aspergillus can occur in patients who have risk factors such as"
+    )
+    assert _trim_unfinished_tail(text) == (
+        "Bacterial co-infection with S aureus is a common complication of severe influenza."
+    )
+    complete = "Admit patients who are septic. Prefer oral therapy when stable."
+    assert _trim_unfinished_tail(complete) == complete
