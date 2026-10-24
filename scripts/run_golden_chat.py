@@ -3,6 +3,10 @@
 Uso (con la API levantada en otra terminal):
 
     PYTHONPATH=src uv run python scripts/run_golden_chat.py
+    PYTHONPATH=src uv run python scripts/run_golden_chat.py --banco eval/preguntas_validacion.json --sin-rondas
+
+eval/preguntas_validacion.json son preguntas que no se usaron para ajustar el
+sistema: miden si las correcciones sirven fuera de las preguntas de prueba.
 
 Escribe eval/resultados/respuestas_<fecha>.jsonl, una linea por pregunta, a
 medida que avanza: si la corrida se interrumpe, lo ya respondido queda
@@ -50,15 +54,17 @@ EXTRA_QUESTIONS = [
 ]
 
 
-def _questions() -> list[dict]:
-    bank = json.loads(BANK.read_text(encoding="utf-8"))
+def _questions(bank_path: Path = BANK, with_rounds: bool = True) -> list[dict]:
+    bank = json.loads(bank_path.read_text(encoding="utf-8"))
     items = [
-        {"origen": "banco", "question": q["question"], "should_refuse": q["should_refuse"]}
+        {"origen": bank_path.stem, "question": q["question"], "should_refuse": q["should_refuse"]}
         for q in bank
     ]
-    items += [
-        {"origen": "ronda", "question": q, "should_refuse": refuse} for q, refuse in EXTRA_QUESTIONS
-    ]
+    if with_rounds:
+        items += [
+            {"origen": "ronda", "question": q, "should_refuse": refuse}
+            for q, refuse in EXTRA_QUESTIONS
+        ]
     return [{"n": i, **item} for i, item in enumerate(items, 1)]
 
 
@@ -72,12 +78,16 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--continuar", type=Path, help="archivo .jsonl de una corrida a retomar")
     parser.add_argument("--url", default=API_URL)
+    parser.add_argument("--banco", type=Path, default=BANK, help="archivo .json de preguntas")
+    parser.add_argument(
+        "--sin-rondas", action="store_true", help="no agregar las 5 preguntas de las rondas de prueba"
+    )
     args = parser.parse_args()
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     out = args.continuar or OUT_DIR / f"respuestas_{datetime.now():%Y%m%d_%H%M}.jsonl"
     done = _done(out)
-    questions = [q for q in _questions() if q["n"] not in done]
+    questions = [q for q in _questions(args.banco, not args.sin_rondas) if q["n"] not in done]
     print(f"{len(questions)} preguntas por correr -> {out}")
 
     with httpx.Client(timeout=TIMEOUT_SECONDS) as client, out.open("a", encoding="utf-8") as fh:

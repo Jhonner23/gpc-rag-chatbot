@@ -1,0 +1,14 @@
+[
+  {"question": "¿Cuál es el tratamiento antibiótico empírico de la neumonía en un paciente hospitalizado con factores de riesgo para Pseudomonas aeruginosa?", "should_refuse": false},
+  {"question": "¿Qué antibiótico se usa en la neumonía hospitalizada sin factores de riesgo y qué alternativa hay si el paciente es alérgico a la penicilina?", "should_refuse": false},
+  {"question": "¿Cuándo se deben agregar macrólidos al tratamiento de la neumonía?", "should_refuse": false},
+  {"question": "¿En qué pacientes con neumonía se solicitan gases arteriales?", "should_refuse": false},
+  {"question": "Paciente de 70 años con neumonía, CURB-65 de 3 y saturación de oxígeno de 86 %, ¿debe hospitalizarse?", "should_refuse": false},
+  {"question": "¿Cuántos urocultivos se necesitan para confirmar una bacteriuria asintomática en una mujer no embarazada?", "should_refuse": false},
+  {"question": "¿Cuál es el tratamiento de la ITU alta que se maneja de forma ambulatoria?", "should_refuse": false},
+  {"question": "¿Qué terapia preventiva se indica a la gestante con ITU alta y hasta cuándo?", "should_refuse": false},
+  {"question": "Mujer de 25 años con un primer episodio de disuria y polaquiuria, sin fiebre, ¿necesita urocultivo y qué antibiótico se indica?", "should_refuse": false},
+  {"question": "¿Cuál es el tratamiento del dengue grave?", "should_refuse": true},
+  {"question": "¿Cómo se maneja la apendicitis aguda?", "should_refuse": true},
+  {"question": "¿Cuál es el tratamiento de la celulitis no purulenta?", "should_refuse": true}
+]
