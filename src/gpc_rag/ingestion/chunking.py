@@ -120,7 +120,10 @@ _BIBLIOGRAPHY_RE = re.compile(
     # Secciones de los articulos que no son contenido clinico.
     r"|article information|author contributions|conflict of interest|disclosures"
     r"|acknowledg|agradecimientos|conflictos? de inter[eé]s|financiaci[oó]n"
-    r"|author affiliations|corresponding author|submissions?\b|accepted for publication",
+    r"|author affiliations|corresponding author|submissions?\b|accepted for publication"
+    # Declaraciones finales de la GPC NAC 2026.
+    r"|contribuci[oó]n de los autores|consideraciones [eé]ticas|confidencialidad"
+    r"|privacidad|protecci[oó]n de (personas|poblaci[oó]n)",
     re.IGNORECASE,
 )
 # Linea con forma de referencia bibliografica ("Smith J, et al. ... 2019;200:
@@ -210,6 +213,12 @@ def _strip_markdown_markers(text: str) -> str:
 
 
 _NUMBERED_TITLE_RE = re.compile(r"^\d{1,3}\.\s")
+# Apartados finales de una GPC que no cuelgan de la ultima pregunta numerada:
+# sin esto las tarjetas de bolsillo de la GPC NAC 2026 quedaban bajo "24. ...
+# vacunacion".
+_STANDALONE_TITLE_RE = re.compile(
+    r"^(resumen (de (las )?)?recomendaciones|tarjetas? de bolsillo)", re.IGNORECASE
+)
 
 
 def _clean_title(title: str) -> str:
@@ -243,6 +252,9 @@ class _TitlePath:
         clean = _clean_title(title)
         if not clean or clean == "Sin seccion":
             return title
+        if _STANDALONE_TITLE_RE.match(clean):
+            self.top, self.mid = clean, None
+            return clean
         if _NUMBERED_TITLE_RE.match(clean):
             # "5. Diagnóstico: Análisis de orina": el apartado es "5.
             # Diagnóstico"; "Análisis de orina" es su primera subseccion.
@@ -272,6 +284,24 @@ def approx_token_count(text: str) -> int:
 class _Section:
     title: str
     text: str
+
+
+def _is_clinical_question(title: str) -> bool:
+    """Pregunta clinica numerada de una GPC ("11. En pacientes adultos con
+    diagnostico de NAC que requieren manejo ambulatorio, ¿cual es el
+    antibiotico recomendado...?"). Suele pasar del largo maximo de un titulo,
+    pero es el limite real de la seccion: si se devolvia al texto, la seccion
+    heredaba el titulo de la pregunta anterior (las recomendaciones de
+    antibioticos de la GPC NAC 2026 quedaban bajo "8. ... toracocentesis")."""
+    clean = _strip_markdown_markers(title)
+    return bool(_NUMBERED_TITLE_RE.match(clean)) and ("¿" in clean or clean.endswith("?"))
+
+
+def _shorten_title(title: str) -> str:
+    if len(title) <= _MAX_SECTION_TITLE_CHARS:
+        return title
+    cut = title[: _MAX_SECTION_TITLE_CHARS - 1].rsplit(" ", 1)[0].rstrip(" ,;")
+    return f"{cut}…"
 
 
 def split_into_sections(
@@ -325,7 +355,10 @@ def split_into_sections(
         if len(title) > _MAX_SECTION_TITLE_CHARS:
             head = title.split(":", 1)[0].strip()
             body = f"{title}\n\n{body}".strip()
-            title = head if 0 < len(head) <= _MAX_SECTION_TITLE_CHARS // 2 else default_title
+            if _is_clinical_question(title):
+                title = _shorten_title(_strip_markdown_markers(title))
+            else:
+                title = head if 0 < len(head) <= _MAX_SECTION_TITLE_CHARS // 2 else default_title
         if body or keep_empty:
             sections.append(_Section(title=title, text=body))
 

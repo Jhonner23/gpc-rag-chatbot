@@ -269,6 +269,20 @@ def with_institutional_quota(
     return sorted(chosen, key=lambda rc: rc.score, reverse=True)
 
 
+# Verbos de la pregunta ("cubrir", "realizan", "egresar", "maneja") que no
+# estan en las guias no indican un tema fuera del corpus: solo cuentan los
+# sustantivos (la enfermedad o el germen).
+_VERB_SUFFIX_RE = re.compile(r"(ar|er|ir|an|en|ando|iendo|ado|ido)$")
+_COMMON_VERBS = frozenset(
+    """maneja manejo trata usa usar da dar hace hacer indica sospecha debe deben
+    puede pueden sirve requiere""".split()  # noqa: SIM905 -- lista legible
+)
+
+
+def _looks_like_verb(word: str) -> bool:
+    return word in _COMMON_VERBS or bool(_VERB_SUFFIX_RE.search(word))
+
+
 class HybridRetriever:
     def __init__(self, cfg: DictConfig, embedder: OllamaEmbedder, store: QdrantStore):
         self.cfg = cfg
@@ -276,6 +290,7 @@ class HybridRetriever:
         self.store = store
         self._bm25: BM25Okapi | None = None
         self._bm25_chunks: list[Chunk] = []
+        self._vocabulary: frozenset[str] = frozenset()
         self._reranker = None  # se carga perezosamente, solo si se usa
 
     def build_bm25_index(self) -> None:
@@ -290,6 +305,9 @@ class HybridRetriever:
         self._bm25_chunks = chunks
         tokenized = [_tokenize(c.text) for c in chunks]
         self._bm25 = BM25Okapi(tokenized) if tokenized else None
+        self._vocabulary = frozenset(
+            w for c, toks in zip(chunks, tokenized, strict=True) for w in (*toks, *_tokenize(c.section))
+        )
         logger.info("Indice BM25 construido con %d chunks.", len(chunks))
 
     def _bm25_search(
@@ -312,7 +330,7 @@ class HybridRetriever:
     def reranker(self):
         # Import perezoso: evita cargar torch/sentence-transformers si no se usa reranking.
         if self._reranker is None:
-            from sentence_transformers import CrossEncoder  # noqa: PLC0415
+            from sentence_transformers import CrossEncoder
 
             # max_length acota el costo en CPU: el modelo admite hasta 8192
             # tokens por par, y los fragmentos son de ~400 (ver chunking).
@@ -376,6 +394,36 @@ class HybridRetriever:
         )
         bm25 = self._bm25_search(query, top_k=retrieval.top_k_bm25, source_type=INSTITUTIONAL)
         return _reciprocal_rank_fusion([dense, bm25])[:limit]
+
+    def out_of_corpus_terms(self, query: str) -> list[str]:
+        """Palabras de la pregunta que no aparecen en ningun documento indexado
+        y que la pregunta no ancla a un tema del corpus (retrieval.topic_terms).
+
+        El reranker no distingue la enfermedad: para "tratamiento recomendado
+        para la malaria en adultos" daba 0.49 a "antibiotico recomendado para
+        el tratamiento ... en pacientes adultos con NAC", y el RAG respondia
+        sobre NAC. "malaria" no aparece en ninguna guia: si la pregunta no
+        nombra ademas un tema del corpus (NAC, ITU...), no hay nada que
+        responder. Con un tema presente ("pielonefritis en paciente con
+        lupus") se responde lo que haya del tema.
+        """
+        if not self._vocabulary:
+            return []
+        tokens = _bm25_query_tokens(retrieval_query(query))
+        topics = {
+            t for term in self.cfg.retrieval.get("topic_terms", []) for t in _tokenize(str(term))
+        }
+        if topics & set(tokens):
+            return []
+        return [
+            w
+            for w in tokens
+            if w not in self._vocabulary
+            and w not in _GENERIC_WORDS
+            and len(w) >= 4
+            and not w.isdigit()
+            and not _looks_like_verb(w)
+        ]
 
     def retrieve(self, query: str) -> list[RetrievedChunk]:
         retrieval = self.cfg.retrieval

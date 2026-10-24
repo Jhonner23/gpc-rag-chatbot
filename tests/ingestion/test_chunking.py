@@ -153,3 +153,43 @@ def test_subsections_carry_their_parent_headings_and_picture_text_is_dropped():
     ]
     assert chunks[0].text.startswith("2. RECOMENDACIONES PARA EL MANEJO — INDICACIONES")
     assert all("eopecers" not in c.text for c in chunks)
+
+
+def test_long_numbered_clinical_question_starts_its_own_section():
+    from gpc_rag.ingestion.chunking import split_into_sections
+
+    question = (
+        "11. En pacientes adultos con diagnóstico de NAC que requieren manejo ambulatorio, "
+        "¿cuál es el antibiótico recomendado para el tratamiento empírico?"
+    )
+    text = (
+        "## **8. ¿Cuándo considerar toracocentesis?**\n\nTexto de la pregunta 8.\n\n"
+        f"**{question}**\n\nRecomendamos amoxicilina 1 g cada 8 horas."
+    )
+    sections = split_into_sections(text)
+    assert len(sections) == 2
+    assert sections[1].title.startswith("11. En pacientes adultos")
+    assert len(sections[1].title) <= 120
+    assert "amoxicilina" in sections[1].text
+    assert question in sections[1].text
+
+
+def test_long_markdown_header_question_is_kept_as_title():
+    from gpc_rag.ingestion.chunking import split_into_sections
+
+    question = (
+        "17. En pacientes adultos con diagnóstico de NAC que presentan mejoría clínica, "
+        "¿cuál es la duración apropiada del tratamiento antibiótico?"
+    )
+    sections = split_into_sections(f"## **{question}** \n\nRecomendamos 5 días.")
+    assert sections[0].title.startswith("17. En pacientes adultos")
+    assert "*" not in sections[0].title
+
+
+def test_pocket_cards_do_not_hang_from_the_last_question():
+    from gpc_rag.ingestion.chunking import _TitlePath
+
+    path = _TitlePath()
+    path.full("24. ¿Debe recomendarse la vacunación?")
+    assert path.full("Tarjetas de Bolsillo: Guía NAC") == "Tarjetas de Bolsillo: Guía NAC"
+    assert path.full("TARJETA 1") == "Tarjetas de Bolsillo: Guía NAC — TARJETA 1"

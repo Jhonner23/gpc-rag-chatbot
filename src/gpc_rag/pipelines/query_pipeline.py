@@ -7,16 +7,20 @@ modelos/clientes en cada pregunta.
 
 from __future__ import annotations
 
+import logging
+
 from omegaconf import DictConfig
 
 from gpc_rag.common.models import RagAnswer
 from gpc_rag.common.settings import load_config
 from gpc_rag.embeddings.ollama_embeddings import OllamaEmbedder
 from gpc_rag.generation.by_source import generate_by_source
-from gpc_rag.generation.extractive import extractive_answer
+from gpc_rag.generation.extractive import REFUSAL, extractive_answer
 from gpc_rag.generation.ollama_llm import OllamaGenerator
 from gpc_rag.retrieval.hybrid import HybridRetriever
 from gpc_rag.vectorstore.qdrant_store import QdrantStore
+
+logger = logging.getLogger(__name__)
 
 
 class QueryPipeline:
@@ -30,6 +34,10 @@ class QueryPipeline:
         self.generator = OllamaGenerator(self.cfg)
 
     def answer(self, question: str, extra_instruction: str | None = None) -> RagAnswer:
+        unknown = self.retriever.out_of_corpus_terms(question)
+        if unknown:
+            logger.info("RAG: terminos fuera del corpus %s; abstencion.", unknown)
+            return RagAnswer(question=question, answer=REFUSAL, sources=[])
         retrieved = self.retriever.retrieve(question)
         rag_cfg = self.cfg.get("rag") or {}
         if rag_cfg.get("mode", "generativo") == "extractivo":
@@ -56,7 +64,7 @@ _pipeline_singleton: QueryPipeline | None = None
 
 def get_pipeline() -> QueryPipeline:
     """Devuelve una unica instancia del pipeline (carga perezosa, cachea el reranker/BM25)."""
-    global _pipeline_singleton  # noqa: PLW0603 -- singleton simple para cachear reranker/BM25 en memoria
+    global _pipeline_singleton
     if _pipeline_singleton is None:
         _pipeline_singleton = QueryPipeline()
     return _pipeline_singleton

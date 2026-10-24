@@ -150,3 +150,32 @@ def test_admin_sections_are_excluded_from_the_context_when_configured() -> None:
     ]
     ranked = retriever._rerank("¿Tratamiento de la NAC?", chunks, 8)
     assert [r.chunk.section for r in ranked] == ["Tratamiento empírico"]
+
+
+def test_question_outside_the_corpus_is_detected() -> None:
+    from omegaconf import OmegaConf
+
+    from gpc_rag.retrieval.hybrid import HybridRetriever
+
+    retriever = HybridRetriever.__new__(HybridRetriever)
+    retriever.cfg = OmegaConf.create({"retrieval": {"topic_terms": ["neumonia", "nac", "pielonefritis"]}})
+    retriever._vocabulary = frozenset(
+        {"antibiotico", "recomendado", "tratamiento", "pacientes", "adultos", "neumonia", "influenza"}
+    )
+    malaria = "¿Cuál es el tratamiento recomendado para la malaria en adultos?"
+    assert retriever.out_of_corpus_terms(malaria) == ["malaria"]
+    # Con un tema del corpus se responde lo que haya del tema.
+    assert retriever.out_of_corpus_terms("¿Tratamiento de la pielonefritis con lupus?") == []
+    assert retriever.out_of_corpus_terms("¿Tratamiento de la influenza en adultos?") == []
+
+
+def test_verbs_and_short_topic_terms_do_not_trigger_the_out_of_corpus_guard() -> None:
+    from omegaconf import OmegaConf
+
+    from gpc_rag.retrieval.hybrid import HybridRetriever
+
+    retriever = HybridRetriever.__new__(HybridRetriever)
+    retriever.cfg = OmegaConf.create({"retrieval": {"topic_terms": ["itu", "nac"]}})
+    retriever._vocabulary = frozenset({"pseudomonas", "aeruginosa", "tratamiento", "empirico"})
+    assert retriever.out_of_corpus_terms("¿Cuándo cubrir Pseudomonas aeruginosa?") == []
+    assert retriever.out_of_corpus_terms("¿Criterios de egreso en ITU para pasar a vía oral?") == []

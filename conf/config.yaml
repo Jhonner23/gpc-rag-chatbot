@@ -19,6 +19,10 @@ retrieval:
   use_reranker: true
   reranker_model: "BAAI/bge-reranker-v2-m3"
   exclude_admin_sections: true # Objetivo, Alcance, Resumen, Necesidades de investigacion... no entran si la pregunta no las nombra
+  # Temas del corpus. Si la pregunta usa una palabra que no esta en ningun
+  # documento y no nombra ninguno de estos temas, el RAG se abstiene.
+  topic_terms: [neumonia, neumonias, nac, pneumonia, itu, uti, urinaria, urinario,
+    urinarias, urinarios, bacteriuria, pielonefritis, cistitis, prostatitis, urosepsis]
   admin_section_penalty: 0.3 # resta a Objetivo, Alcance, Introduccion... si la pregunta no las nombra (ver retrieval/hybrid.py)
   section_boost: 0.0         # impulso a secciones "N. ..." (ver retrieval/hybrid.py); desactivado
   reranker_max_length: 1024  # tokens por par (pregunta + fragmento) en el reranker
