@@ -197,3 +197,12 @@ def test_external_documents_are_capped_but_the_protocol_is_not() -> None:
     assert files.count("lancet.pdf") == 3
     assert files.count("cub.pdf") == 4
     assert "gpc.pdf" in files  # sin el tope, los 2 fragmentos extra del Lancet lo dejaban fuera
+
+
+def test_guide_front_matter_is_administrative() -> None:
+    from gpc_rag.retrieval.hybrid import _admin_penalty
+
+    query = "¿Cuál es el manejo inicial de la NAC?"
+    assert _admin_penalty("Población de interés", query, 0.3, "x", "guia", 4) < 0
+    assert _admin_penalty("Usuarios de la guía", query, 0.3, "x", "guia", 4) < 0
+    assert _admin_penalty("Población de interés", "¿Cuál es la población de interés?", 0.3) == 0
