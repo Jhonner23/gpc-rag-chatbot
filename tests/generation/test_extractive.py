@@ -253,3 +253,44 @@ def test_protocol_and_external_units_are_selected_separately() -> None:
     assert len(gen.prompts) == 2
     assert "Tabla 2" in gen.prompts[0] and "Treatment of asymptomatic" not in gen.prompts[0]
     assert "Treatment of asymptomatic" in gen.prompts[1] and "Tabla 2" not in gen.prompts[1]
+
+
+def test_bibliographic_references_are_not_units() -> None:
+    review = RetrievedChunk(
+        chunk=Chunk(
+            text="Asymptomatic Bacteriuria\n\nScreening is not recommended in nonpregnant adults. "
+            "Nicolle LE, Gupta K, Bradley SF, et al. Clinical practice guideline for the "
+            "management of asymptomatic bacteriuria. Clin Infect Dis. 2019;68(10). "
+            "https://doi.org/10.1093/cid/ciy1121 +ESSENTIAL READING",
+            source_file="ITU review 2024.pdf",
+            section="Asymptomatic Bacteriuria",
+            page=6,
+            chunk_id="r",
+            source_type="revision",
+        ),
+        score=0.4,
+    )
+    texts = [u.text for u in build_units([review])]
+    assert any("not recommended" in t for t in texts)
+    assert not any("et al" in t or "doi" in t for t in texts)
+
+
+def test_study_summaries_from_external_guides_are_not_units() -> None:
+    guide = RetrievedChunk(
+        chunk=Chunk(
+            text="14. Factores de riesgo para SAMR o P. aeruginosa\n\n"
+            "Recomendamos cubrir P. aeruginosa en pacientes con aislamiento previo.\n\n"
+            "El estudio de Prina introdujo el acrónimo PES con una mortalidad mayor "
+            "(OR 2.51, IC95%: 1.20-5.25).\n\n"
+            "El análisis de Metersky y colaboradores mostró que la EPOC discriminaba riesgo de "
+            "_Pseudomonas_ , mientras que la diabetes se asoció con SAMR_157 .",
+            source_file="GPC NAC 2026.pdf",
+            section="14. Factores de riesgo para SAMR o P. aeruginosa",
+            page=18,
+            chunk_id="g",
+            source_type="guia",
+        ),
+        score=0.4,
+    )
+    texts = [u.text for u in build_units([guide])]
+    assert texts == ["Recomendamos cubrir P. aeruginosa en pacientes con aislamiento previo."]

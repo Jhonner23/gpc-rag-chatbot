@@ -264,6 +264,47 @@ def _attach_anaphora(units: list[str]) -> list[str]:
     return merged
 
 
+# Referencias bibliograficas dentro de una seccion clinica (las "Additional
+# readings" del Core Curriculum de AJKD van al pie de cada apartado): "Nicolle
+# LE, Gupta K, et al. Clinical practice guideline... doi:...". No son
+# recomendaciones; el selector llego a elegir una para bacteriuria asintomatica.
+_CITATION_UNIT_RE = re.compile(
+    r"\bet al\b|doi\.org|\bdoi\s*:|https?://|\bpmid\b|essential reading", re.IGNORECASE
+)
+# Inicio de una referencia: "Nicolle LE, Gupta K" / "Smith J et al".
+_REFERENCE_START_RE = re.compile(r"(?:^|(?<=[.;:]\s))[A-Z][\w'-]+ [A-Z]{1,3}(?:,| et al)")
+
+
+def _strip_references(text: str) -> str:
+    """Quita la cola bibliografica de una unidad; vacio si toda es referencia."""
+    if not _CITATION_UNIT_RE.search(text):
+        return text
+    m = _REFERENCE_START_RE.search(text)
+    head = text[: m.start()].strip() if m else ""
+    # Solo queda la etiqueta de la seccion ("Asymptomatic Bacteriuria:").
+    return head if len(head.split()) >= 4 and not head.endswith(":") else ""
+
+
+# Resumen de un estudio en la discusion de la evidencia de una guia ("El
+# estudio de Prina introdujo...", "El analisis de Metersky y colaboradores...
+# (OR 2.51, IC95%: 1.20-5.25)"): es el respaldo de una recomendacion, no la
+# recomendacion. En "factores para decidir el manejo de la neumonia" el
+# selector las elegia en lugar de recomendaciones.
+_STUDY_SUMMARY_RE = re.compile(
+    r"\b(?:el|un|los|este|dicho)\s+(?:estudio|an[aá]lisis|ensayo|metan[aá]lisis)s?\s+de\s+[A-Z]"
+    r"|\by colaboradores\b|\bIC\s?95|\b(?:OR|HR|RR)\s?[=:]?\s?\d"
+)
+# Llamadas de referencia pegadas en cursiva markdown ("_SAMR_157", "_P.
+# aeruginosa_ 132") y espacios antes de puntuacion ("Pseudomonas ,").
+_UNDERSCORE_REF_RE = re.compile(r"_\s?\d{1,3}(?:[,–-]\d{1,3})*\b")
+_SPACE_BEFORE_PUNCT_RE = re.compile(r"\s+([,.;:])")
+
+
+def _tidy_external(text: str) -> str:
+    text = _UNDERSCORE_REF_RE.sub("", text).replace("_", "")
+    return _SPACE_BEFORE_PUNCT_RE.sub(r"\1", text).strip()
+
+
 def build_units(sources: list[RetrievedChunk]) -> list[Unit]:
     units: list[Unit] = []
     seen: set[str] = set()
@@ -272,7 +313,12 @@ def build_units(sources: list[RetrievedChunk]) -> list[Unit]:
             text = raw
             if rc.chunk.source_type != INSTITUTIONAL:
                 text = _DOT_REF_RE.sub(".", _TRAILING_REFS_RE.sub("", text))
-                text = _FOOTNOTE_MARK_RE.sub("", text).strip()
+                text = _tidy_external(_FOOTNOTE_MARK_RE.sub("", text))
+            text = _strip_references(text)
+            if not text:
+                continue
+            if rc.chunk.source_type != INSTITUTIONAL and _STUDY_SUMMARY_RE.search(text):
+                continue
             key = text.lower()
             if key in seen:  # solape entre fragmentos consecutivos
                 continue
@@ -306,6 +352,10 @@ devuelve la lista vacia aunque haya oraciones sobre antibioticos o fiebre.
 - Si eliges una recomendacion o un tratamiento, elige tambien la oracion que \
 dice a que pacientes o situacion aplica (condicion, poblacion, excepciones), \
 si esta en la lista.
+- Si la pregunta es sobre el manejo inicial, elige lo que se hace al \
+diagnosticar (clasificar la gravedad, decidir donde tratar, examenes y \
+antibiotico inicial), no lo del seguimiento, las complicaciones o el largo \
+plazo.
 - Si la pregunta es sobre cuando hacer algo (tratar, hospitalizar, pedir un \
 examen), elige las oraciones que dan esas indicaciones antes que las que \
 solo dan dosis.
@@ -325,7 +375,8 @@ exactamente los nombres de farmacos, dosis, unidades, numeros, intervalos, \
 duraciones, negaciones ("no", "not") y condiciones. Usa la terminologia \
 medica estandar en español (p. ej. pyelonephritis = pielonefritis, \
 asymptomatic bacteriuria = bacteriuria asintomatica, cystitis = cistitis, \
-UTI = ITU, screening = tamizaje). No agregues, quites ni expliques nada, y no incluyas el id en \
+UTI = ITU, screening = tamizaje, culture = cultivo, culture susceptibility = \
+antibiograma). No agregues, quites ni expliques nada, y no incluyas el id en \
 el texto traducido. Responde UNICAMENTE con JSON: {"traducciones": {"<id>": \
 "<texto traducido>", ...}}"""
 
